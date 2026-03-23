@@ -2,10 +2,10 @@ name: Mag7 Daily Report
 
 on:
   schedule:
-    # 매일 오전 9:00 KST (= 00:00 UTC) 월~금 실행
+    # 매일 오전 9:00 KST (= 00:00 UTC) 월~금
     - cron: '0 0 * * 1-5'
   workflow_dispatch:
-    # 수동 실행 버튼 (GitHub Actions 탭에서 언제든 실행 가능)
+    # GitHub Actions 탭 또는 Streamlit UI "▶ 지금 실행" 버튼으로 수동 실행
 
 jobs:
   generate-and-send:
@@ -25,11 +25,12 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Install Korean font for matplotlib (optional)
+      - name: Show tickers to be processed
         run: |
-          sudo apt-get install -y fonts-nanum 2>/dev/null || true
+          echo "=== tickers.json ==="
+          cat tickers.json
 
-      - name: Generate Mag7 reports (real data via yfinance)
+      - name: Generate reports (real data via yfinance)
         run: python local_mag7_real.py
 
       - name: Send report via Telegram
@@ -38,7 +39,7 @@ jobs:
           CHAT_ID: ${{ secrets.CHAT_ID }}
         run: python telegram_sender.py
 
-      - name: Upload PDF as artifact (백업)
+      - name: Upload PDF as artifact (7일 보관)
         uses: actions/upload-artifact@v4
         if: always()
         with:

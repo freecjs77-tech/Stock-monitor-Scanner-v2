@@ -45,8 +45,26 @@ except ImportError as e:
     print(f"        cowork_agents/ 폴더가 {AGENTS_DIR} 에 있는지 확인하세요.")
     sys.exit(1)
 
-# ── 종목 기본 정보 ─────────────────────────────────────────────────
-ALL_TICKERS = ['NVDA', 'PLTR', 'TSLA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META']
+# ── tickers.json에서 종목 목록 로드 ────────────────────────────────
+TICKERS_FILE = os.path.join(SCRIPT_DIR, 'tickers.json')
+
+def load_tickers_from_config():
+    """tickers.json에서 종목 목록을 읽어옴. 없으면 기본값 사용."""
+    if os.path.exists(TICKERS_FILE):
+        try:
+            with open(TICKERS_FILE, encoding='utf-8') as f:
+                data = json.load(f)
+            tickers = data.get('tickers', [])
+            if tickers:
+                print(f"  [CONFIG] tickers.json 로드: {', '.join(tickers)}")
+                return tickers
+        except Exception as e:
+            print(f"  [WARN] tickers.json 읽기 실패: {e}")
+    default = ['NVDA', 'PLTR', 'TSLA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META']
+    print(f"  [CONFIG] 기본 종목 사용: {', '.join(default)}")
+    return default
+
+ALL_TICKERS = load_tickers_from_config()
 
 COMPANY_INFO = {
     'NVDA':  {'company': 'NVIDIA Corporation',    'sector': 'AI / 반도체',          'exchange': 'NASDAQ'},
