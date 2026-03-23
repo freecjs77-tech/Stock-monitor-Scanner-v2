@@ -1,0 +1,20 @@
+# Generated reports (PDF, charts)
+cowork_agents/reports/
+cowork_agents/_tmp/
+*.pdf
+*.png
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
