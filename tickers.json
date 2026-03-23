@@ -1,4 +1,14 @@
 {
-  "tickers": ["NVDA", "PLTR", "TSLA", "AAPL", "MSFT", "GOOGL", "AMZN", "META"],
+  "tickers": [
+    "NVDA",
+    "PLTR",
+    "TSLA",
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "AMZN",
+    "META",
+    "AMD"
+  ],
   "updated": "2026-03-23"
 }
