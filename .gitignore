@@ -1,13 +1,10 @@
-# Generated reports (PDF, charts)
+# 생성된 리포트 (용량 큼, 매일 새로 생성됨)
 cowork_agents/reports/
-cowork_agents/_tmp/
-*.pdf
-*.png
-
-# Python
+cowork_agents/__pycache__/
 __pycache__/
 *.pyc
-*.pyo
+
+# 개발 환경
 .venv/
 venv/
 *.egg-info/
@@ -16,5 +13,6 @@ venv/
 .DS_Store
 Thumbs.db
 
-# Logs
+# 임시 파일
+*.tmp
 *.log

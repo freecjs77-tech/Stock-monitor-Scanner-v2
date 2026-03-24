@@ -363,7 +363,7 @@ def run(tickers=None, send_telegram=False):
         except Exception:
             pass
 
-        print(f"\n  📄 리포트: {merged_path}")
+        print(f"\n  [REPORT] {merged_path}")
     else:
         print("\n  [WARN] 생성된 PDF 없음")
         return None
