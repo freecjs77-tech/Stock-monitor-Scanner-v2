@@ -167,6 +167,40 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .op-bear { background: rgba(211,47,47,0.12); color: #FF5252; border: 1px solid rgba(211,47,47,0.2); }
 .op-neut { background: rgba(245,124,0,0.12); color: #FFB300; border: 1px solid rgba(245,124,0,0.2); }
 
+/* 스코어 바 */
+.score-bar-wrap {
+    height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    margin: 6px 0 4px;
+    overflow: hidden;
+}
+.score-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+}
+
+/* 타이밍 판정 하단 행 */
+.timing-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+}
+.timing-pill {
+    font-size: 10px; font-weight: 700;
+    border-radius: 20px; padding: 3px 10px;
+    border: 1px solid;
+}
+.tp-bull { background: rgba(0,200,83,0.12);  color: #00E676; border-color: rgba(0,200,83,0.25); }
+.tp-bear { background: rgba(211,47,47,0.12); color: #FF5252; border-color: rgba(211,47,47,0.25); }
+.tp-neut { background: rgba(245,124,0,0.12); color: #FFB300; border-color: rgba(245,124,0,0.25); }
+.score-txt {
+    font-size: 10px; font-weight: 700;
+    color: rgba(255,255,255,0.35);
+}
+
 /* 빈 카드 (데이터 없음) */
 .ticker-card-empty {
     background: #1A1D27;
@@ -291,11 +325,46 @@ KNOWN = {
     'IONQ':'IonQ', 'MSTR':'MicroStrategy', 'IBIT':'iShares Bitcoin ETF',
 }
 
-OPINION_CLASS = {
-    '강세 유지': 'bull', '중립/강세': 'bull',
-    '중립/약세': 'neut',
-    '약세 지속': 'bear',
-}
+def compute_score(p):
+    """report_engine.auto_score 인라인 — 외부 의존성 없음"""
+    c = p['close']; m20 = p['ma20']; m50 = p['ma50']; m200 = p['ma200']
+    rsi = p['rsi']; macd_v = p['macd']; macd_s = p['macd_signal']
+
+    above = sum([c > m20, c > m50, c > m200])
+    a = min(above * 5 + (3 if (m20 > m50 > m200) and above == 3 else 0) + (2 if above >= 2 else 0), 20)
+
+    rsi_s = 2 if rsi >= 70 else (5 if rsi >= 60 else (8 if rsi >= 45 else (9 if rsi >= 30 else 4)))
+    macd_s = (10 if macd_v > macd_s and macd_v > 0 else
+              (7 if macd_v > macd_s else (4 if macd_v > 0 else 2)))
+    b = min(rsi_s + macd_s, 20)
+
+    bb_r = p['bb_upper'] - p['bb_lower']
+    bp = (c - p['bb_lower']) / bb_r if bb_r > 0 else 0.5
+    c_s = (4 if bp <= 0.0 else 13 if bp <= 0.20 else 10 if bp <= 0.45 else
+           7 if bp <= 0.60 else 5 if bp <= 0.80 else 3)
+    c_s = min(max(c_s, 0), 15)
+
+    vr = p.get('volume', 0) / max(p.get('avg_volume', 1), 1)
+    chg = p['change_pct']
+    d_s = (13 if chg > 1.0 and vr >= 1.5 else 10 if chg > 0 and vr >= 1.2 else
+           2 if chg < -1.0 and vr >= 1.5 else 4 if chg < 0 and vr >= 1.2 else 7)
+    d_s = min(max(d_s, 0), 15)
+
+    nm = min(abs(c-m20)/max(m20,1), abs(c-m50)/max(m50,1), abs(c-m200)/max(m200,1))
+    am = c > m200
+    e_s = (14 if am and nm < 0.02 else 11 if am and nm < 0.05 else 8 if am and nm < 0.10 else
+           6 if am else 4 if nm < 0.03 else 2)
+    e_s = min(max(e_s, 0), 15)
+
+    return a + b + c_s + d_s + e_s
+
+
+def timing_label(total):
+    if total >= 63: return '매수 적기',  '#00E676', 'bull'
+    if total >= 50: return '매수 검토',  '#69F0AE', 'bull'
+    if total >= 37: return '관망',       '#FFB300', 'neut'
+    if total >= 24: return '비중 축소',  '#FF7043', 'bear'
+    return '매도 적기', '#FF5252', 'bear'
 
 # ══════════════════════════════════════════════════════════════════
 #  GitHub API
@@ -446,10 +515,10 @@ missing = [t for t in st.session_state.tickers if t not in price_map]
 #  헤더
 # ══════════════════════════════════════════════════════════════════
 n          = len(st.session_state.tickers)
-bull_count = sum(1 for t in st.session_state.tickers
-                 if price_map.get(t, {}).get("opinion_note", "") in ("강세 유지", "중립/강세"))
-bear_count = sum(1 for t in st.session_state.tickers
-                 if price_map.get(t, {}).get("opinion_note", "") == "약세 지속")
+buy_count  = sum(1 for t in st.session_state.tickers
+                 if price_map.get(t) and compute_score(price_map[t]) >= 50)
+sell_count = sum(1 for t in st.session_state.tickers
+                 if price_map.get(t) and compute_score(price_map[t]) < 37)
 
 st.markdown(f"""
 <div class="header-wrap">
@@ -466,12 +535,12 @@ st.markdown(f"""
       <div class="stat-lbl">종목 수</div>
     </div>
     <div class="stat-box">
-      <div class="stat-val" style="color:#00E676">{bull_count}</div>
-      <div class="stat-lbl">강세</div>
+      <div class="stat-val" style="color:#00E676">{buy_count}</div>
+      <div class="stat-lbl">매수 타이밍</div>
     </div>
     <div class="stat-box">
-      <div class="stat-val" style="color:#FF5252">{bear_count}</div>
-      <div class="stat-lbl">약세</div>
+      <div class="stat-val" style="color:#FF5252">{sell_count}</div>
+      <div class="stat-lbl">매도 주의</div>
     </div>
   </div>
 </div>
@@ -522,29 +591,27 @@ for row in rows:
             name = KNOWN.get(ticker, p.get("company", ticker))
 
             if p:
-                close  = p["close"]
-                chg    = p["change_pct"]
-                rsi    = p["rsi"]
-                op     = p.get("opinion_note", "")
-                op_cls = OPINION_CLASS.get(op, "neut")
+                close = p["close"]
+                chg   = p["change_pct"]
+                rsi   = p["rsi"]
 
                 chg_sign = "+" if chg >= 0 else ""
                 card_cls = "up" if chg >= 0 else "down"
                 chg_cls  = "up" if chg >= 0 else "down"
 
                 # MA 상태
-                above = sum([close > p.get("ma20", close),
-                             close > p.get("ma50",  close),
-                             close > p.get("ma200", close)])
+                above  = sum([close > p.get("ma20", close),
+                              close > p.get("ma50",  close),
+                              close > p.get("ma200", close)])
                 ma_txt = {3:"정배열", 2:"MA200↓", 1:"MA50↓", 0:"역배열"}[above]
                 ma_col = {3:"#00E676", 2:"#FFB300", 1:"#FF5252", 0:"#FF5252"}[above]
 
-                rsi_col = "#FF5252" if rsi >= 70 else ("#00E676" if rsi <= 30 else "rgba(255,255,255,0.6)")
+                rsi_col = "#FF5252" if rsi >= 70 else ("#00E676" if rsi <= 35 else "rgba(255,255,255,0.6)")
 
-                op_label_map = {
-                    "강세 유지":"강세", "중립/강세":"중립/강세",
-                    "중립/약세":"중립/약세", "약세 지속":"약세",
-                }
+                # 타이밍 점수 & 판정
+                score = compute_score(p)
+                op_lbl, op_color, op_cls = timing_label(score)
+                bar_pct = round(score / 85 * 100)
 
                 st.markdown(f"""
                 <div class="ticker-card {card_cls}">
@@ -558,6 +625,9 @@ for row in rows:
                       <span class="price-chg {chg_cls}">{chg_sign}{chg:.2f}%</span>
                     </div>
                   </div>
+                  <div class="score-bar-wrap">
+                    <div class="score-bar-fill" style="width:{bar_pct}%;background:{op_color}"></div>
+                  </div>
                   <hr class="ticker-divider">
                   <div class="ticker-stats">
                     <div class="ts-item">
@@ -566,12 +636,16 @@ for row in rows:
                     </div>
                     <div class="ts-item">
                       <div class="ts-val" style="color:{ma_col}">{ma_txt}</div>
-                      <div class="ts-lbl">MA 상태</div>
+                      <div class="ts-lbl">MA</div>
                     </div>
                     <div class="ts-item">
-                      <div class="ts-val op-{op_cls}" style="font-size:11px;font-weight:700">{op_label_map.get(op, op)}</div>
-                      <div class="ts-lbl">의견</div>
+                      <div class="ts-val" style="color:{op_color}">{score}</div>
+                      <div class="ts-lbl">/ 85점</div>
                     </div>
+                  </div>
+                  <div class="timing-row">
+                    <span class="timing-pill tp-{op_cls}">{op_lbl}</span>
+                    <span class="score-txt">타이밍 판정</span>
                   </div>
                 </div>
                 """, unsafe_allow_html=True)
