@@ -16,3 +16,9 @@ Thumbs.db
 # 임시 파일
 *.tmp
 *.log
+
+# Streamlit secrets (토큰 포함 — 절대 커밋 금지)
+.streamlit/secrets.toml
+
+# 루트 PDF (임시 생성물)
+*.pdf

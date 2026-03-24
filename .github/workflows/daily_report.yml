@@ -39,6 +39,16 @@ jobs:
           CHAT_ID: ${{ secrets.CHAT_ID }}
         run: python telegram_sender.py
 
+      - name: Commit updated price data
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git add cowork_agents/mag7_data.json
+          git diff --staged --quiet || git commit -m "chore: update mag7_data.json [skip ci]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Upload PDF as artifact (7일 보관)
         uses: actions/upload-artifact@v4
         if: always()

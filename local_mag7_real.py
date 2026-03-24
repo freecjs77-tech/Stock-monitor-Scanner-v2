@@ -39,7 +39,7 @@ DATA_FILE   = os.path.join(AGENTS_DIR, 'mag7_data.json')
 sys.path.insert(0, AGENTS_DIR)
 
 try:
-    from report_engine import generate_report
+    from report_engine import generate_report, generate_summary_page
 except ImportError as e:
     print(f"[ERROR] report_engine 로드 실패: {e}")
     print(f"        cowork_agents/ 폴더가 {AGENTS_DIR} 에 있는지 확인하세요.")
@@ -344,10 +344,23 @@ def run(tickers=None, send_telegram=False):
             json.dump(data_out, f, ensure_ascii=False, indent=2)
         print(f"\n  [DATA] {DATA_FILE} 업데이트 완료")
 
-    # PDF 병합
+    # PDF 병합 (요약 페이지 → 개별 종목 순)
     merged_path = os.path.join(REPORTS_DIR, f'Mag7_Daily_Report_{today_str}.pdf')
     if generated:
         pdf_paths = [p for _, p in generated]
+
+        # 요약 페이지 생성
+        summary_path = os.path.join(tmp_dir, f'_summary_{today_str}.pdf')
+        print(f"\n  [SUMMARY] 요약 페이지 생성 중...")
+        try:
+            generate_summary_page(stocks_data, summary_path)
+            print(f"  [SUMMARY] 완료")
+            pdf_paths = [summary_path] + pdf_paths
+        except Exception as e:
+            import traceback
+            print(f"  [SUMMARY] 오류 (요약 없이 계속): {e}")
+            traceback.print_exc()
+
         print(f"\n  [MERGE] {len(pdf_paths)}개 PDF 병합 중...")
         merge_pdfs(pdf_paths, merged_path)
         print(f"  [MERGE] 완료 → {os.path.basename(merged_path)}")

@@ -735,6 +735,201 @@ def _auto_opinion(d, total, op_label, a_sc, b_sc):
 
 
 # ══════════════════════════════════════════════════════════════════
+#  Summary page (all tickers on one page)
+# ══════════════════════════════════════════════════════════════════
+
+def generate_summary_page(stocks_list, output_path):
+    """
+    Generate a single-page PDF summary of all tickers.
+    stocks_list: list of stock_data dicts (same format as generate_report input)
+    output_path: full path for the output PDF
+    """
+    today_str = datetime.date.today().strftime('%Y년 %m월 %d일')
+
+    doc = SimpleDocTemplate(output_path, pagesize=A4,
+                             leftMargin=M, rightMargin=M,
+                             topMargin=10 * mm, bottomMargin=8 * mm)
+    story = []
+
+    # ── Title ─────────────────────────────────────────────────────
+    title_tbl = Table(
+        [[Paragraph('Mag7 Daily Report', s('tt', 20, NAVY, TA_LEFT, bold=True)),
+          Paragraph(f'{today_str}  |  기술적 분석 종합', s('td', 9, DGRAY, TA_RIGHT))]],
+        colWidths=[CW * 0.60, CW * 0.40])
+    title_tbl.setStyle(TableStyle([
+        ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
+        ('LEFTPADDING', (0,0),(-1,-1), 0), ('RIGHTPADDING', (0,0),(-1,-1), 0),
+        ('TOPPADDING', (0,0),(-1,-1), 0), ('BOTTOMPADDING', (0,0),(-1,-1), 0),
+    ]))
+    story.append(title_tbl)
+    story.append(HRFlowable(width='100%', thickness=3, color=BLUE,
+                             spaceBefore=2 * mm, spaceAfter=3 * mm))
+
+    # ── Summary table ─────────────────────────────────────────────
+    COL_W = [
+        CW * 0.065,   # 티커
+        CW * 0.155,   # 회사명
+        CW * 0.085,   # 종가
+        CW * 0.075,   # 등락
+        CW * 0.085,   # MA 상태
+        CW * 0.065,   # RSI
+        CW * 0.095,   # MACD
+        CW * 0.065,   # BB%B
+        CW * 0.085,   # 52주 위치
+        CW * 0.065,   # 점수
+        CW * 0.055,   # 의견
+    ]
+
+    HDR = ['티커', '회사명', '종가', '등락률', 'MA 상태', 'RSI', 'MACD',
+           'BB%B', '52주', '점수', '의견']
+    hdr_row = [Paragraph(h, s(f'sh{i}', 7.5, WHITE, TA_CENTER, bold=True))
+               for i, h in enumerate(HDR)]
+    rows = [hdr_row]
+    row_styles = []
+
+    for ri, d in enumerate(stocks_list, 1):
+        _, _, _, _, _, total = auto_score(d)
+        op_label, op_color = opinion_label(total)
+
+        c    = d['close']
+        chg  = d['change_pct']
+        rsi  = d['rsi']
+        macd_v = d['macd']
+        macd_s = d['macd_signal']
+
+        # MA 상태
+        above = sum([c > d['ma20'], c > d['ma50'], c > d['ma200']])
+        ma_txt   = {3: '정배열', 2: 'MA200↓', 1: 'MA50↓', 0: '역배열'}[above]
+        ma_color = GREEN if above == 3 else (ORANGE if above == 2 else RED)
+
+        # MACD 상태
+        macd_txt   = f'{macd_v:.2f}' + (' ↑' if macd_v > macd_s else ' ↓')
+        macd_color = GREEN if macd_v > macd_s else RED
+
+        # BB%B
+        bb_range = d['bb_upper'] - d['bb_lower']
+        bb_pct   = (c - d['bb_lower']) / bb_range if bb_range > 0 else 0.5
+        bb_txt   = f'{bb_pct:.2f}'
+        bb_color = RED if bb_pct > 0.85 else (GREEN if bb_pct < 0.15 else DGRAY)
+
+        # 52주 위치
+        range_52 = d['high_52w'] - d['low_52w']
+        pos_52   = (c - d['low_52w']) / range_52 if range_52 > 0 else 0.5
+        pos_txt  = f'{pos_52*100:.0f}%'
+
+        # RSI 색상
+        rsi_color = RED if rsi >= 70 else (GREEN if rsi <= 30 else DGRAY)
+
+        # 등락 색상
+        chg_color = GREEN if chg >= 0 else RED
+        chg_txt   = f'+{chg:.2f}%' if chg >= 0 else f'{chg:.2f}%'
+
+        row = [
+            Paragraph(d['ticker'],          s(f'r{ri}0', 8,   NAVY,      TA_CENTER, bold=True)),
+            Paragraph(d['company'],          s(f'r{ri}1', 7,   DGRAY,     TA_LEFT)),
+            Paragraph(f'${c:.2f}',           s(f'r{ri}2', 8,   colors.black, TA_CENTER, bold=True)),
+            Paragraph(chg_txt,               s(f'r{ri}3', 8,   chg_color, TA_CENTER, bold=True)),
+            Paragraph(ma_txt,                s(f'r{ri}4', 7.5, ma_color,  TA_CENTER, bold=True)),
+            Paragraph(f'{rsi:.1f}',          s(f'r{ri}5', 8,   rsi_color, TA_CENTER, bold=True)),
+            Paragraph(macd_txt,              s(f'r{ri}6', 7.5, macd_color,TA_CENTER, bold=True)),
+            Paragraph(bb_txt,                s(f'r{ri}7', 7.5, bb_color,  TA_CENTER)),
+            Paragraph(pos_txt,               s(f'r{ri}8', 7.5, DGRAY,     TA_CENTER)),
+            Paragraph(f'{total}/85',         s(f'r{ri}9', 8,   op_color,  TA_CENTER, bold=True)),
+            Paragraph(op_label,              s(f'r{ri}a', 7.5, op_color,  TA_CENTER, bold=True)),
+        ]
+        rows.append(row)
+
+        bg = BUY_BG if total >= 50 else (NEUT_BG if total >= 38 else SELL_BG)
+        row_styles.append(('BACKGROUND', (0, ri), (-1, ri), bg))
+
+    summary_t = Table(rows, colWidths=COL_W)
+    summary_t.setStyle(TableStyle([
+        ('BACKGROUND',    (0, 0), (-1, 0),  NAVY),
+        ('BOX',           (0, 0), (-1, -1), 0.6, MGRAY),
+        ('INNERGRID',     (0, 0), (-1, -1), 0.3, colors.HexColor('#E5E8EA')),
+        ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING',    (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING',  (0, 0), (-1, -1), 4),
+    ] + row_styles))
+    story.append(summary_t)
+    story.append(Spacer(1, 5 * mm))
+
+    # ── Score legend ──────────────────────────────────────────────
+    legend_items = [
+        ('강매수 (65+)', GREEN), ('매수 (50-64)', GREEN),
+        ('중립 (38-49)', ORANGE), ('매도 (25-37)', RED), ('강매도 (-24)', RED),
+    ]
+    legend_cells = []
+    for lbl, lc in legend_items:
+        legend_cells.append(Paragraph(f'● {lbl}', s(f'lg{lbl}', 7, lc, TA_CENTER)))
+    legend_t = Table([legend_cells], colWidths=[CW / 5] * 5)
+    legend_t.setStyle(TableStyle([
+        ('BACKGROUND',    (0,0),(-1,-1), LGRAY),
+        ('BOX',           (0,0),(-1,-1), 0.5, MGRAY),
+        ('TOPPADDING',    (0,0),(-1,-1), 4),
+        ('BOTTOMPADDING', (0,0),(-1,-1), 4),
+        ('ALIGN',         (0,0),(-1,-1), 'CENTER'),
+    ]))
+    story.append(legend_t)
+    story.append(Spacer(1, 4 * mm))
+
+    # ── MA 상태 설명 ──────────────────────────────────────────────
+    story.append(Paragraph(
+        '* MA 상태: 정배열=현재가가 MA20/50/200 모두 상향 | MA200↓=MA200 하향 이탈 | MA50↓=MA50/200 하향 | 역배열=전부 하향  '
+        '/ BB%B: 0=BB하단, 0.5=중앙, 1=BB상단  / 52주: 52주 고저 범위 내 현재 위치',
+        s('note', 6.5, DGRAY, TA_LEFT)))
+    story.append(Spacer(1, 3 * mm))
+
+    # ── Market heatmap bar ────────────────────────────────────────
+    scores  = []
+    for d in stocks_list:
+        _, _, _, _, _, total = auto_score(d)
+        scores.append(total)
+    avg_score = sum(scores) / len(scores) if scores else 0
+    bull_count = sum(1 for sc in scores if sc >= 50)
+    bear_count = sum(1 for sc in scores if sc < 38)
+    neut_count = len(scores) - bull_count - bear_count
+
+    mkt_label, mkt_color = opinion_label(int(avg_score))
+    mkt_cells = [
+        Paragraph('시장 전체 평균', s('mk0', 8, DGRAY, TA_CENTER, bold=True)),
+        Paragraph(f'{avg_score:.1f} / 85  ({mkt_label})', s('mk1', 10, mkt_color, TA_CENTER, bold=True)),
+        Paragraph(f'강세 {bull_count}종목', s('mk2', 8, GREEN, TA_CENTER, bold=True)),
+        Paragraph(f'중립 {neut_count}종목', s('mk3', 8, ORANGE, TA_CENTER, bold=True)),
+        Paragraph(f'약세 {bear_count}종목', s('mk4', 8, RED, TA_CENTER, bold=True)),
+    ]
+    mkt_t = Table([mkt_cells], colWidths=[CW / 5] * 5)
+    mkt_t.setStyle(TableStyle([
+        ('BACKGROUND',    (0,0),(0,-1),  LGRAY),
+        ('BACKGROUND',    (1,0),(1,-1),  colors.HexColor('#EBF5FB')),
+        ('BACKGROUND',    (2,0),(2,-1),  BUY_BG),
+        ('BACKGROUND',    (3,0),(3,-1),  NEUT_BG),
+        ('BACKGROUND',    (4,0),(4,-1),  SELL_BG),
+        ('BOX',           (0,0),(-1,-1), 0.6, MGRAY),
+        ('LINEAFTER',     (0,0),(3,-1),  0.4, MGRAY),
+        ('TOPPADDING',    (0,0),(-1,-1), 7),
+        ('BOTTOMPADDING', (0,0),(-1,-1), 7),
+        ('ALIGN',         (0,0),(-1,-1), 'CENTER'),
+        ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
+    ]))
+    story.append(mkt_t)
+    story.append(Spacer(1, 4 * mm))
+
+    # ── Footer ────────────────────────────────────────────────────
+    story.append(HRFlowable(width='100%', thickness=0.6, color=MGRAY,
+                             spaceBefore=1 * mm, spaceAfter=1.5 * mm))
+    story.append(Paragraph(
+        f'본 보고서는 AI 기반 자동 기술적 분석으로, 투자 권유가 아닙니다. '
+        f'데이터 소스: Yahoo Finance (yfinance)  |  AI Chart Analyst (c) 2026',
+        s('foot', 6.5, DGRAY, TA_CENTER)))
+
+    doc.build(story)
+    return output_path
+
+
+# ══════════════════════════════════════════════════════════════════
 #  Main entry point
 # ══════════════════════════════════════════════════════════════════
 
