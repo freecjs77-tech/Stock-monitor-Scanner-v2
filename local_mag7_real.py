@@ -39,7 +39,7 @@ DATA_FILE   = os.path.join(AGENTS_DIR, 'mag7_data.json')
 sys.path.insert(0, AGENTS_DIR)
 
 try:
-    from report_engine import generate_report, generate_summary_page
+    from report_engine import generate_report, generate_summary_page, build_index_page
 except ImportError as e:
     print(f"[ERROR] report_engine 로드 실패: {e}")
     print(f"        cowork_agents/ 폴더가 {AGENTS_DIR} 에 있는지 확인하세요.")
@@ -355,7 +355,11 @@ def run(tickers=None, send_telegram=False):
         try:
             generate_summary_page(stocks_data, summary_path)
             print(f"  [SUMMARY] 완료")
-            pdf_paths = [summary_path] + pdf_paths
+            # 인덱스 페이지 생성 (2페이지, 1회만)
+            index_path = os.path.join(tmp_dir, f'_index_{today_str}.pdf')
+            build_index_page(index_path)
+            print(f"  [INDEX] 타이밍 인덱스 페이지 생성 완료")
+            pdf_paths = [summary_path, index_path] + pdf_paths
         except Exception as e:
             import traceback
             print(f"  [SUMMARY] 오류 (요약 없이 계속): {e}")
