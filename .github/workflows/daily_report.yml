@@ -11,6 +11,8 @@ jobs:
   generate-and-send:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
