@@ -375,6 +375,26 @@ def timing_label(total):
     if total >= 24: return '비중 축소',  '#FF7043', 'bear'
     return '매도 적기', '#FF5252', 'bear'
 
+
+def compute_buy_tier(p):
+    """단계별 매수 신호 (0~3차)"""
+    c   = p['close']; m20 = p['ma20']; m200 = p['ma200']
+    rsi = p['rsi'];   macd_v = p['macd']; macd_s = p['macd_signal']
+    vol_ratio   = p.get('volume', 0) / max(p.get('avg_volume', 1), 1)
+    chg         = p['change_pct']
+    above_ma200 = c > m200
+    macd_bull   = macd_v > macd_s
+    near_ma20   = abs(c - m20) / max(m20, 1) <= 0.03
+
+    if (above_ma200 and near_ma20 and macd_bull and macd_v > 0
+            and vol_ratio >= 1.3 and chg > 0.5):
+        return 3, '3차 추세확인', '#00E676'
+    if (above_ma200 and 28 <= rsi <= 50 and macd_bull and vol_ratio >= 1.2):
+        return 2, '2차 매수확정', '#69F0AE'
+    if above_ma200 and rsi <= 40:
+        return 1, '1차 진입준비', '#FFB300'
+    return 0, '', ''
+
 # ══════════════════════════════════════════════════════════════════
 #  GitHub API
 # ══════════════════════════════════════════════════════════════════
@@ -622,6 +642,16 @@ for row in rows:
                 op_lbl, op_color, op_cls = timing_label(score)
                 bar_pct = round(score / 85 * 100)
 
+                # 단계 신호
+                tier_num, tier_lbl, tier_color = compute_buy_tier(p)
+                tier_badge = (
+                    f'<span style="font-size:9px;font-weight:700;'
+                    f'background:rgba(0,0,0,0.25);color:{tier_color};'
+                    f'border:1px solid {tier_color}44;border-radius:10px;'
+                    f'padding:2px 7px;margin-left:6px">{tier_lbl}</span>'
+                    if tier_num else ''
+                )
+
                 st.markdown(f"""
                 <div class="ticker-card {card_cls}">
                   <div class="ticker-top">
@@ -654,7 +684,7 @@ for row in rows:
                   </div>
                   <div class="timing-row">
                     <span class="timing-pill tp-{op_cls}">{op_lbl}</span>
-                    <span class="score-txt">타이밍 판정</span>
+                    {tier_badge}
                   </div>
                 </div>
                 """, unsafe_allow_html=True)

@@ -414,6 +414,57 @@ def opinion_label(total):
 
 
 # ══════════════════════════════════════════════════════════════════
+#  단계별 매수 신호 (1차~3차)
+# ══════════════════════════════════════════════════════════════════
+TIER_META = {
+    0: ('',           '',        MGRAY),
+    1: ('1차 진입준비', '#FFB300', ORANGE),
+    2: ('2차 매수확정', '#69F0AE', GREEN),
+    3: ('3차 추세확인', '#00C853', GREEN),
+}
+TIER_DESC = {
+    1: 'RSI 과매도 진입 + MA200 지지 유지 — 소량 분할매수 시작, 추가 하락 가능성 대비',
+    2: 'RSI 과매도 회복 + MACD 골든크로스 + 거래량 동반 — 주력 매수 진입 타이밍',
+    3: 'MA20 지지 + MACD 제로선 위 + 거래량 + 양봉 — 추세 재개 확인, 풀포지션 가능',
+}
+
+
+def buy_tier(d):
+    """
+    단계별 매수 신호 판정
+    Returns: tier (int 0~3)
+      0: 신호 없음
+      1: 진입 준비  — RSI ≤40 + MA200 위
+      2: 매수 확정  — RSI 28~50 + MACD 골든크로스 + 거래량 1.2x+
+      3: 추세 확인  — MA20 근접(3%) + MACD 제로 위 + 거래량 1.3x+ + 양봉
+    """
+    c   = d['close']; m20 = d['ma20']; m200 = d['ma200']
+    rsi = d['rsi'];   macd_v = d['macd']; macd_s = d['macd_signal']
+    vol_ratio   = d.get('volume', 0) / max(d.get('avg_volume', 1), 1)
+    chg         = d['change_pct']
+    above_ma200 = c > m200
+    macd_bull   = macd_v > macd_s
+    near_ma20   = abs(c - m20) / max(m20, 1) <= 0.03
+
+    # 3차: 추세 재개 확인 (모든 조건 충족)
+    if (above_ma200 and near_ma20
+            and macd_bull and macd_v > 0
+            and vol_ratio >= 1.3 and chg > 0.5):
+        return 3
+
+    # 2차: 반전 확정
+    if (above_ma200 and 28 <= rsi <= 50
+            and macd_bull and vol_ratio >= 1.2):
+        return 2
+
+    # 1차: 진입 준비
+    if above_ma200 and rsi <= 40:
+        return 1
+
+    return 0
+
+
+# ══════════════════════════════════════════════════════════════════
 #  Chart
 # ══════════════════════════════════════════════════════════════════
 
@@ -602,6 +653,8 @@ def build_chart(d, path):
 def build_pdf(d, chart_path, output_path):
     a_sc, b_sc, c_sc, d_sc, e_sc, f_sc, total = auto_score(d)
     op_label, op_color = opinion_label(total)
+    tier = buy_tier(d)
+    tier_lbl, tier_hex, tier_color = TIER_META[tier]
     signals = auto_signals(d)
     ma200_status = '현재가 상향' if d['close'] > d['ma200'] else '현재가 하향 이탈'
 
@@ -625,31 +678,36 @@ def build_pdf(d, chart_path, output_path):
     story.append(HRFlowable(width='100%', thickness=3, color=BLUE,
                              spaceBefore=2 * mm, spaceAfter=2.5 * mm))
 
-    # Metrics bar
+    # Metrics bar (7 columns: 종가/고점/저점/MA200/점수/판정/단계신호)
+    tier_bg = colors.HexColor('#E8F5E9') if tier >= 2 else (colors.HexColor('#FFF8E1') if tier == 1 else colors.HexColor('#FEF0F0'))
+    chg_sign = '+' if d['change_pct'] >= 0 else ''
     lbl_row = [Paragraph(t, s(f'ml{i}', 7, DGRAY, TA_CENTER, bold=True))
-               for i, t in enumerate(['종가', '52주 고점', '52주 저점', '200일 MA', '종합점수', '타이밍 판정'])]
-    val_row = [Paragraph(v, s(f'mv{i}', 12, c, TA_CENTER, bold=True))
+               for i, t in enumerate(['종가', '52주 고점', '52주 저점', '200일 MA', '종합점수', '타이밍 판정', '단계 신호'])]
+    val_row = [Paragraph(v, s(f'mv{i}', 11, c, TA_CENTER, bold=True))
                for i, (v, c) in enumerate([
                    (f'${d["close"]:.2f}',    RED if d['change_pct'] < 0 else GREEN),
                    (f'${d["high_52w"]:.2f}', NAVY),
                    (f'${d["low_52w"]:.2f}',  NAVY),
                    (f'${d["ma200"]:.2f}',    RED if d['close'] < d['ma200'] else GREEN),
                    (f'{total} / 85',         op_color),
-                   (op_label,               op_color)])]
-    chg_sign = '+' if d['change_pct'] >= 0 else ''
+                   (op_label,                op_color),
+                   (tier_lbl if tier else '—', tier_color)])]
     sub_row = [Paragraph(v, s(f'ms{i}', 7, DGRAY, TA_CENTER))
                for i, v in enumerate([
-                   f'전일 대비 {chg_sign}{d["change_pct"]:.2f}%',
-                   d.get('high_52w_date', '2025년'),
-                   d.get('low_52w_date',  '2026년'),
+                   f'{chg_sign}{d["change_pct"]:.2f}%',
+                   d.get('high_52w_date', ''),
+                   d.get('low_52w_date',  ''),
                    ma200_status, '/85점 만점',
-                   d.get('opinion_note', '기술적 신호 기반')])]
-    mt = Table([lbl_row, val_row, sub_row], colWidths=[CW / 6] * 6)
+                   '기술지표 종합',
+                   TIER_DESC.get(tier, '매수 조건 미충족')[:14] if tier else '해당 없음'])]
+    col7 = [CW * 0.145] * 6 + [CW * 0.13]
+    mt = Table([lbl_row, val_row, sub_row], colWidths=col7)
     mt.setStyle(TableStyle([
         ('BACKGROUND',    (0,0),(-1,-1), LGRAY),
-        ('BACKGROUND',    (4,0),(-1,-1), colors.HexColor('#FEF0F0')),
+        ('BACKGROUND',    (4,0),(5,-1),  colors.HexColor('#FEF0F0')),
+        ('BACKGROUND',    (6,0),(6,-1),  tier_bg),
         ('BOX',           (0,0),(-1,-1), 0.8, MGRAY),
-        ('LINEAFTER',     (0,0),(4,-1),  0.4, MGRAY),
+        ('LINEAFTER',     (0,0),(5,-1),  0.4, MGRAY),
         ('TOPPADDING',    (0,0),(-1,-1), 4),
         ('BOTTOMPADDING', (0,0),(-1,-1), 3),
     ]))
@@ -840,11 +898,16 @@ def _auto_opinion(d, total, op_label, a_sc, b_sc):
     macd_state = ('MACD 골든크로스' if macd_v > macd_s else 'MACD 데드크로스') + \
                  (' (제로선 상방)' if macd_v > 0 else ' (제로선 하방)')
 
-    chg_sign = '+' if d['change_pct'] >= 0 else ''
+    tier = buy_tier(d)
+    tier_lbl = TIER_META[tier][0]
+    tier_line = (f'<b>[매수 단계 신호: {tier_lbl}]</b>  {TIER_DESC[tier]}<br/><br/>'
+                 if tier else '')
+
     return (
         f'[타이밍 판정: {op_label}  {total}/85점]<br/>'
         f'{d["ticker"]}의 현재 기술적 상태는 <b>{ma_state}</b>입니다. '
         f'{rsi_timing}. {macd_state}.<br/><br/>'
+        + tier_line +
         f'<b>관심 종목 (매수 관점):</b> {buy_cond}<br/>'
         f'<b>보유 종목 (매도 관점):</b> {sell_cond}<br/>'
         f'<b>손절 기준:</b> {stop_loss}'
