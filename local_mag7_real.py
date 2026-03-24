@@ -406,6 +406,16 @@ def run(tickers=None, send_telegram=False):
         else:
             print(f"\n  [WARN] telegram_sender.py 없음: {sender}")
 
+        # Email 전송 (GMAIL_USER 환경변수 있을 때만)
+        if os.environ.get('GMAIL_USER'):
+            email_sender = os.path.join(SCRIPT_DIR, 'email_sender.py')
+            if os.path.exists(email_sender):
+                import subprocess
+                print(f"\n  [EMAIL] 전송 시작...")
+                subprocess.run([sys.executable, email_sender], check=False)
+        else:
+            print(f"\n  [EMAIL] GMAIL_USER 미설정 — 이메일 전송 건너뜀")
+
     return merged_path
 
 

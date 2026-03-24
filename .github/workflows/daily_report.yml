@@ -41,6 +41,14 @@ jobs:
           CHAT_ID: ${{ secrets.CHAT_ID }}
         run: python telegram_sender.py
 
+      - name: Send report via Email
+        if: ${{ secrets.GMAIL_USER != '' }}
+        env:
+          GMAIL_USER:   ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PW: ${{ secrets.GMAIL_APP_PW }}
+          MAIL_TO:      ${{ secrets.MAIL_TO }}
+        run: python email_sender.py
+
       - name: Commit updated price data
         run: |
           git config user.email "actions@github.com"
