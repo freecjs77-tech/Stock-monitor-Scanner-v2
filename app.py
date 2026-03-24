@@ -427,14 +427,19 @@ if "run_id_seen" not in st.session_state: st.session_state.run_id_seen  = None
 if "price_map"   not in st.session_state: st.session_state.price_map    = {}
 if "last_updated" not in st.session_state: st.session_state.last_updated = ""
 
-# 가격 데이터 초기 로드 (세션 최초 또는 폴링 완료 시)
-if not st.session_state.price_map:
+# 가격 데이터 로드 (항상 최신 — 세션 캐시 + 30초 TTL)
+if not st.session_state.price_map or st.session_state.get("force_reload"):
     pm, lu = load_price_data()
-    st.session_state.price_map    = pm
-    st.session_state.last_updated = lu
+    if pm:
+        st.session_state.price_map    = pm
+        st.session_state.last_updated = lu
+    st.session_state.force_reload = False
 
 price_map    = st.session_state.price_map
 last_updated = st.session_state.last_updated
+
+# tickers에 있는데 data에 없는 종목 감지
+missing = [t for t in st.session_state.tickers if t not in price_map]
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -494,6 +499,14 @@ if last_updated:
 # ══════════════════════════════════════════════════════════════════
 #  종목 그리드
 # ══════════════════════════════════════════════════════════════════
+if missing:
+    st.markdown(
+        f'<div class="data-banner" style="border-color:rgba(255,179,0,0.4);background:linear-gradient(90deg,rgba(255,179,0,0.12),rgba(255,179,0,0.04))">'
+        f'⚠️ &nbsp;<b style="color:#FFB300">{", ".join(missing)}</b> — 아직 데이터 없음.'
+        f' &nbsp;▶ 지금 실행을 눌러 리포트를 생성하세요.</div>',
+        unsafe_allow_html=True,
+    )
+
 st.markdown('<div class="section-label">등록 종목</div>', unsafe_allow_html=True)
 
 COLS      = 4
@@ -590,6 +603,15 @@ if to_remove:
 st.write("")
 st.markdown('<div class="section-label">종목 추가 · 실행</div>', unsafe_allow_html=True)
 
+st.markdown("""
+<style>
+/* 종목 추가 행: 버튼을 입력창 하단에 맞춤 */
+div[data-testid="stHorizontalBlock"]:has(div[data-testid="stTextInput"]) {
+    align-items: flex-end !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 col_in, col_add, col_run = st.columns([3, 1, 1.2], gap="small")
 
 with col_in:
@@ -600,11 +622,9 @@ with col_in:
     ).upper().strip()
 
 with col_add:
-    st.write("")
     add_btn = st.button("＋ 추가", type="primary", use_container_width=True)
 
 with col_run:
-    st.write("")
     run_btn = st.button("▶ 지금 실행", use_container_width=True)
 
 if add_btn:
@@ -674,15 +694,10 @@ if run_info:
     elif conclusion == "success":
         # 방금 완료됐고 아직 데이터 미갱신이면 갱신
         if st.session_state.polling and st.session_state.run_id_seen != run_info["id"]:
-            with st.spinner("최신 데이터 불러오는 중..."):
-                pm, lu = load_price_data()
-                if pm:
-                    st.session_state.price_map    = pm
-                    st.session_state.last_updated = lu
-                    price_map    = pm
-                    last_updated = lu
-            st.session_state.run_id_seen = run_info["id"]
-            st.session_state.polling     = False
+            st.session_state.run_id_seen  = run_info["id"]
+            st.session_state.polling      = False
+            st.session_state.price_map    = {}   # 캐시 클리어 → 다음 렌더에서 재로드
+            st.session_state.force_reload = True
             st.session_state.toast = ("success", "✅ 리포트 완료 — 종목 데이터가 최신으로 갱신됐습니다")
             st.rerun()
 
