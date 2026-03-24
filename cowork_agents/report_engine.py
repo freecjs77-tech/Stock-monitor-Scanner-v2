@@ -267,28 +267,26 @@ def auto_signals(d):
 
 def auto_score(d):
     """
-    매수/매도 타이밍 관점의 기술적 점수 (0-85)
-    높은 점수 = 추세 양호 + 과매도 회복 + 지지선 근접 = 매수 검토 조건
-    낮은 점수 = 과매수 or 지지 이탈 = 매도/관망 신호
+    매수/매도 타이밍 관점의 기술적 점수 (0-85 + F페널티)
+    A~E: 매수 타이밍 점수 (합계 최대 85)
+    F: 백테스트 기반 매도 압력 페널티 (음수, 최대 -20)
+    총점 = max(0, A+B+C+D+E+F)
     """
     c = d['close']; m20 = d['ma20']; m50 = d['ma50']; m200 = d['ma200']
     rsi = d['rsi']; macd_v = d['macd']; macd_s = d['macd_signal']
 
     # A. 추세 강도 (0-20)
-    # Fix: 역배열(m20<m50<m200)은 보너스 없음 — 정배열(m20>m50>m200)만 보너스
     above = sum([c > m20, c > m50, c > m200])
     bullish_aligned = (m20 > m50 > m200)
     a_score = above * 5 + (3 if bullish_aligned and above == 3 else 0) + (2 if above >= 2 else 0)
     a_score = min(a_score, 20)
 
     # B. 모멘텀 (0-20)
-    # RSI 30-45: 과매도 회복 = 매수 적기 / 70+: 과매수 = 신규 진입 비권장
     if rsi >= 70:      rsi_score = 2
     elif rsi >= 60:    rsi_score = 5
     elif rsi >= 45:    rsi_score = 8
-    elif rsi >= 30:    rsi_score = 9   # 과매도 회복 구간 = 매수 적기
-    else:              rsi_score = 4   # 심각 과매도, 바닥 미확인
-    # MACD: 제로선 위치 + 골든/데드크로스 구분
+    elif rsi >= 30:    rsi_score = 9
+    else:              rsi_score = 4
     if macd_v > macd_s and macd_v > 0:   macd_score = 10
     elif macd_v > macd_s:                 macd_score = 7
     elif macd_v > 0:                      macd_score = 4
@@ -296,19 +294,17 @@ def auto_score(d):
     b_score = min(rsi_score + macd_score, 20)
 
     # C. BB 위치 (0-15)
-    # Fix: 단조증가 수식 폐기, 불연속 제거 — 하단 근처 = 매수 기회
     bb_range = d['bb_upper'] - d['bb_lower']
     bb_pct = (c - d['bb_lower']) / bb_range if bb_range > 0 else 0.5
-    if bb_pct <= 0.0:       c_score = 4   # BB 하단 이탈 (극단적 과매도)
-    elif bb_pct <= 0.20:    c_score = 13  # BB 하단권 — 매수 기회
-    elif bb_pct <= 0.45:    c_score = 10  # 하단~중앙 — 양호한 진입
-    elif bb_pct <= 0.60:    c_score = 7   # 중앙권 — 중립
-    elif bb_pct <= 0.80:    c_score = 5   # 중앙~상단 — 진입 비권장
-    else:                   c_score = 3   # BB 상단권 — 과매수, 매도 고려
+    if bb_pct <= 0.0:       c_score = 4
+    elif bb_pct <= 0.20:    c_score = 13
+    elif bb_pct <= 0.45:    c_score = 10
+    elif bb_pct <= 0.60:    c_score = 7
+    elif bb_pct <= 0.80:    c_score = 5
+    else:                   c_score = 3
     c_score = min(max(c_score, 0), 15)
 
     # D. 거래량 (0-15)
-    # Fix: 배율 크기 반영 (기존 3단계 고정 폐기)
     vol_ratio = d.get('volume', 0) / max(d.get('avg_volume', 1), 1)
     chg = d['change_pct']
     if chg > 1.0 and vol_ratio >= 1.5:    d_score = 13
@@ -319,7 +315,6 @@ def auto_score(d):
     d_score = min(max(d_score, 0), 15)
 
     # E. MA 지지선 근접도 (0-15)
-    # MA200 위에서 MA 지지선에 가까울수록 이상적인 진입점
     near_ma = min(
         abs(c - m20)  / max(m20,  1),
         abs(c - m50)  / max(m50,  1),
@@ -334,8 +329,25 @@ def auto_score(d):
     else:                                 e_score = 2
     e_score = min(max(e_score, 0), 15)
 
-    total = a_score + b_score + c_score + d_score + e_score
-    return a_score, b_score, c_score, d_score, e_score, total
+    # F. 매도 압력 페널티 (0 ~ -20)  ← 백테스트 기반
+    # 근거: GOOGL 5Y 분석 — 조건별 하락 예측력 (기준 21.7%)
+    macd_dead = macd_v < macd_s
+    f_score = 0
+    # ① MA50 이탈 + MACD 데드크로스(제로선 위): 하락예측 38.5% (1.77x)
+    if c < m50 and macd_dead and macd_v > 0:
+        f_score -= 15
+    # ② 거래량 급증 하락 -1%+: 하락예측 31.8% (1.47x)
+    if chg < -1.0 and vol_ratio >= 1.5:
+        f_score -= 8
+    # ③ BB 극과열 + RSI 고점: 하락예측 25.9% (1.19x)
+    if bb_pct >= 0.90:
+        f_score -= 8
+    elif bb_pct >= 0.85 and rsi >= 65:
+        f_score -= 5
+    f_score = max(f_score, -20)  # 최대 -20 페널티
+
+    total = max(0, a_score + b_score + c_score + d_score + e_score + f_score)
+    return a_score, b_score, c_score, d_score, e_score, f_score, total
 
 
 def timing_judgment(d, total):
@@ -363,17 +375,27 @@ def timing_judgment(d, total):
     else:
         buy_cond = f'RSI {rsi:.0f} / BB {bb_pct:.2f} — 조정 후 MA 지지 확인 시 분할 진입'
 
-    # 매도/차익실현 조건
-    if rsi_hot and bb_pct > 0.75:
-        sell_cond = f'현재 차익실현 고려 — RSI {rsi:.0f} 과매수 + BB 상단({d["bb_upper"]:.2f}) 근접'
+    # 매도/차익실현 조건 — 백테스트 기반 우선순위
+    vol_ratio = d.get('volume', 0) / max(d.get('avg_volume', 1), 1)
+    chg = d['change_pct']
+    # 조건①: MA50 이탈 + MACD 데드크로스(제로 위) — 38.5% 하락예측
+    if c < m50 and not macd_bull and macd_v > 0:
+        sell_cond = f'MA50(${m50:.2f}) 이탈 + MACD 데드크로스(제로선 위) — 단기 추세 붕괴, 비중 축소 권장'
+    # 조건②: BB 극과열 — 28.2% 하락예측
+    elif bb_pct >= 0.90:
+        sell_cond = f'BB 극과열(%B={bb_pct:.2f}) — 단기 과매수 정점, 분할 차익실현 검토'
+    # 조건③: 거래량 급증 하락 — 31.8% 하락예측
+    elif chg < -1.0 and vol_ratio >= 1.5:
+        sell_cond = f'하락 {chg:.1f}% + 거래량 {vol_ratio:.1f}x 급증 — 매도세 출현, 추가 하락 경계'
+    # 조건④: BB 상단 + RSI 고점 — 25.9% 하락예측
+    elif bb_pct >= 0.85 and rsi >= 65:
+        sell_cond = f'BB 상단({bb_pct:.2f}) + RSI {rsi:.0f} 과열 — 조정 리스크, 보유자 차익실현 고려'
     elif not macd_bull and not above_ma200:
-        sell_cond = f'MACD 데드크로스 + MA200 이탈 — 손절 또는 비중 축소 권장'
-    elif not macd_bull and rsi > 55:
-        sell_cond = f'MACD 데드크로스 발생 — 비중 단계적 축소 검토'
+        sell_cond = f'MACD 데드크로스 + MA200(${m200:.2f}) 이탈 — 손절 또는 비중 축소 원칙 적용'
     elif c > m200 * 1.25:
-        sell_cond = f'MA200 대비 {(c/m200-1)*100:.0f}% 이격 과대 — 분할 차익실현 권장'
+        sell_cond = f'MA200 대비 {(c/m200-1)*100:.0f}% 과이격 — 분할 차익실현 후 재진입 전략 권장'
     else:
-        sell_cond = f'MA20(${m20:.2f}) 종가 이탈 시 매도 원칙 적용'
+        sell_cond = f'현재 특이 매도 신호 없음 — MA20(${m20:.2f}) 종가 이탈 시 손절 원칙 적용'
 
     # 손절 기준
     stop_price = m20 * 0.97
@@ -578,7 +600,7 @@ def build_chart(d, path):
 # ══════════════════════════════════════════════════════════════════
 
 def build_pdf(d, chart_path, output_path):
-    a_sc, b_sc, c_sc, d_sc, e_sc, total = auto_score(d)
+    a_sc, b_sc, c_sc, d_sc, e_sc, f_sc, total = auto_score(d)
     op_label, op_color = opinion_label(total)
     signals = auto_signals(d)
     ma200_status = '현재가 상향' if d['close'] > d['ma200'] else '현재가 하향 이탈'
@@ -653,7 +675,7 @@ def build_pdf(d, chart_path, output_path):
         ('C. BB 위치 (매수구간)', c_sc, 15, RED if c_sc / 15 < 0.5 else GREEN),
         ('D. 거래량',            d_sc, 15, RED if d_sc / 15 < 0.5 else GREEN),
         ('E. MA 지지 근접도',    e_sc, 15, RED if e_sc / 15 < 0.5 else GREEN),
-        ('보너스',               0,    5,  MGRAY),
+        ('F. 매도 압력 페널티',  f_sc,  0, RED if f_sc < 0 else MGRAY),
     ]
     sc_rows = [[
         Paragraph('항목',  s('sh0', 7.5, WHITE, TA_LEFT,   bold=True)),
@@ -661,11 +683,19 @@ def build_pdf(d, chart_path, output_path):
         Paragraph('바',    s('sh2', 7.5, WHITE, TA_CENTER, bold=True)),
     ]]
     for name, sc, mx, bc in sc_items:
+        if name.startswith('F.'):
+            # F는 페널티(음수) — 별도 표시
+            lbl_txt = f'{sc:+d}'
+            lbl_col = RED if sc < 0 else MGRAY
+            bar_w = score_bar(abs(sc), 20, RED if sc < 0 else MGRAY, SC_BAR)
+        else:
+            lbl_txt = f'{sc}/{mx}'
+            lbl_col = RED if (mx > 0 and sc / mx < 0.5) else GREEN
+            bar_w = score_bar(sc, mx, bc, SC_BAR)
         sc_rows.append([
-            Paragraph(name, s(f'sn{name}', 7, NAVY)),
-            Paragraph(f'{sc}/{mx}', s(f'sv{sc}', 8,
-                       RED if sc / mx < 0.5 else GREEN, TA_CENTER, bold=True)),
-            score_bar(sc, mx, bc, SC_BAR),
+            Paragraph(name,    s(f'sn{name}', 7, NAVY)),
+            Paragraph(lbl_txt, s(f'sv{sc}',   8, lbl_col, TA_CENTER, bold=True)),
+            bar_w,
         ])
     sc_rows.append([
         Paragraph('합계', s('tot', 8.5, NAVY, bold=True)),
@@ -875,7 +905,7 @@ def generate_summary_page(stocks_list, output_path):
     row_styles = []
 
     for ri, d in enumerate(stocks_list, 1):
-        _, _, _, _, _, total = auto_score(d)
+        _, _, _, _, _, _, total = auto_score(d)
         op_label, op_color = opinion_label(total)
 
         c    = d['close']
@@ -972,7 +1002,7 @@ def generate_summary_page(stocks_list, output_path):
     # ── Market heatmap bar ────────────────────────────────────────
     scores  = []
     for d in stocks_list:
-        _, _, _, _, _, total = auto_score(d)
+        _, _, _, _, _, _, total = auto_score(d)
         scores.append(total)
     avg_score = sum(scores) / len(scores) if scores else 0
     bull_count = sum(1 for sc in scores if sc >= 50)

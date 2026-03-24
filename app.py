@@ -356,7 +356,16 @@ def compute_score(p):
            6 if am else 4 if nm < 0.03 else 2)
     e_s = min(max(e_s, 0), 15)
 
-    return a + b + c_s + d_s + e_s
+    # F. 매도 압력 페널티 (백테스트 기반)
+    macd_dead = macd_v < macd_s
+    f_s = 0
+    if c < m50 and macd_dead and macd_v > 0:   f_s -= 15  # MA50 이탈 + 데드크로스(제로위)
+    if chg < -1.0 and vr >= 1.5:               f_s -= 8   # 거래량 급증 하락
+    if bp >= 0.90:                              f_s -= 8   # BB 극과열
+    elif bp >= 0.85 and rsi >= 65:             f_s -= 5   # BB 과열 + RSI 고점
+    f_s = max(f_s, -20)
+
+    return max(0, a + b + c_s + d_s + e_s + f_s)
 
 
 def timing_label(total):
