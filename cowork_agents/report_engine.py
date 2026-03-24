@@ -266,52 +266,129 @@ def auto_signals(d):
 
 
 def auto_score(d):
+    """
+    매수/매도 타이밍 관점의 기술적 점수 (0-85)
+    높은 점수 = 추세 양호 + 과매도 회복 + 지지선 근접 = 매수 검토 조건
+    낮은 점수 = 과매수 or 지지 이탈 = 매도/관망 신호
+    """
     c = d['close']; m20 = d['ma20']; m50 = d['ma50']; m200 = d['ma200']
     rsi = d['rsi']; macd_v = d['macd']; macd_s = d['macd_signal']
 
-    # A. Trend (0-20)
+    # A. 추세 강도 (0-20)
+    # Fix: 역배열(m20<m50<m200)은 보너스 없음 — 정배열(m20>m50>m200)만 보너스
     above = sum([c > m20, c > m50, c > m200])
-    aligned = (m20 > m50 > m200) or (m20 < m50 < m200)
-    a_score = above * 5 + (3 if aligned and above == 3 else 0) + (2 if above >= 2 else 0)
+    bullish_aligned = (m20 > m50 > m200)
+    a_score = above * 5 + (3 if bullish_aligned and above == 3 else 0) + (2 if above >= 2 else 0)
     a_score = min(a_score, 20)
 
-    # B. Momentum (0-20)
-    rsi_score = max(0, min(10, int((rsi - 30) / 4))) if rsi < 70 else 5
-    macd_score = 8 if macd_v > macd_s else (5 if macd_v > 0 else 2)
+    # B. 모멘텀 (0-20)
+    # RSI 30-45: 과매도 회복 = 매수 적기 / 70+: 과매수 = 신규 진입 비권장
+    if rsi >= 70:      rsi_score = 2
+    elif rsi >= 60:    rsi_score = 5
+    elif rsi >= 45:    rsi_score = 8
+    elif rsi >= 30:    rsi_score = 9   # 과매도 회복 구간 = 매수 적기
+    else:              rsi_score = 4   # 심각 과매도, 바닥 미확인
+    # MACD: 제로선 위치 + 골든/데드크로스 구분
+    if macd_v > macd_s and macd_v > 0:   macd_score = 10
+    elif macd_v > macd_s:                 macd_score = 7
+    elif macd_v > 0:                      macd_score = 4
+    else:                                 macd_score = 2
     b_score = min(rsi_score + macd_score, 20)
 
-    # C. Volatility (0-15)
-    bb_pct = (c - d['bb_lower']) / (d['bb_upper'] - d['bb_lower']) if (d['bb_upper'] - d['bb_lower']) > 0 else 0.5
-    c_score = int(bb_pct * 10) + 3 if 0.15 < bb_pct < 0.85 else int(bb_pct * 8)
+    # C. BB 위치 (0-15)
+    # Fix: 단조증가 수식 폐기, 불연속 제거 — 하단 근처 = 매수 기회
+    bb_range = d['bb_upper'] - d['bb_lower']
+    bb_pct = (c - d['bb_lower']) / bb_range if bb_range > 0 else 0.5
+    if bb_pct <= 0.0:       c_score = 4   # BB 하단 이탈 (극단적 과매도)
+    elif bb_pct <= 0.20:    c_score = 13  # BB 하단권 — 매수 기회
+    elif bb_pct <= 0.45:    c_score = 10  # 하단~중앙 — 양호한 진입
+    elif bb_pct <= 0.60:    c_score = 7   # 중앙권 — 중립
+    elif bb_pct <= 0.80:    c_score = 5   # 중앙~상단 — 진입 비권장
+    else:                   c_score = 3   # BB 상단권 — 과매수, 매도 고려
     c_score = min(max(c_score, 0), 15)
 
-    # D. Volume (0-15)
-    vol_ratio = d.get('volume', 0) / d.get('avg_volume', 1)
+    # D. 거래량 (0-15)
+    # Fix: 배율 크기 반영 (기존 3단계 고정 폐기)
+    vol_ratio = d.get('volume', 0) / max(d.get('avg_volume', 1), 1)
     chg = d['change_pct']
-    if chg > 0 and vol_ratio > 1.2:
-        d_score = 11
-    elif chg < 0 and vol_ratio > 1.2:
-        d_score = 4
-    else:
-        d_score = 7
-    d_score = min(d_score, 15)
+    if chg > 1.0 and vol_ratio >= 1.5:    d_score = 13
+    elif chg > 0 and vol_ratio >= 1.2:    d_score = 10
+    elif chg < -1.0 and vol_ratio >= 1.5: d_score = 2
+    elif chg < 0 and vol_ratio >= 1.2:    d_score = 4
+    else:                                  d_score = 7
+    d_score = min(max(d_score, 0), 15)
 
-    # E. Pattern/Support (0-15)
-    range_52 = d['high_52w'] - d['low_52w']
-    pos_52 = (c - d['low_52w']) / range_52 if range_52 > 0 else 0.5
-    e_score = int(pos_52 * 12) + 2
-    e_score = min(max(e_score, 2), 15)
+    # E. MA 지지선 근접도 (0-15)
+    # MA200 위에서 MA 지지선에 가까울수록 이상적인 진입점
+    near_ma = min(
+        abs(c - m20)  / max(m20,  1),
+        abs(c - m50)  / max(m50,  1),
+        abs(c - m200) / max(m200, 1),
+    )
+    above_ma200 = c > m200
+    if above_ma200 and near_ma < 0.02:    e_score = 14
+    elif above_ma200 and near_ma < 0.05:  e_score = 11
+    elif above_ma200 and near_ma < 0.10:  e_score = 8
+    elif above_ma200:                     e_score = 6
+    elif near_ma < 0.03:                  e_score = 4
+    else:                                 e_score = 2
+    e_score = min(max(e_score, 0), 15)
 
     total = a_score + b_score + c_score + d_score + e_score
     return a_score, b_score, c_score, d_score, e_score, total
 
 
+def timing_judgment(d, total):
+    """매수/매도 타이밍 종합 판정 — 관심종목(진입) + 보유종목(청산) 기준"""
+    c = d['close']; m20 = d['ma20']; m50 = d['ma50']; m200 = d['ma200']
+    rsi = d['rsi']; macd_v = d['macd']; macd_s = d['macd_signal']
+    bb_range = d['bb_upper'] - d['bb_lower']
+    bb_pct   = (c - d['bb_lower']) / bb_range if bb_range > 0 else 0.5
+
+    above_ma200  = c > m200
+    macd_bull    = macd_v > macd_s
+    rsi_hot      = rsi >= 65
+    rsi_cold     = rsi <= 35
+    near_support = min(abs(c-m20)/max(m20,1), abs(c-m50)/max(m50,1)) < 0.04
+
+    # 매수 진입 조건
+    if above_ma200 and rsi_cold and macd_bull:
+        buy_cond = f'현재 진입 검토 — RSI {rsi:.0f} 과매도 + MACD 골든크로스 동시 충족'
+    elif above_ma200 and near_support and not rsi_hot:
+        buy_cond = f'MA 지지 확인 후 진입 — 현재가 MA선 {min(abs(c-m20)/m20, abs(c-m50)/m50)*100:.1f}% 이격'
+    elif above_ma200 and rsi < 45:
+        buy_cond = f'RSI {rsi:.0f} — 추가 조정 시 분할 매수 검토 (목표 진입 RSI 30~35)'
+    elif not above_ma200:
+        buy_cond = f'MA200(${m200:.2f}) 회복 확인 후 진입 — 장기 추세 약세 구간'
+    else:
+        buy_cond = f'RSI {rsi:.0f} / BB {bb_pct:.2f} — 조정 후 MA 지지 확인 시 분할 진입'
+
+    # 매도/차익실현 조건
+    if rsi_hot and bb_pct > 0.75:
+        sell_cond = f'현재 차익실현 고려 — RSI {rsi:.0f} 과매수 + BB 상단({d["bb_upper"]:.2f}) 근접'
+    elif not macd_bull and not above_ma200:
+        sell_cond = f'MACD 데드크로스 + MA200 이탈 — 손절 또는 비중 축소 권장'
+    elif not macd_bull and rsi > 55:
+        sell_cond = f'MACD 데드크로스 발생 — 비중 단계적 축소 검토'
+    elif c > m200 * 1.25:
+        sell_cond = f'MA200 대비 {(c/m200-1)*100:.0f}% 이격 과대 — 분할 차익실현 권장'
+    else:
+        sell_cond = f'MA20(${m20:.2f}) 종가 이탈 시 매도 원칙 적용'
+
+    # 손절 기준
+    stop_price = m20 * 0.97
+    stop_pct   = (stop_price / c - 1) * 100
+    stop_loss  = f'${stop_price:.2f}  ({stop_pct:.1f}%)  — MA20 -3% 이탈 기준'
+
+    return buy_cond, sell_cond, stop_loss
+
+
 def opinion_label(total):
-    if total >= 65: return '강매수', GREEN
-    if total >= 50: return '매수',   GREEN
-    if total >= 38: return '중립',   ORANGE
-    if total >= 25: return '매도',   RED
-    return '강매도', RED
+    if total >= 63: return '매수 적기',  GREEN
+    if total >= 50: return '매수 검토',  GREEN
+    if total >= 37: return '관망',       ORANGE
+    if total >= 24: return '비중 축소',  RED
+    return '매도 적기', RED
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -514,7 +591,7 @@ def build_pdf(d, chart_path, output_path):
     # Header
     hdr = Table(
         [[Paragraph(d['company'], s('hc', 17, NAVY, TA_LEFT, bold=True)),
-          Paragraph(f'{d["ticker"]}  |  {d["exchange"]}  |  {d["sector"]}\n2026년 3월 20일 기준',
+          Paragraph(f'{d["ticker"]}  |  {d["exchange"]}  |  {d["sector"]}\n{datetime.date.today().strftime("%Y년 %m월 %d일")} 기준',
                     s('ex', 8, DGRAY, TA_RIGHT))]],
         colWidths=[CW * 0.60, CW * 0.40])
     hdr.setStyle(TableStyle([
@@ -528,7 +605,7 @@ def build_pdf(d, chart_path, output_path):
 
     # Metrics bar
     lbl_row = [Paragraph(t, s(f'ml{i}', 7, DGRAY, TA_CENTER, bold=True))
-               for i, t in enumerate(['종가', '52주 고점', '52주 저점', '200일 MA', '종합점수', '투자의견'])]
+               for i, t in enumerate(['종가', '52주 고점', '52주 저점', '200일 MA', '종합점수', '타이밍 판정'])]
     val_row = [Paragraph(v, s(f'mv{i}', 12, c, TA_CENTER, bold=True))
                for i, (v, c) in enumerate([
                    (f'${d["close"]:.2f}',    RED if d['change_pct'] < 0 else GREEN),
@@ -573,9 +650,9 @@ def build_pdf(d, chart_path, output_path):
     sc_items = [
         ('A. 추세 (이동평균)',    a_sc, 20, RED if a_sc / 20 < 0.5 else GREEN),
         ('B. 모멘텀 (RSI/MACD)', b_sc, 20, RED if b_sc / 20 < 0.5 else GREEN),
-        ('C. 변동성 (BB/ATR)',   c_sc, 15, RED if c_sc / 15 < 0.5 else GREEN),
+        ('C. BB 위치 (매수구간)', c_sc, 15, RED if c_sc / 15 < 0.5 else GREEN),
         ('D. 거래량',            d_sc, 15, RED if d_sc / 15 < 0.5 else GREEN),
-        ('E. 패턴 / 지지저항',   e_sc, 15, RED if e_sc / 15 < 0.5 else GREEN),
+        ('E. MA 지지 근접도',    e_sc, 15, RED if e_sc / 15 < 0.5 else GREEN),
         ('보너스',               0,    5,  MGRAY),
     ]
     sc_rows = [[
@@ -649,36 +726,31 @@ def build_pdf(d, chart_path, output_path):
     story.append(sbs)
     story.append(Spacer(1, 3 * mm))
 
-    # Strategy table
-    entry = d.get('entry_cond',   'MA50 상향 돌파 확인')
-    tgt1  = d.get('target1',      f'${d["ma50"]:.2f}  +{(d["ma50"]/d["close"]-1)*100:.1f}%')
-    tgt2  = d.get('target2',      f'${d["ma200"]:.2f}  +{(d["ma200"]/d["close"]-1)*100:.1f}%')
-    stop  = d.get('stop_loss',    f'${d["ma20"]*0.97:.2f}  -{(1-d["ma20"]*0.97/d["close"])*100:.1f}%')
-    rr    = d.get('risk_reward',  '1 : 1.5')
+    # Strategy table — timing-focused (buy / sell / stop-loss)
+    buy_cond, sell_cond, stop_loss = timing_judgment(d, total)
+    STRAT_HDR_COLS = [CW * 0.36, CW * 0.36, CW * 0.28]
     strat_t = Table(
         [[Paragraph(t, s('trh', 7, WHITE, TA_CENTER, bold=True))
-          for t in ['진입 조건', '1차 목표가', '2차 목표가', '손절 기준', '리스크/리워드']],
-         [Paragraph(v, s(f'tv{i}', 8, c, TA_CENTER, bold=True))
-          for i, (v, c) in enumerate([(entry, NAVY), (tgt1, GREEN), (tgt2, GREEN), (stop, RED), (rr, NAVY)])],
-         [Paragraph(v, s('trn', 7, DGRAY, TA_CENTER))
-          for v in ['거래량 수반 필수', '단기 저항', 'MA 회복 시', 'MA20 이탈 기준', '반등 시나리오']]],
-        colWidths=[CW / 5] * 5)
+          for t in ['매수 진입 조건', '매도 · 차익실현 조건', '손절 기준']],
+         [Paragraph(v, s(f'tv{i}', 8, c, TA_LEFT, lead=12))
+          for i, (v, c) in enumerate([(buy_cond, GREEN), (sell_cond, RED), (stop_loss, RED)])]],
+        colWidths=STRAT_HDR_COLS)
     strat_t.setStyle(TableStyle([
         ('BACKGROUND',    (0,0),(-1,0),  NAVY),
         ('BACKGROUND',    (0,1),(-1,1),  LGRAY),
-        ('BACKGROUND',    (0,2),(-1,2),  WHITE),
         ('BOX',           (0,0),(-1,-1), 0.6, MGRAY),
-        ('LINEAFTER',     (0,0),(3,-1),  0.4, MGRAY),
-        ('TOPPADDING',    (0,0),(-1,-1), 3.5),
-        ('BOTTOMPADDING', (0,0),(-1,-1), 3),
-        ('ALIGN',         (0,0),(-1,-1), 'CENTER'),
+        ('LINEAFTER',     (0,0),(1,-1),  0.4, MGRAY),
+        ('TOPPADDING',    (0,0),(-1,-1), 4),
+        ('BOTTOMPADDING', (0,0),(-1,-1), 4),
+        ('LEFTPADDING',   (0,0),(-1,-1), 6),
+        ('RIGHTPADDING',  (0,0),(-1,-1), 6),
         ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
     ]))
     story.append(strat_t)
     story.append(Spacer(1, 3.5 * mm))
 
     # Opinion
-    op_hdr = Table([[Paragraph('  종합 의견', s('oh', 9, WHITE, TA_LEFT, bold=True))]],
+    op_hdr = Table([[Paragraph('  타이밍 종합 판정', s('oh', 9, WHITE, TA_LEFT, bold=True))]],
                    colWidths=[CW])
     op_hdr.setStyle(TableStyle([
         ('BACKGROUND',    (0,0),(-1,-1), BLUE),
@@ -712,25 +784,40 @@ def build_pdf(d, chart_path, output_path):
 
 
 def _auto_opinion(d, total, op_label, a_sc, b_sc):
+    """타이밍 중심 종합 의견 — 관심 종목 매수 적기 / 보유 종목 매도 적기 판단"""
     c = d['close']; m20 = d['ma20']; m50 = d['ma50']; m200 = d['ma200']
-    rsi = d['rsi']; macd_v = d['macd']
+    rsi = d['rsi']; macd_v = d['macd']; macd_s = d['macd_signal']
+
+    buy_cond, sell_cond, stop_loss = timing_judgment(d, total)
 
     above = sum([c > m20, c > m50, c > m200])
-    trend = '완전 정배열 강세' if above == 3 else ('MA50/200 저항 구간' if above == 1 else ('MA200 저항 근접' if above == 2 else '완전 역배열 약세'))
+    ma_state = {3: 'MA 정배열 (장·중·단기 모두 지지)', 2: 'MA200 하향 이탈 (장기 지지선 회복 필요)',
+                1: 'MA50/200 이중 저항권', 0: 'MA 완전 역배열 (강한 하락 추세)'}[above]
 
-    rsi_desc = '과매수' if rsi >= 70 else ('과매도 접근' if rsi <= 35 else ('중립권 상단' if rsi >= 50 else '중립권 하단'))
-    macd_desc = '상승 모멘텀' if macd_v > d['macd_signal'] else '하락 모멘텀 (시그널선 하회)'
+    # RSI 타이밍 설명
+    if rsi >= 70:
+        rsi_timing = f'RSI {rsi:.0f} — 과매수 구간, 신규 진입 비권장 / 보유자는 차익실현 검토'
+    elif rsi >= 60:
+        rsi_timing = f'RSI {rsi:.0f} — 모멘텀 상단, 추세 유지 중이나 추가 상승 여력 제한적'
+    elif rsi >= 45:
+        rsi_timing = f'RSI {rsi:.0f} — 중립 구간, 방향 확인 후 진입 유효'
+    elif rsi >= 30:
+        rsi_timing = f'RSI {rsi:.0f} — 과매도 회복 구간, 분할 매수 관심 구간'
+    else:
+        rsi_timing = f'RSI {rsi:.0f} — 심각 과매도, 추세 바닥 확인 전 진입 위험'
+
+    # MACD 상태
+    macd_state = ('MACD 골든크로스' if macd_v > macd_s else 'MACD 데드크로스') + \
+                 (' (제로선 상방)' if macd_v > 0 else ' (제로선 하방)')
 
     chg_sign = '+' if d['change_pct'] >= 0 else ''
     return (
-        f'{d["ticker"]}은 현재 {trend} 상태입니다. '
-        f'현재가(${c:.2f})는 MA20(${m20:.2f}) {"상향" if c > m20 else "하향"}하며, '
-        f'MA50(${m50:.2f}) / MA200(${m200:.2f})에 대해 {"상향" if c > m50 and c > m200 else "저항 구간에 위치"}합니다.<br/>'
-        f'RSI({rsi:.1f})는 {rsi_desc}을 나타내며, MACD({macd_v:.2f})는 {macd_desc}입니다. '
-        '당일 ' + chg_sign + f'{d["change_pct"]:.2f}% 변동으로 ' + ("매도 압력이 우세" if d["change_pct"] < -1.5 else ("매수 우위" if d["change_pct"] > 1.5 else "방향성 미결")) + '합니다.<br/>'
-        f'종합점수 {total}/85점({op_label})으로, '
-        f'{"MA50 돌파 여부가 핵심 분기점입니다" if abs(c - m50) / m50 < 0.08 else "현재 기술적 흐름을 유지하며 추이를 관찰하십시오"}. '
-        f'손절은 MA20(${m20:.2f}) 이탈 시 원칙 적용을 권장합니다.'
+        f'[타이밍 판정: {op_label}  {total}/85점]<br/>'
+        f'{d["ticker"]}의 현재 기술적 상태는 <b>{ma_state}</b>입니다. '
+        f'{rsi_timing}. {macd_state}.<br/><br/>'
+        f'<b>관심 종목 (매수 관점):</b> {buy_cond}<br/>'
+        f'<b>보유 종목 (매도 관점):</b> {sell_cond}<br/>'
+        f'<b>손절 기준:</b> {stop_loss}'
     )
 
 
@@ -858,8 +945,8 @@ def generate_summary_page(stocks_list, output_path):
 
     # ── Score legend ──────────────────────────────────────────────
     legend_items = [
-        ('강매수 (65+)', GREEN), ('매수 (50-64)', GREEN),
-        ('중립 (38-49)', ORANGE), ('매도 (25-37)', RED), ('강매도 (-24)', RED),
+        ('매수 적기 (63+)', GREEN), ('매수 검토 (50-62)', GREEN),
+        ('관망 (37-49)', ORANGE), ('비중 축소 (24-36)', RED), ('매도 적기 (0-23)', RED),
     ]
     legend_cells = []
     for lbl, lc in legend_items:
