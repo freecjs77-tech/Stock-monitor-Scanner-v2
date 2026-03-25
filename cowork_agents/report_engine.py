@@ -1003,106 +1003,218 @@ def _build_opinion_flowables(d, total, op_label, a_sc, b_sc):
     flowables.append(Spacer(1, 1*mm))
     flowables.append(ind_t)
 
-    # 다이버전스 경보 박스
-    if divergence == 'bullish':
-        div_msg  = '강세 다이버전스 감지!  주가는 하락했는데 RSI는 올라왔어요 — 반등 가능성이 커지고 있는 신호예요.'
-        div_clr  = GREEN
-        div_bg   = BUY_BG
-    elif divergence == 'bearish':
-        div_msg  = '약세 다이버전스 감지!  주가는 올랐는데 RSI는 내려왔어요 — 상승 힘이 빠지고 있을 수 있어요. 주의하세요.'
-        div_clr  = RED
-        div_bg   = SELL_BG
+    # ── 2. 현재 상황 스캔 + 실전 매매 타이밍 ──────────────────────
+    up_cnt     = sum([rsi_slope > 1.0,  hist_slope > 0.05,  ma20_slope > 1.0])
+    dn_cnt     = sum([rsi_slope < -1.0, hist_slope < -0.05, ma20_slope < -1.0])
+    stop_price = m20 * 0.97
+
+    rsi_dir_txt  = '↑' if rsi_slope  > 1.0  else ('↓' if rsi_slope  < -1.0  else '→')
+    macd_dir_txt = '↑' if hist_slope > 0.05 else ('↓' if hist_slope < -0.05 else '→')
+
+    # Signal 배지
+    if divergence == 'bullish' and total >= 37:
+        sig_label = '🟡 반등 기대';  sig_clr = colors.HexColor('#F9A825')
+    elif total >= 63 and divergence != 'bearish':
+        sig_label = '🟢 매수 적기';  sig_clr = GREEN
+    elif total >= 50 and divergence != 'bearish':
+        sig_label = '🔵 관심 구간';  sig_clr = BLUE
+    elif total < 37:
+        sig_label = '🔴 위험';       sig_clr = RED
     else:
-        div_msg  = None
+        sig_label = '⚠️ 주의';       sig_clr = ORANGE
 
-    if div_msg:
-        div_box = Table(
-            [[Paragraph(f'⚡ {div_msg}', s('dvb', 7.5, div_clr, TA_LEFT, bold=True))]],
-            colWidths=[CW])
-        div_box.setStyle(TableStyle([
-            ('BACKGROUND',   (0,0),(-1,-1), div_bg),
-            ('BOX',          (0,0),(-1,-1), 1.0, div_clr),
-            ('TOPPADDING',   (0,0),(-1,-1), 5), ('BOTTOMPADDING', (0,0),(-1,-1), 5),
-            ('LEFTPADDING',  (0,0),(-1,-1), 8), ('RIGHTPADDING',  (0,0),(-1,-1), 8),
-        ]))
-        flowables.append(Spacer(1, 1.5*mm))
-        flowables.append(div_box)
-
-    # ── 2. 최종 결론 ───────────────────────────────────────────────
-    above = sum([c > m20, c > m50, c > m200])
-    ma_st_str = {3: 'MA 정배열(장·중·단기 지지)', 2: 'MA200 위나 단기 MA 저항권',
-                 1: 'MA50/200 이중 저항권',       0: 'MA 완전 역배열'}[above]
-
-    # 방향성 요약 문장
-    up_cnt = sum([rsi_slope > 1.0, hist_slope > 0.05, ma20_slope > 1.0])
-    dn_cnt = sum([rsi_slope < -1.0, hist_slope < -0.05, ma20_slope < -1.0])
-    if up_cnt >= 2:
-        dir_context = f'RSI·MACD·MA20 흐름이 위로 향하고 있어요(↑ {up_cnt}/3). '
-    elif dn_cnt >= 2:
-        dir_context = f'RSI·MACD·MA20 흐름이 아래로 향하고 있어요(↓ {dn_cnt}/3). '
-    else:
-        dir_context = '지표 방향이 아직 뚜렷하지 않아요. '
-
-    # 다이버전스 경고 문장
-    if divergence == 'bullish':
-        div_context = '강세 다이버전스가 감지됐으니 반등 가능성에 주목하세요. '
-    elif divergence == 'bearish':
-        div_context = '약세 다이버전스가 감지됐으니 추격 매수는 피하세요. '
-    else:
-        div_context = ''
-
-    if total >= 63:
-        conclusion = (
-            f'<b>[{op_label} — {total}/85점]</b>  지금이 사기 좋은 타이밍이에요! '
-            f'{dir_context}'
-            f'{ma_st_str} 상태예요. {div_context}'
-            f'한 번에 다 사지 말고 나눠서 담되, 손절 기준 ${stop_price:.2f}은 꼭 지키세요.'
+    # 내러티브 문단
+    if divergence == 'bearish':
+        narrative = (
+            '겉으로는 주가가 올랐지만 속으로는 힘이 빠지고 있는 <b>\'가짜 상승\'</b> 구간이에요. '
+            'RSI가 주가 상승을 따라가지 못하는 약세 다이버전스가 감지됐고, '
+            'MACD 히스토그램도 줄어들고 있어요. 지금은 추격 매수보다 기다리는 게 훨씬 유리해요.'
         )
-    elif total >= 50:
-        conclusion = (
-            f'<b>[{op_label} — {total}/85점]</b>  신호가 조금씩 좋아지고 있어요. '
-            f'{dir_context}'
-            f'{div_context}'
-            f'한 번에 많이 사지 말고 조금씩 나눠서 담아보세요. '
-            f'MA20(${m20:.2f}) 위로 올라서는지가 가장 중요한 확인 포인트예요.'
+    elif divergence == 'bullish':
+        narrative = (
+            '주가가 내려왔지만 RSI는 오히려 올라오고 있는 <b>강세 다이버전스</b>가 감지됐어요. '
+            '바닥권에서 반등 가능성이 점점 커지고 있는 신호예요. '
+            '급하게 한 번에 사기보단, 지지 확인 후 분할 접근이 유리한 타이밍이에요.'
         )
-    elif total >= 37:
-        conclusion = (
-            f'<b>[{op_label} — {total}/85점]</b>  지금은 기다리는 게 정답이에요. '
-            f'{dir_context}'
-            f'아직 방향이 불확실하고 {ma_st_str} 상태라 섣불리 들어가면 물릴 수 있어요. '
-            f'{div_context}'
-            f'MA20(${m20:.2f}) 위로 올라서는 걸 확인한 뒤에 진입하는 게 훨씬 안전해요.'
+    elif total >= 63 and up_cnt >= 2:
+        narrative = (
+            f'RSI·MACD·MA20 흐름이 모두 위를 향하고 있어요 (↑ {up_cnt}/3). '
+            '기술적으로 매수 신호가 강하게 켜진 구간이에요. '
+            '단, 한 번에 다 사기보단 나눠서 담는 전략이 안전해요.'
+        )
+    elif total < 37 or dn_cnt >= 2:
+        narrative = (
+            f'RSI·MACD·MA20 흐름이 아래를 향하고 있어요 (↓ {dn_cnt}/3). '
+            '지금은 약세 신호가 강한 구간이에요. '
+            '성급하게 진입하면 물릴 수 있으니 지표 방향이 바뀔 때까지 기다리세요.'
         )
     else:
-        conclusion = (
-            f'<b>[{op_label} — {total}/85점]</b>  지금은 사면 안 되는 구간이에요. '
-            f'{dir_context}'
-            f'{ma_st_str} 상태로 약세 신호가 강해요. '
-            f'{div_context}'
-            f'MA200(${m200:.2f}) 지지를 확인한 뒤로 진입을 미루고, 보유자는 ${stop_price:.2f} 이탈 시 과감하게 비중을 줄이세요.'
+        narrative = (
+            '지표 방향이 아직 뚜렷하지 않아요. '
+            'RSI와 MACD가 방향을 탐색 중이고, MA20 근처에서 지지·저항을 확인하는 구간이에요. '
+            '신규 진입보단 기존 보유 유지 또는 현금 대기가 무난해요.'
         )
 
-    concl_hdr = Table(
-        [[Paragraph('  최종 결론', s('clh', 8, WHITE, TA_LEFT, bold=True))]],
-        colWidths=[CW])
-    concl_hdr.setStyle(TableStyle([
-        ('BACKGROUND',    (0,0),(-1,-1), BLUE2),
-        ('TOPPADDING',    (0,0),(-1,-1), 4), ('BOTTOMPADDING', (0,0),(-1,-1), 4),
-        ('LEFTPADDING',   (0,0),(-1,-1), 8),
+    # 불렛 — RSI
+    if divergence == 'bearish':
+        rsi_bullet = f'차는 앞으로 가는데 엔진 출력은 떨어지고 있어요 (약세 다이버전스, RSI {rsi:.1f} {rsi_dir_txt})'
+    elif divergence == 'bullish':
+        rsi_bullet = f'주가는 내려왔지만 엔진이 다시 살아나고 있어요 (강세 다이버전스, RSI {rsi:.1f} {rsi_dir_txt})'
+    elif rsi < 30:
+        rsi_bullet = f'RSI({rsi:.1f})가 과매도 구간이에요. 너무 떨어졌지만 바닥 확인이 필요해요 {rsi_dir_txt}'
+    elif rsi > 70:
+        rsi_bullet = f'RSI({rsi:.1f})가 과매수 구간이에요. 많이 올라왔으니 추격 매수는 위험할 수 있어요 {rsi_dir_txt}'
+    elif rsi_slope < -1.0:
+        rsi_bullet = f'RSI({rsi:.1f})가 중립권인데 계속 내려가고 있어요 {rsi_dir_txt}. 엔진이 꺼지려는 느낌이에요'
+    elif rsi_slope > 1.0:
+        rsi_bullet = f'RSI({rsi:.1f})가 방향을 바꿔 올라오고 있어요 {rsi_dir_txt}. 모멘텀이 살아나는 신호예요'
+    else:
+        rsi_bullet = f'RSI({rsi:.1f})가 중립 구간에서 방향을 탐색 중이에요 {rsi_dir_txt}'
+
+    # 불렛 — MACD
+    if hist_slope < -0.05:
+        macd_bullet = f'히스토그램이 빠르게 줄어들고 있어요 {macd_dir_txt}. 상승 에너지가 약해지며 하락 압력이 커지고 있어요'
+    elif hist_slope > 0.05:
+        macd_bullet = f'히스토그램이 점점 커지고 있어요 {macd_dir_txt}. 상승 동력이 강해지고 있는 좋은 신호예요'
+    else:
+        macd_bullet = f'MACD가 방향을 탐색 중이에요 {macd_dir_txt}. 아직 뚜렷한 추세가 잡히지 않았어요'
+
+    # 불렛 — MA 저항/지지
+    res_list = []
+    sup_list = []
+    if c < m20:  res_list.append(f'MA20(${m20:.2f})')
+    else:        sup_list.append(f'MA20(${m20:.2f})')
+    if c < m50:  res_list.append(f'MA50(${m50:.2f})')
+    else:        sup_list.append(f'MA50(${m50:.2f})')
+    if c < m200: res_list.append(f'MA200(${m200:.2f})')
+    else:        sup_list.append(f'MA200(${m200:.2f})')
+    if res_list and sup_list:
+        ma_bullet = (f'{" · ".join(res_list)}이 위에서 저항하고 있어요. '
+                     f'이 선들을 돌파해야 본격 상승이 가능해요. '
+                     f'아래엔 {" · ".join(sup_list)} 지지선이 버티고 있어요')
+    elif res_list:
+        ma_bullet = f'모든 이동평균선 아래에 있어요. {" · ".join(res_list)} 모두 위에서 누르고 있는 어려운 상황이에요'
+    else:
+        ma_bullet = f'모든 이동평균선 위에 있어요. {" · ".join(sup_list)} 모두 아래에서 지지해주는 좋은 상황이에요'
+
+    # 신규 진입 시나리오
+    if divergence == 'bearish' or total < 50:
+        entry_quote = '"지금 바로 사지 마세요! 먼저 지지를 확인하세요."'
+    elif total >= 63:
+        entry_quote = '"신호가 강해요! 분할로 나눠서 담아가세요."'
+    else:
+        entry_quote = '"신호가 나오면 조금씩 분할로 접근하세요."'
+    best_entry = f'MA20(${m20:.2f}) 위로 종가가 확실히 올라서는 걸 확인한 뒤 진입해도 늦지 않아요'
+    if c < m50:
+        safe_entry = f'더 밀린다면 ${m50:.2f}~${bb_l:.2f} 구간에서 바닥 지지를 확인 후 눌림목 매수가 훨씬 유리해요'
+    else:
+        safe_entry = f'더 밀린다면 ${bb_l:.2f} 근처에서 바닥 지지를 확인 후 눌림목 매수가 훨씬 유리해요'
+
+    # 보유자 대응
+    if divergence == 'bearish' or dn_cnt >= 2:
+        hold_quote = '"수익은 챙기고, 손실은 짧게 끊으세요."'
+    elif total >= 63:
+        hold_quote = '"추세가 살아있어요! 너무 빨리 팔지 마세요."'
+    else:
+        hold_quote = '"손절선을 지키면서 상황을 지켜보세요."'
+    take_profit = (f'MA20(${m20:.2f})~MA200(${m200:.2f}) 구간에서 주춤거리면 '
+                   f'일부 수익을 실현하고 현금을 확보하세요')
+    danger_line = (f'${stop_price:.2f}(MA20 -3%)가 무너지면 추가 하락 압력이 강해져요. '
+                   f'이 선 아래로 내려가면 미련 없이 비중을 줄이세요')
+
+    # ── 레이아웃 조립 ────────────────────────────────────────────────
+
+    # ① Section 1 헤더: 제목(좌) + Signal 배지(우)
+    scan_hdr = Table(
+        [[Paragraph('1. 현재 상황 스캔', s('sch', 8, WHITE, TA_LEFT, bold=True)),
+          Paragraph(f'Signal:  {sig_label}', s('sbg', 8, sig_clr, TA_RIGHT, bold=True))]],
+        colWidths=[CW * 0.55, CW * 0.45])
+    scan_hdr.setStyle(TableStyle([
+        ('BACKGROUND',  (0,0),(-1,-1), NAVY),
+        ('TOPPADDING',  (0,0),(-1,-1), 5), ('BOTTOMPADDING', (0,0),(-1,-1), 5),
+        ('LEFTPADDING', (0,0),(-1,-1), 8), ('RIGHTPADDING',  (0,0),(-1,-1), 8),
+        ('VALIGN',      (0,0),(-1,-1), 'MIDDLE'),
     ]))
-    concl_body = Table(
-        [[Paragraph(conclusion, s('clb', 8, NAVY, lead=13))]],
-        colWidths=[CW])
-    concl_body.setStyle(TableStyle([
-        ('BACKGROUND',    (0,0),(-1,-1), NEUT_BG),
-        ('BOX',           (0,0),(-1,-1), 0.5, BLUE2),
-        ('TOPPADDING',    (0,0),(-1,-1), 7), ('BOTTOMPADDING', (0,0),(-1,-1), 7),
-        ('LEFTPADDING',   (0,0),(-1,-1), 8), ('RIGHTPADDING',  (0,0),(-1,-1), 8),
+
+    # ② 내러티브 + 불렛 3행
+    scan_rows = [
+        [Paragraph(narrative, s('nb', 8, NAVY, lead=13))],
+        [Paragraph(f'<b>📉 투자 심리 (RSI):</b>  {rsi_bullet}',
+                   s('bl1', 7.5, RED if rsi_slope < -1.0 else (GREEN if rsi_slope > 1.0 else NAVY), lead=12))],
+        [Paragraph(f'<b>📉 추세 힘 (MACD):</b>  {macd_bullet}',
+                   s('bl2', 7.5, RED if hist_slope < -0.05 else (GREEN if hist_slope > 0.05 else NAVY), lead=12))],
+        [Paragraph(f'<b>🧱 저항/지지 (MA):</b>  {ma_bullet}',
+                   s('bl3', 7.5, RED if res_list else GREEN, lead=12))],
+    ]
+    scan_body = Table(scan_rows, colWidths=[CW])
+    scan_body.setStyle(TableStyle([
+        ('BACKGROUND',   (0,0),(-1,0),  NEUT_BG),
+        ('BACKGROUND',   (0,1),(-1,1),  LGRAY),
+        ('BACKGROUND',   (0,2),(-1,2),  NEUT_BG),
+        ('BACKGROUND',   (0,3),(-1,3),  LGRAY),
+        ('BOX',          (0,0),(-1,-1), 0.5, MGRAY),
+        ('LINEBELOW',    (0,0),(-1,-2), 0.3, colors.HexColor('#C0D8EE')),
+        ('TOPPADDING',   (0,0),(-1,-1), 5), ('BOTTOMPADDING', (0,0),(-1,-1), 5),
+        ('LEFTPADDING',  (0,0),(-1,-1), 10), ('RIGHTPADDING', (0,0),(-1,-1), 10),
+        ('VALIGN',       (0,0),(-1,-1), 'MIDDLE'),
     ]))
+
+    # ③ Section 2 헤더
+    timing_hdr = Table(
+        [[Paragraph('2. 초보자를 위한 실전 매매 타이밍', s('tch', 8, WHITE, TA_LEFT, bold=True))]],
+        colWidths=[CW])
+    timing_hdr.setStyle(TableStyle([
+        ('BACKGROUND',  (0,0),(-1,-1), BLUE2),
+        ('TOPPADDING',  (0,0),(-1,-1), 5), ('BOTTOMPADDING', (0,0),(-1,-1), 5),
+        ('LEFTPADDING', (0,0),(-1,-1), 8),
+    ]))
+
+    # ④ 🛒 신규 진입 블록
+    CART_BG  = colors.HexColor('#E8F5E9')
+    CART_HDR = colors.HexColor('#C8E6C9')
+    entry_blk = Table([
+        [Paragraph('🛒  살까 말까 고민 중이라면?  (신규 진입)', s('esh', 8, GREEN, TA_LEFT, bold=True))],
+        [Paragraph(entry_quote, s('eq', 8, NAVY, lead=12))],
+        [Paragraph(f'<b>• 베스트 시나리오:</b>  {best_entry}', s('eb', 8, NAVY, lead=12))],
+        [Paragraph(f'<b>• 안전 시나리오:</b>  {safe_entry}',   s('es', 8, NAVY, lead=12))],
+    ], colWidths=[CW])
+    entry_blk.setStyle(TableStyle([
+        ('BACKGROUND',  (0,0),(-1,0),  CART_HDR),
+        ('BACKGROUND',  (0,1),(-1,-1), CART_BG),
+        ('BOX',         (0,0),(-1,-1), 0.5, GREEN),
+        ('LINEBELOW',   (0,0),(-1,-2), 0.3, colors.HexColor('#A5D6A7')),
+        ('TOPPADDING',  (0,0),(-1,-1), 5), ('BOTTOMPADDING', (0,0),(-1,-1), 5),
+        ('LEFTPADDING', (0,0),(-1,-1), 10), ('RIGHTPADDING', (0,0),(-1,-1), 10),
+        ('VALIGN',      (0,0),(-1,-1), 'MIDDLE'),
+    ]))
+
+    # ⑤ 💰 보유자 대응 블록
+    HOLD_BG  = colors.HexColor('#E3F2FD')
+    HOLD_HDR = colors.HexColor('#BBDEFB')
+    hold_blk = Table([
+        [Paragraph('💰  이미 가지고 있다면?  (보유자 대응)', s('hsh', 8, BLUE, TA_LEFT, bold=True))],
+        [Paragraph(hold_quote, s('hq', 8, NAVY, lead=12))],
+        [Paragraph(f'<b>• 익절 라인:</b>  {take_profit}', s('hp', 8, NAVY, lead=12))],
+        [Paragraph(f'<b>• 위험 라인:</b>  {danger_line}',  s('hd', 8, RED,  lead=12))],
+    ], colWidths=[CW])
+    hold_blk.setStyle(TableStyle([
+        ('BACKGROUND',  (0,0),(-1,0),  HOLD_HDR),
+        ('BACKGROUND',  (0,1),(-1,-1), HOLD_BG),
+        ('BOX',         (0,0),(-1,-1), 0.5, BLUE),
+        ('LINEBELOW',   (0,0),(-1,-2), 0.3, colors.HexColor('#90CAF9')),
+        ('TOPPADDING',  (0,0),(-1,-1), 5), ('BOTTOMPADDING', (0,0),(-1,-1), 5),
+        ('LEFTPADDING', (0,0),(-1,-1), 10), ('RIGHTPADDING', (0,0),(-1,-1), 10),
+        ('VALIGN',      (0,0),(-1,-1), 'MIDDLE'),
+    ]))
+
     flowables.append(Spacer(1, 2.5*mm))
-    flowables.append(concl_hdr)
-    flowables.append(concl_body)
+    flowables.append(scan_hdr)
+    flowables.append(scan_body)
+    flowables.append(Spacer(1, 1.5*mm))
+    flowables.append(timing_hdr)
+    flowables.append(entry_blk)
+    flowables.append(Spacer(1, 1*mm))
+    flowables.append(hold_blk)
 
     # ── 6. 주요 뉴스 (최근 7일) ───────────────────────────────────
     news_list = d.get('news', [])
