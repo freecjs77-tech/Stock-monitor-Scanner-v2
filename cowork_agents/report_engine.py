@@ -1641,21 +1641,28 @@ def generate_summary_page(stocks_list, output_path, ai_data=None):
     story.append(Spacer(1, 3 * mm))
 
     # ── 전체 시황 요약 (AI 또는 통계)
+    AI_BG     = colors.HexColor('#EEF6FF')
+    AI_BORDER = colors.HexColor('#1F6BB5')
+    POINT_BG  = colors.HexColor('#F0F7FF')
+
     if ai_data and ai_data.get('market_overview'):
-        # AI 요약 박스
-        AI_BG     = colors.HexColor('#EEF6FF')
-        AI_BORDER = colors.HexColor('#1F6BB5')
-        ai_tbl = Table(
-            [[Paragraph(f'<b>오늘의 시장 분위기</b>  —  {ai_data["market_overview"]}',
-                        s('smov_ai', 8.5, NAVY, lead=14))]],
-            colWidths=[CW])
+        # 날씨 제목 + 시장 개요 박스
+        weather = ai_data.get('weather_title', '오늘의 시장 분위기')
+        overview_txt = ai_data.get('market_overview', '')
+        ai_rows = [
+            [Paragraph(f'<b>{today_str}  |  {weather}</b>',
+                       s('smwt', 9.5, NAVY, TA_LEFT, bold=True))],
+            [Paragraph(overview_txt, s('smov_ai', 8.5, NAVY, lead=13))],
+        ]
+        ai_tbl = Table(ai_rows, colWidths=[CW])
         ai_tbl.setStyle(TableStyle([
-            ('BACKGROUND',  (0, 0), (-1, -1), AI_BG),
-            ('BOX',         (0, 0), (-1, -1), 1.2, AI_BORDER),
-            ('TOPPADDING',  (0, 0), (-1, -1), 8),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-            ('LEFTPADDING', (0, 0), (-1, -1), 10),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+            ('BACKGROUND',    (0, 0), (-1, -1), AI_BG),
+            ('BOX',           (0, 0), (-1, -1), 1.2, AI_BORDER),
+            ('LINEBELOW',     (0, 0), (-1, 0),  0.5, AI_BORDER),
+            ('TOPPADDING',    (0, 0), (-1, -1), 7),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 10),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 10),
         ]))
         story.append(ai_tbl)
     else:
@@ -1747,28 +1754,49 @@ def generate_summary_page(stocks_list, output_path, ai_data=None):
         story.append(card_body)
         story.append(Spacer(1, 3 * mm))
 
-    # ── 전체 결론 박스
+    # ── 결론 박스 (AI investment_points 또는 기존 종목 요약)
     story.append(Spacer(1, 2 * mm))
-    pick     = ' · '.join(buy_tickers + entry_tickers) or '없음'
-    cautious = ' · '.join(watch_tickers) or '없음'
-    danger   = ' · '.join(sell_tickers)
 
-    concl_parts = [f'<b>담아볼 만한 종목:</b>  {pick}',
-                   f'<b>지켜볼 종목:</b>  {cautious}']
-    if danger:
-        concl_parts.append(f'<b>주의 구간:</b>  {danger}')
-    concl_txt = '    |    '.join(concl_parts)
-
-    concl_tbl = Table(
-        [[Paragraph(f'전체 결론  —  {concl_txt}', s('smconcl', 8, NAVY, lead=14))]],
-        colWidths=[CW])
-    concl_tbl.setStyle(TableStyle([
-        ('BACKGROUND',  (0, 0), (-1, -1), CONCL_BG),
-        ('BOX',         (0, 0), (-1, -1), 1.2, colors.HexColor('#1F6BB5')),
-        ('TOPPADDING',  (0, 0), (-1, -1), 8), ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ('LEFTPADDING', (0, 0), (-1, -1), 10), ('RIGHTPADDING', (0, 0), (-1, -1), 10),
-    ]))
-    story.append(concl_tbl)
+    ai_points = (ai_data or {}).get('investment_points', [])
+    if ai_points:
+        # AI 투자 포인트 박스
+        pt_rows = [[Paragraph('<b>오늘의 투자 포인트</b>',
+                              s('smpt_hdr', 8.5, NAVY, TA_LEFT, bold=True))]]
+        for i, pt in enumerate(ai_points[:3], 1):
+            pt_rows.append([Paragraph(f'{i}.  {pt}',
+                                      s(f'smpt{i}', 8, NAVY, lead=13))])
+        pt_tbl = Table(pt_rows, colWidths=[CW])
+        pt_tbl.setStyle(TableStyle([
+            ('BACKGROUND',    (0, 0), (-1, -1), POINT_BG),
+            ('BACKGROUND',    (0, 0), (-1,  0), AI_BG),
+            ('BOX',           (0, 0), (-1, -1), 1.2, AI_BORDER),
+            ('LINEBELOW',     (0, 0), (-1,  0), 0.5, AI_BORDER),
+            ('TOPPADDING',    (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 10),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 10),
+        ]))
+        story.append(pt_tbl)
+    else:
+        # fallback: 기존 종목 요약
+        pick     = ' · '.join(buy_tickers + entry_tickers) or '없음'
+        cautious = ' · '.join(watch_tickers) or '없음'
+        danger   = ' · '.join(sell_tickers)
+        concl_parts = [f'<b>담아볼 만한 종목:</b>  {pick}',
+                       f'<b>지켜볼 종목:</b>  {cautious}']
+        if danger:
+            concl_parts.append(f'<b>주의 구간:</b>  {danger}')
+        concl_txt = '    |    '.join(concl_parts)
+        concl_tbl = Table(
+            [[Paragraph(f'전체 결론  —  {concl_txt}', s('smconcl', 8, NAVY, lead=14))]],
+            colWidths=[CW])
+        concl_tbl.setStyle(TableStyle([
+            ('BACKGROUND',  (0, 0), (-1, -1), CONCL_BG),
+            ('BOX',         (0, 0), (-1, -1), 1.2, AI_BORDER),
+            ('TOPPADDING',  (0, 0), (-1, -1), 8), ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10), ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+        ]))
+        story.append(concl_tbl)
     story.append(Spacer(1, 4 * mm))
 
     # ── 푸터
