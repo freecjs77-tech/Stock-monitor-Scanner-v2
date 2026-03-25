@@ -777,19 +777,21 @@ def build_pdf(d, chart_path, output_path):
     story.append(HRFlowable(width='100%', thickness=3, color=BLUE,
                              spaceBefore=2 * mm, spaceAfter=2.5 * mm))
 
-    # Metrics bar (7 columns: 종가/고점/저점/MA200/점수/판정/단계신호)
-    stage_bg = colors.HexColor('#D8EEE6') if stage_key == 'buy' else (colors.HexColor('#FFF3E0') if stage_key == 'entry' else (colors.HexColor('#FDEAEA') if stage_key in ('sell','sell_div') else LGRAY))
+    # Metrics bar (6 columns: 종가/고점/저점/MA200/점수/타이밍단계)
+    stage_bg = (colors.HexColor('#D8EEE6') if stage_key == 'buy'
+                else colors.HexColor('#FFF3E0') if stage_key == 'entry'
+                else colors.HexColor('#FDEAEA') if stage_key in ('sell','sell_div')
+                else LGRAY)
     chg_sign = '+' if d['change_pct'] >= 0 else ''
     lbl_row = [Paragraph(t, s(f'ml{i}', 7, DGRAY, TA_CENTER, bold=True))
-               for i, t in enumerate(['종가', '52주 고점', '52주 저점', '200일 MA', '종합점수', '타이밍 판정', '타이밍 단계'])]
+               for i, t in enumerate(['종가', '52주 고점', '52주 저점', '200일 MA', '종합점수', '타이밍 단계'])]
     val_row = [
         Paragraph(f'${d["close"]:.2f}',    se(f'mv0', 12, RED if d['change_pct'] < 0 else GREEN, TA_CENTER, bold=True)),
         Paragraph(f'${d["high_52w"]:.2f}', se(f'mv1', 12, NAVY,  TA_CENTER, bold=True)),
         Paragraph(f'${d["low_52w"]:.2f}',  se(f'mv2', 12, NAVY,  TA_CENTER, bold=True)),
         Paragraph(f'${d["ma200"]:.2f}',    se(f'mv3', 12, RED if d['close'] < d['ma200'] else GREEN, TA_CENTER, bold=True)),
         Paragraph(f'{total} / 85',         se(f'mv4', 12, op_color, TA_CENTER, bold=True)),
-        Paragraph(op_label,                s(f'mv5',  11, op_color, TA_CENTER, bold=True)),
-        Paragraph(stage_lbl,               s(f'mv6',  10, stage_clr, TA_CENTER, bold=True)),
+        Paragraph(stage_lbl,               s(f'mv5',  11, stage_clr, TA_CENTER, bold=True)),
     ]
     sub_row = [Paragraph(v, s(f'ms{i}', 7, DGRAY, TA_CENTER))
                for i, v in enumerate([
@@ -797,16 +799,15 @@ def build_pdf(d, chart_path, output_path):
                    d.get('high_52w_date', ''),
                    d.get('low_52w_date',  ''),
                    ma200_status, '/85점 만점',
-                   '기술지표 종합',
                    '4단계 판정'])]
-    col7 = [CW * 0.145] * 6 + [CW * 0.13]
-    mt = Table([lbl_row, val_row, sub_row], colWidths=col7)
+    col6 = [CW * 0.16] * 5 + [CW * 0.20]
+    mt = Table([lbl_row, val_row, sub_row], colWidths=col6)
     mt.setStyle(TableStyle([
         ('BACKGROUND',    (0,0),(-1,-1), LGRAY),
-        ('BACKGROUND',    (4,0),(5,-1),  colors.HexColor('#FEF0F0')),
-        ('BACKGROUND',    (6,0),(6,-1),  stage_bg),
+        ('BACKGROUND',    (4,0),(4,-1),  colors.HexColor('#FEF0F0')),
+        ('BACKGROUND',    (5,0),(5,-1),  stage_bg),
         ('BOX',           (0,0),(-1,-1), 0.8, MGRAY),
-        ('LINEAFTER',     (0,0),(5,-1),  0.4, MGRAY),
+        ('LINEAFTER',     (0,0),(4,-1),  0.4, MGRAY),
         ('TOPPADDING',    (0,0),(-1,-1), 4),
         ('BOTTOMPADDING', (0,0),(-1,-1), 3),
     ]))
@@ -1182,7 +1183,7 @@ def _build_opinion_flowables(d, total, op_label, a_sc, b_sc):
     # ① 헤드라인 배너 (좌: 제목, 우: 타이밍 단계)
     hdl_tbl = Table(
         [[Paragraph(headline, s('hdl', 9, WHITE, TA_LEFT, bold=True)),
-          Paragraph(f'[ {stage_lbl} ]', s('stg', 9, stage_clr, TA_RIGHT, bold=True))]],
+          Paragraph(f'[ {stage_lbl} ]', s('stg', 9, WHITE, TA_RIGHT, bold=True))]],
         colWidths=[CW * 0.65, CW * 0.35])
     hdl_tbl.setStyle(TableStyle([
         ('BACKGROUND',  (0,0),(-1,-1), NAVY),
