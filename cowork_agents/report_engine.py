@@ -1514,31 +1514,128 @@ def build_index_page(output_path):
     doc.build(story, onFirstPage=_draw_dark_bg, onLaterPages=_draw_dark_bg)
 
 
-def generate_summary_page(stocks_list, output_path, ai_data=None):
-    """종목별 맞춤 전략 서머리 — 라이트 테마 카드형 레이아웃
-    ai_data: generate_ai_summary() 반환값 (없으면 규칙 기반 텍스트 사용)
-    """
+def _stage_reason(d, sk):
+    """trading_stage 판정 근거 텍스트 생성"""
+    c        = d['close']
+    rsi      = d['rsi']
+    rsi_s3   = d.get('rsi_slope3', 0.0)
+    rsi_s5   = d.get('rsi_slope',  0.0)
+    macd_v   = d['macd'];  macd_s_v = d['macd_signal']
+    vol      = d.get('volume', 0)
+    avg_vol  = max(d.get('avg_volume', 1), 1)
+    m20      = d['ma20'];  m200 = d['ma200']
+    bb_u     = d['bb_upper']
+    div      = d.get('rsi_divergence', 'none')
+    high_52w = d.get('high_52w', c * 1.3)
+    chg      = d.get('change_pct', 0.0)
 
-    # ── 팔레트
-    CARD_HDR = colors.HexColor('#1B3A5C')
-    CARD_R1  = colors.HexColor('#F8FBFF')
-    CARD_R2  = colors.HexColor('#EDF3FA')
-    LABEL_BG = colors.HexColor('#DDE8F5')
-    BORDER   = colors.HexColor('#B0C8E8')
-    NAVY     = colors.HexColor('#1B3A5C')
-    MGRAY    = colors.HexColor('#888888')
-    CONCL_BG = colors.HexColor('#EEF6FF')
-    S_GREEN  = colors.HexColor('#2E7D32')
-    S_ORANGE = colors.HexColor('#E65100')
-    S_RED    = colors.HexColor('#C62828')
-    S_GRAY   = colors.HexColor('#757575')
-    WHITE    = colors.white
+    near_high    = c >= high_52w * 0.82
+    heavily_down = c <= high_52w * 0.80
+    macd_bull    = macd_v > macd_s_v
+    vol_ratio    = vol / avg_vol
+    near_bb_top  = c >= bb_u * 0.97
+    is_bearish   = chg < 0
+
+    if sk == 'sell_div':
+        return f'bearish div + near_high=True -> 매도 주의'
+    if sk == 'buy':
+        sigs = []
+        if c > m20:      sigs.append('MA20 돌파')
+        if macd_bull:    sigs.append('MACD 골든크로스')
+        if vol_ratio >= 1.0: sigs.append('거래량 동반')
+        return ' + '.join(sigs)
+    if sk == 'entry':
+        price_s = d.get('price_series', [])
+        low_stopped = (float(price_s[-1]) >= min(float(p) for p in price_s[-4:-1])
+                       if len(price_s) >= 4 else True)
+        if rsi < 35 and rsi_s3 > 0 and low_stopped:
+            return f'A: RSI<35 + RSI기울기 플러스 + 하락멈춤'
+        if rsi < 40 and heavily_down and rsi_s3 > rsi_s5 and low_stopped:
+            return f'B: RSI<40 + 낙폭과대 + 하락둔화'
+        if rsi < 30 and rsi_s3 >= -2 and low_stopped:
+            return f'C: RSI<30 + 급락아님'
+        return '1차 진입 조건 충족'
+    if sk == 'sell':
+        if not heavily_down and rsi >= 45:
+            near_ma200 = (c > m200 and c <= m200 * 1.05 and rsi_s5 < 0)
+            bb_bear    = (near_bb_top and is_bearish)
+            ma20_break = (near_high and c < m20 and rsi_s5 < -1.0)
+            if near_ma200: return f'A: MA200 하락 접근 + RSI기울기 음수'
+            if bb_bear:    return f'B: BB 상단 근접 + 음봉'
+            if ma20_break: return f'C: 고점권 MA20 이탈 + RSI급락'
+        return '매도 시작 조건 충족'
+    # watch — 왜 관망인지
+    if div == 'bearish' and not near_high:
+        return f'bearish div이지만 near_high=False -> 바닥권 제외'
+    if not heavily_down and rsi >= 45:
+        near_ma200 = (c > m200 and c <= m200 * 1.05 and rsi_s5 < 0)
+        if not near_ma200:
+            return '조건 미충족'
+    if rsi < 45:
+        return f'RSI {rsi:.1f} < 45 -> 매도 시작 차단'
+    return '조건 미충족'
+
+
+def generate_summary_page(stocks_list, output_path, ai_data=None):
+    """판정 요약 테이블 — 다크 테마 리디자인 + Geist 영문"""
+
+    # ══ 팔레트 ══════════════════════════════════════════════════════
+    D_BG      = colors.HexColor('#060D18')   # 최심 배경
+    D_PANEL   = colors.HexColor('#0A1525')   # 헤더·패널
+    D_ROW1    = colors.HexColor('#0D1B2C')   # 홀수 행
+    D_ROW2    = colors.HexColor('#111F30')   # 짝수 행
+    D_HDR_ROW = colors.HexColor('#081220')   # 컬럼명 행
+    D_BORDER  = colors.HexColor('#1A3050')   # 선
+    D_ACCENT  = colors.HexColor('#2563EB')   # 파란 강조선
+    D_ACCENT2 = colors.HexColor('#1D4ED8')   # 어두운 강조
+    D_TEXT    = colors.HexColor('#EEF4FB')   # 기본 텍스트
+    D_MID     = colors.HexColor('#A8C4DE')   # 중간 텍스트
+    D_SUB     = colors.HexColor('#4E6E8E')   # 흐린 텍스트
+    # 판정 색상
+    S_GREEN   = colors.HexColor('#34D399')   # 매수 (에메랄드)
+    S_ORANGE  = colors.HexColor('#FBBF24')   # 진입 (앰버)
+    S_RED     = colors.HexColor('#F87171')   # 매도 (코럴)
+    S_GRAY    = colors.HexColor('#64748B')   # 관망
+    # 판정 배지 배경
+    BADGE_G   = colors.HexColor('#052E16')   # 매수 배지 bg
+    BADGE_G_B = colors.HexColor('#166534')   # 매수 배지 border
+    BADGE_O   = colors.HexColor('#292524')   # 진입 배지 bg
+    BADGE_O_B = colors.HexColor('#92400E')   # 진입 배지 border
+    BADGE_R   = colors.HexColor('#2A0A0A')   # 매도 배지 bg
+    BADGE_R_B = colors.HexColor('#7F1D1D')   # 매도 배지 border
+    BADGE_S   = colors.HexColor('#0D1B2C')   # 관망 배지 bg
+    BADGE_S_B = colors.HexColor('#1E3A5F')   # 관망 배지 border
+
+    def _draw_dark_bg(canvas, doc):
+        canvas.saveState()
+        # 배경
+        canvas.setFillColor(D_BG)
+        canvas.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
+        # 상단 강조 줄 (4px)
+        canvas.setFillColor(D_ACCENT)
+        canvas.rect(0, PAGE_H - 4, PAGE_W, 4, fill=1, stroke=0)
+        canvas.restoreState()
+
+    def _badge_stage(sk, lbl):
+        """판정 배지 — 색상 박스 안에 텍스트"""
+        clr = (S_GREEN if sk == 'buy'
+               else S_ORANGE if sk == 'entry'
+               else S_RED    if sk in ('sell', 'sell_div')
+               else S_GRAY)
+        return Paragraph(f'<b>{lbl}</b>',
+                         s(f'badge_{sk}', 8, clr, TA_CENTER, bold=True))
+
+    def _badge_bg(sk):
+        return (BADGE_G if sk == 'buy'
+                else BADGE_O if sk == 'entry'
+                else BADGE_R if sk in ('sell', 'sell_div')
+                else BADGE_S)
 
     today_str = datetime.date.today().strftime('%Y년 %m월 %d일')
 
     doc = SimpleDocTemplate(output_path, pagesize=A4,
                             leftMargin=M, rightMargin=M,
-                            topMargin=10 * mm, bottomMargin=8 * mm)
+                            topMargin=12 * mm, bottomMargin=8 * mm)
     story = []
 
     # ── 사전 계산
@@ -1548,268 +1645,197 @@ def generate_summary_page(stocks_list, output_path, ai_data=None):
         sk, lbl, _ = trading_stage(d)
         scored.append((d, total, sk, lbl))
 
-    entry_tickers = [d['ticker'] for d, _, sk, _ in scored if sk == 'entry']
-    buy_tickers   = [d['ticker'] for d, _, sk, _ in scored if sk == 'buy']
-    sell_tickers  = [d['ticker'] for d, _, sk, _ in scored if sk in ('sell', 'sell_div')]
-    watch_tickers = [d['ticker'] for d, _, sk, _ in scored if sk == 'watch']
-    avg_score = sum(t for _, t, _, _ in scored) / max(len(scored), 1)
-
-    # ── 스테이지 색상 헬퍼
-    def _sc(sk):
-        return (S_GREEN if sk == 'buy'
-                else S_ORANGE if sk == 'entry'
-                else S_RED if sk in ('sell', 'sell_div')
-                else S_GRAY)
-
-    def _sbg(sk):
-        return (colors.HexColor('#E8F5E9') if sk == 'buy'
-                else colors.HexColor('#FFF3E0') if sk == 'entry'
-                else colors.HexColor('#FFEBEE') if sk in ('sell', 'sell_div')
-                else colors.HexColor('#F5F5F5'))
-
-    # ── 자동 텍스트 생성
-    def _situation(d, sk):
-        rsi  = d['rsi'];  m20 = d['ma20'];  m200 = d['ma200']
-        rs3  = d.get('rsi_slope3', 0);  rs5 = d.get('rsi_slope', 0)
-        h52  = d.get('high_52w', d['close'] * 1.3)
-        drop = (1 - d['close'] / h52) * 100
-        above = sum([d['close'] > d['ma20'], d['close'] > d['ma50'], d['close'] > d['ma200']])
-        if sk == 'sell_div':
-            return (f'주가는 올랐지만 RSI({rsi:.1f})가 꺾이는 약세 다이버전스 발생. '
-                    '상승 에너지가 소진되고 있는 신호예요.')
-        elif sk == 'buy':
-            return (f'MA20(${m20:.2f}) 돌파, MACD 골든크로스, 거래량 증가가 동시에 확인됐어요. '
-                    '추세 전환이 기술적으로 확인된 구간이에요.')
-        elif sk == 'entry':
-            if rs3 > 0:
-                return (f'RSI({rsi:.1f})가 과매도 구간에서 반등 중이에요. '
-                        f'52주 고점 대비 {drop:.0f}% 하락한 상태에서 낙폭이 줄어들고 있어요.')
-            else:
-                return (f'RSI({rsi:.1f})가 과매도권에서 하락 속도가 둔화되고 있어요. '
-                        f'52주 고점 대비 {drop:.0f}% 하락 — 바닥 탐색 구간이에요.')
-        elif sk == 'sell':
-            return (f'강력한 저항선(MA200 또는 BB 상단)에 도달했어요. '
-                    '추가 상승이 막힐 가능성이 높은 구간이에요.')
-        else:
-            if above == 0:
-                return (f'모든 이평선 아래 위치. RSI({rsi:.1f})로 하락 압력 지속 중. '
-                        '반등 신호를 기다리는 구간이에요.')
-            else:
-                return (f'지표가 방향을 탐색 중이에요. '
-                        f'MA20(${m20:.2f}) 근처에서 지지·저항을 확인하는 구간이에요.')
-
-    def _action(d, sk):
-        m20 = d['ma20'];  stop = round(m20 * 0.97, 2)
-        if sk == 'sell_div':
-            return (f'신규 진입 금지. 보유자는 수익의 30~50%를 먼저 현금화하세요. '
-                    f'${stop} (손절선) 이탈 시 전량 정리 고려.')
-        elif sk == 'buy':
-            return '전체 예산의 30~50%까지 비중 확대 가능해요. 분할 매수로 리스크를 나누세요.'
-        elif sk == 'entry':
-            return ('전체 예산의 10~15%만 먼저 넣어보세요. '
-                    '"틀려도 괜찮다"는 마음으로 소액 탐색 진입.')
-        elif sk == 'sell':
-            return '신규 진입 자제. 보유자는 일부 수익 실현 후 손절선을 지키며 대응하세요.'
-        else:
-            return (f'현금 보유 유지. MA20(${m20:.2f}) 돌파 또는 RSI 30 이하 과매도 시 진입 검토.')
-
-    def _prices(d, sk):
-        c = d['close'];  m20 = d['ma20'];  m50 = d['ma50']
-        m200 = d['ma200'];  bb_l = d['bb_lower'];  stop = round(m20 * 0.97, 2)
-        if sk == 'entry':
-            return f'현재가 ${c:.2f}  /  다음 타점: ${m20:.2f} (MA20 돌파 시 2차 매수)  /  손절: ${stop}'
-        elif sk == 'buy':
-            return f'현재가 ${c:.2f}  /  목표: ${m50:.2f} (MA50) ~ ${m200:.2f} (MA200)  /  손절: ${stop}'
-        elif sk in ('sell', 'sell_div'):
-            return f'현재가 ${c:.2f}  /  손절: ${stop} (MA20 -3%)  /  지지: ${m50:.2f} (MA50) / ${bb_l:.2f} (BB 하단)'
-        else:
-            return f'현재가 ${c:.2f}  /  관심 구간: ${bb_l:.2f} ~ ${m20:.2f}  /  손절(보유자): ${stop}'
-
-    # ── 헤더
+    # ══ 헤더 블록 ══════════════════════════════════════════════════
     hdr = Table([[
-        Paragraph('종목별 맞춤 전략', s('smh1', 16, WHITE, TA_LEFT, bold=True)),
-        Paragraph(f'{today_str}  |  기술적 분석', s('smh2', 9, colors.HexColor('#A0C0E0'), TA_RIGHT)),
-    ]], colWidths=[CW * 0.60, CW * 0.40])
+        Paragraph('타이밍 판정 요약',
+                  s('smh1', 20, D_TEXT, TA_LEFT, bold=True)),
+        Paragraph(f'{today_str}  |  기술적  분석',
+                  s('smh2', 8, D_SUB, TA_RIGHT)),
+    ]], colWidths=[CW * 0.58, CW * 0.42])
     hdr.setStyle(TableStyle([
-        ('BACKGROUND',   (0, 0), (-1, -1), CARD_HDR),
-        ('TOPPADDING',   (0, 0), (-1, -1), 8), ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ('LEFTPADDING',  (0, 0), (-1, -1), 10), ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+        ('BACKGROUND',   (0, 0), (-1, -1), D_PANEL),
+        ('TOPPADDING',   (0, 0), (-1, -1), 14),
+        ('BOTTOMPADDING',(0, 0), (-1, -1), 14),
+        ('LEFTPADDING',  (0, 0), (-1, -1), 14),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 14),
         ('VALIGN',       (0, 0), (-1, -1), 'MIDDLE'),
-        ('LINEBELOW',    (0, 0), (-1, -1), 3, colors.HexColor('#1F6BB5')),
+        ('LINEBELOW',    (0, 0), (-1, -1), 2.5, D_ACCENT),
     ]))
     story.append(hdr)
-    story.append(Spacer(1, 3 * mm))
+    story.append(Spacer(1, 5 * mm))
 
-    # ── 전체 시황 요약 (AI 또는 통계)
-    AI_BG     = colors.HexColor('#EEF6FF')
-    AI_BORDER = colors.HexColor('#1F6BB5')
-    POINT_BG  = colors.HexColor('#F0F7FF')
+    # ══ 판정 요약 테이블 ════════════════════════════════════════════
+    # 컬럼 너비: 티커 | 판정 | RSI | rsi_s3 | near_high | h_down | 근거
+    COL_W = [CW*0.09, CW*0.11, CW*0.07, CW*0.08, CW*0.10, CW*0.08, CW*0.47]
 
-    if ai_data and ai_data.get('market_overview'):
-        # 날씨 제목 + 시장 개요 박스
-        weather = ai_data.get('weather_title', '오늘의 시장 분위기')
-        overview_txt = ai_data.get('market_overview', '')
-        ai_rows = [
-            [Paragraph(f'<b>{today_str}  |  {weather}</b>',
-                       s('smwt', 9.5, NAVY, TA_LEFT, bold=True))],
-            [Paragraph(overview_txt, s('smov_ai', 8.5, NAVY, lead=13))],
-        ]
-        ai_tbl = Table(ai_rows, colWidths=[CW])
-        ai_tbl.setStyle(TableStyle([
-            ('BACKGROUND',    (0, 0), (-1, -1), AI_BG),
-            ('BOX',           (0, 0), (-1, -1), 1.2, AI_BORDER),
-            ('LINEBELOW',     (0, 0), (-1, 0),  0.5, AI_BORDER),
-            ('TOPPADDING',    (0, 0), (-1, -1), 7),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
-            ('LEFTPADDING',   (0, 0), (-1, -1), 10),
-            ('RIGHTPADDING',  (0, 0), (-1, -1), 10),
-        ]))
-        story.append(ai_tbl)
-    else:
-        overview = (f'분석 종목 {len(scored)}개  |  평균 점수 {avg_score:.1f}점  |  '
-                    f'1차 진입 {len(entry_tickers)}개  /  매수 적기 {len(buy_tickers)}개  /  '
-                    f'매도 주의 {len(sell_tickers)}개  /  관망 {len(watch_tickers)}개')
-        story.append(Paragraph(overview, s('smov', 8, MGRAY, TA_LEFT)))
-    story.append(Spacer(1, 4 * mm))
-
-    # ── 종목 카드
-    LBLW = CW * 0.10
-    TXTW = CW * 0.90
+    # 컬럼 헤더 행
+    tbl_hdr = [
+        Paragraph('티커',      s('th0', 7.5, D_MID, TA_CENTER, bold=True)),
+        Paragraph('판정',      s('th1', 7.5, D_MID, TA_CENTER, bold=True)),
+        Paragraph('RSI',       se('th2', 7.5, D_MID, TA_CENTER, bold=True)),
+        Paragraph('rsi_s3',    se('th3', 7.5, D_MID, TA_CENTER, bold=True)),
+        Paragraph('near_high', se('th4', 7.5, D_MID, TA_CENTER, bold=True)),
+        Paragraph('h_down',    se('th5', 7.5, D_MID, TA_CENTER, bold=True)),
+        Paragraph('근거',      s('th6', 7.5, D_MID, TA_LEFT,   bold=True)),
+    ]
+    tbl_rows = [tbl_hdr]
+    row_metas = []   # (row_bg, badge_bg)
 
     for idx, (d, total, sk, lbl) in enumerate(scored):
-        sc  = _sc(sk)
-        sbg = _sbg(sk)
+        c         = d['close']
+        rsi       = d['rsi']
+        rsi_s3    = d.get('rsi_slope3', 0.0)
+        high_52w  = d.get('high_52w', c * 1.3)
+        near_high = c >= high_52w * 0.82
+        h_down    = c <= high_52w * 0.80
+        reason    = _stage_reason(d, sk)
 
-        # AI 요약 우선, 없으면 규칙 기반
-        ai_stock = (ai_data or {}).get('stocks', {}).get(d['ticker'], {})
-        sit = ai_stock.get('summary') or _situation(d, sk)
-        kpt = ai_stock.get('key_point') or ''
-        act = _action(d, sk)
-        prc = _prices(d, sk)
+        s3_clr = S_GREEN if rsi_s3 > 0 else S_RED
+        s3_str = f'+{rsi_s3:.2f}' if rsi_s3 >= 0 else f'{rsi_s3:.2f}'
 
-        # 카드 헤더 (다크 네이비 배경)
-        card_hdr = Table([[
-            Paragraph(f'{d["ticker"]}  {d["company"]}',
-                      s(f'smch{idx}', 10, WHITE, TA_LEFT, bold=True)),
-            Paragraph(f'{lbl}  {total}/85점',
-                      s(f'smcs{idx}', 9, sc, TA_RIGHT, bold=True)),
-        ]], colWidths=[CW * 0.65, CW * 0.35])
-        card_hdr.setStyle(TableStyle([
-            ('BACKGROUND',   (0, 0), (-1, -1), CARD_HDR),
-            ('TOPPADDING',   (0, 0), (-1, -1), 5), ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-            ('LEFTPADDING',  (0, 0), (-1, -1), 8), ('RIGHTPADDING',  (0, 0), (-1, -1), 8),
-            ('VALIGN',       (0, 0), (-1, -1), 'MIDDLE'),
-        ]))
+        # RSI 색상: 과매도/과매수 구분
+        rsi_clr = (S_RED    if rsi >= 70
+                   else S_GREEN  if rsi <= 35
+                   else D_TEXT)
 
-        # 카드 바디 (현황 / [포인트] / 행동 / 핵심 가격)
-        body_rows = [
-            [Paragraph('현황', s(f'smla{idx}', 7.5, NAVY, TA_CENTER, bold=True)),
-             Paragraph(sit,   s(f'smta{idx}', 8,   NAVY, lead=12))],
-        ]
-        if kpt:
-            body_rows.append([
-                Paragraph('포인트', s(f'smld{idx}', 7.5, NAVY, TA_CENTER, bold=True)),
-                Paragraph(f'<i>{kpt}</i>', s(f'smtd{idx}', 8, colors.HexColor('#1F6BB5'), lead=12)),
-            ])
-        body_rows += [
-            [Paragraph('행동', s(f'smlb{idx}', 7.5, WHITE, TA_CENTER, bold=True)),
-             Paragraph(act,   s(f'smtb{idx}', 8,   NAVY, lead=12))],
-            [Paragraph('핵심 가격', s(f'smlc{idx}', 7, NAVY, TA_CENTER, bold=True)),
-             Paragraph(prc,   se(f'smtc{idx}', 7.5, NAVY, lead=12))],
-        ]
-        n = len(body_rows)
-        act_row = n - 2   # 행동 행 인덱스
-        prc_row = n - 1   # 핵심 가격 행 인덱스
-        card_body = Table(body_rows, colWidths=[LBLW, TXTW])
-        style_cmds = [
-            ('BOX',         (0, 0), (-1, -1), 0.6, BORDER),
-            ('LINEBELOW',   (0, 0), (-1, -2), 0.3, BORDER),
-            ('LINEBEFORE',  (1, 0), (1,  -1), 0.5, BORDER),
-            ('TOPPADDING',  (0, 0), (-1, -1), 5),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-            ('LEFTPADDING', (0, 0), (0,  -1), 4),
-            ('RIGHTPADDING',(0, 0), (0,  -1), 4),
-            ('LEFTPADDING', (1, 0), (1,  -1), 8),
-            ('RIGHTPADDING',(1, 0), (1,  -1), 8),
-            ('VALIGN',      (0, 0), (-1, -1), 'MIDDLE'),
-            # 현황 행
-            ('BACKGROUND',  (0, 0), (-1, 0), CARD_R1),
-            ('BACKGROUND',  (0, 0), (0,  0), LABEL_BG),
-            # 행동 행
-            ('BACKGROUND',  (0, act_row), (-1, act_row), sbg),
-            ('BACKGROUND',  (0, act_row), (0,  act_row), sc),
-            # 핵심 가격 행
-            ('BACKGROUND',  (0, prc_row), (-1, prc_row), CARD_R2),
-            ('BACKGROUND',  (0, prc_row), (0,  prc_row), LABEL_BG),
-        ]
-        # 포인트 행 (있을 경우)
-        if kpt:
-            style_cmds += [
-                ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor('#F0F7FF')),
-                ('BACKGROUND', (0, 1), (0,  1), LABEL_BG),
-            ]
-        card_body.setStyle(TableStyle(style_cmds))
+        nh_str = 'True'   if near_high else 'False'
+        hd_str = 'True'   if h_down    else 'False'
+        nh_clr = S_RED    if near_high else D_SUB
+        hd_clr = S_ORANGE if h_down    else D_SUB
 
-        story.append(card_hdr)
-        story.append(card_body)
-        story.append(Spacer(1, 3 * mm))
+        row_bg   = D_ROW1 if idx % 2 == 0 else D_ROW2
+        badge_bg = _badge_bg(sk)
 
-    # ── 결론 박스 (AI investment_points 또는 기존 종목 요약)
-    story.append(Spacer(1, 2 * mm))
+        tbl_rows.append([
+            Paragraph(f'<b>{d["ticker"]}</b>',
+                      se(f'stk{idx}', 10, D_TEXT, TA_CENTER, bold=True)),
+            _badge_stage(sk, lbl),
+            Paragraph(f'{rsi:.1f}',
+                      se(f'srsi{idx}', 9, rsi_clr, TA_CENTER, bold=(rsi<=35 or rsi>=70))),
+            Paragraph(s3_str,
+                      se(f'ss3{idx}',  9, s3_clr, TA_CENTER)),
+            Paragraph(nh_str,
+                      se(f'snh{idx}',  8, nh_clr, TA_CENTER, bold=near_high)),
+            Paragraph(hd_str,
+                      se(f'shd{idx}',  8, hd_clr, TA_CENTER, bold=h_down)),
+            Paragraph(reason,
+                      s(f'sreason{idx}', 7.5, D_MID, lead=12)),
+        ])
+        row_metas.append((row_bg, badge_bg))
 
-    ai_points = (ai_data or {}).get('investment_points', [])
-    if ai_points:
-        # AI 투자 포인트 박스
-        pt_rows = [[Paragraph('<b>오늘의 투자 포인트</b>',
-                              s('smpt_hdr', 8.5, NAVY, TA_LEFT, bold=True))]]
-        for i, pt in enumerate(ai_points[:3], 1):
-            pt_rows.append([Paragraph(f'{i}.  {pt}',
-                                      s(f'smpt{i}', 8, NAVY, lead=13))])
-        pt_tbl = Table(pt_rows, colWidths=[CW])
-        pt_tbl.setStyle(TableStyle([
-            ('BACKGROUND',    (0, 0), (-1, -1), POINT_BG),
-            ('BACKGROUND',    (0, 0), (-1,  0), AI_BG),
-            ('BOX',           (0, 0), (-1, -1), 1.2, AI_BORDER),
-            ('LINEBELOW',     (0, 0), (-1,  0), 0.5, AI_BORDER),
-            ('TOPPADDING',    (0, 0), (-1, -1), 6),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-            ('LEFTPADDING',   (0, 0), (-1, -1), 10),
-            ('RIGHTPADDING',  (0, 0), (-1, -1), 10),
-        ]))
-        story.append(pt_tbl)
-    else:
-        # fallback: 기존 종목 요약
-        pick     = ' · '.join(buy_tickers + entry_tickers) or '없음'
-        cautious = ' · '.join(watch_tickers) or '없음'
-        danger   = ' · '.join(sell_tickers)
-        concl_parts = [f'<b>담아볼 만한 종목:</b>  {pick}',
-                       f'<b>지켜볼 종목:</b>  {cautious}']
-        if danger:
-            concl_parts.append(f'<b>주의 구간:</b>  {danger}')
-        concl_txt = '    |    '.join(concl_parts)
-        concl_tbl = Table(
-            [[Paragraph(f'전체 결론  —  {concl_txt}', s('smconcl', 8, NAVY, lead=14))]],
-            colWidths=[CW])
-        concl_tbl.setStyle(TableStyle([
-            ('BACKGROUND',  (0, 0), (-1, -1), CONCL_BG),
-            ('BOX',         (0, 0), (-1, -1), 1.2, AI_BORDER),
-            ('TOPPADDING',  (0, 0), (-1, -1), 8), ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-            ('LEFTPADDING', (0, 0), (-1, -1), 10), ('RIGHTPADDING', (0, 0), (-1, -1), 10),
-        ]))
-        story.append(concl_tbl)
-    story.append(Spacer(1, 4 * mm))
+    main_tbl = Table(tbl_rows, colWidths=COL_W)
+    style_cmds = [
+        # 외곽선
+        ('BOX',           (0, 0), (-1, -1), 1.0, D_BORDER),
+        # 컬럼 구분선
+        ('LINEBELOW',     (0, 0), (-1, -1), 0.3, D_BORDER),
+        ('LINEBEFORE',    (1, 0), (-1, -1), 0.3, D_BORDER),
+        # 헤더 행
+        ('BACKGROUND',    (0, 0), (-1,  0), D_HDR_ROW),
+        ('LINEBELOW',     (0, 0), (-1,  0), 1.5, D_ACCENT),
+        # 여백
+        ('TOPPADDING',    (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 6),
+        ('RIGHTPADDING',  (0, 0), (-1, -1), 6),
+        # 정렬
+        ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN',         (0, 0), (-1, -1), 'CENTER'),
+        ('ALIGN',         (6, 0), (6,  -1), 'LEFT'),
+        ('LEFTPADDING',   (6, 0), (6,  -1), 10),
+    ]
+    for i, (rbg, bbg) in enumerate(row_metas, start=1):
+        style_cmds.append(('BACKGROUND', (0, i), (-1, i), rbg))
+        style_cmds.append(('BACKGROUND', (1, i), (1,  i), bbg))
+    main_tbl.setStyle(TableStyle(style_cmds))
+    story.append(main_tbl)
+    story.append(Spacer(1, 7 * mm))
+
+    # ══ 판정 조건 기준 테이블 ═══════════════════════════════════════
+    # 섹션 레이블
+    cond_label = Table([[
+        Paragraph('판정 조건 기준',
+                  s('cond_ttl', 9, D_MID, TA_LEFT, bold=True)),
+        Paragraph('타이밍 판단에 사용된 기술적 조건 요약',
+                  s('cond_sub', 7.5, D_SUB, TA_RIGHT)),
+    ]], colWidths=[CW * 0.45, CW * 0.55])
+    cond_label.setStyle(TableStyle([
+        ('LINEBELOW', (0,0),(-1,-1), 0.8, D_ACCENT2),
+        ('BOTTOMPADDING',(0,0),(-1,-1), 5),
+        ('TOPPADDING',(0,0),(-1,-1), 0),
+        ('LEFTPADDING',(0,0),(-1,-1), 2),
+        ('RIGHTPADDING',(0,0),(-1,-1), 2),
+    ]))
+    story.append(cond_label)
+    story.append(Spacer(1, 3 * mm))
+
+    # 조건 정의: (라벨, 텍스트색, 배지배경, 조건 설명)
+    stage_defs = [
+        ('매수 적기', S_GREEN,  BADGE_G,
+         '다음 중 2가지 이상 충족  +  양봉 마감  +  RSI < 75\n'
+         '① MA20 돌파    ② MACD 골든크로스    ③ 거래량 평균 이상'),
+        ('1차 진입',  S_ORANGE, BADGE_O,
+         'A.  RSI < 35  +  RSI 3일 기울기 양전환  +  하락 멈춤\n'
+         'B.  RSI < 40  +  52주 고점 -20% 이상  +  하락 둔화  +  하락 멈춤\n'
+         'C.  RSI < 30  +  급락 아님 (rsi_s3 >= -2)  +  하락 멈춤'),
+        ('매도 시작', S_RED,    BADGE_R,
+         '전제:  고점 대비 -20% 이내  +  RSI >= 45 (과매도 제외)\n'
+         'A.  MA200 위 5% 이내  +  RSI 기울기 음수\n'
+         'B.  BB 상단 3% 이내  +  음봉 마감\n'
+         'C.  고점권(82%)에서 MA20 이탈  +  RSI 5일 급락'),
+        ('매도 주의', S_RED,    BADGE_R,
+         '약세 다이버전스 (RSI 하락 + 주가 상승)  +  52주 고점 82% 이상 (near_high = True)'),
+        ('관망',     S_GRAY,   BADGE_S,
+         '위 조건 미충족  —  신호 대기 구간.  현금 보유가 최선인 구간'),
+    ]
+
+    LBL_W = CW * 0.13
+    TXT_W = CW * 0.87
+    ref_rows  = []
+    ref_metas = []
+
+    for lbl, clr, bg, cond_txt in stage_defs:
+        ref_rows.append([
+            Paragraph(f'<b>{lbl}</b>',
+                      s(f'rlbl_{lbl}', 7.5, clr, TA_CENTER, bold=True)),
+            Paragraph(cond_txt,
+                      s(f'rcond_{lbl}', 7, D_MID, lead=11.5)),
+        ])
+        ref_metas.append(bg)
+
+    ref_tbl = Table(ref_rows, colWidths=[LBL_W, TXT_W])
+    ref_style_cmds = [
+        ('BOX',           (0, 0), (-1, -1), 0.8, D_BORDER),
+        ('LINEBELOW',     (0, 0), (-1, -2), 0.3, D_BORDER),
+        ('LINEBEFORE',    (1, 0), (1,  -1), 0.6, D_BORDER),
+        ('TOPPADDING',    (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('LEFTPADDING',   (0, 0), (0,  -1), 5),
+        ('RIGHTPADDING',  (0, 0), (0,  -1), 5),
+        ('LEFTPADDING',   (1, 0), (1,  -1), 10),
+        ('RIGHTPADDING',  (1, 0), (1,  -1), 8),
+        ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN',         (0, 0), (0,  -1), 'CENTER'),
+    ]
+    for i, bg in enumerate(ref_metas):
+        row_bg = D_ROW1 if i % 2 == 0 else D_ROW2
+        ref_style_cmds.append(('BACKGROUND', (0, i), (-1, i), row_bg))
+        ref_style_cmds.append(('BACKGROUND', (0, i), (0,  i), bg))
+    ref_tbl.setStyle(TableStyle(ref_style_cmds))
+    story.append(ref_tbl)
+    story.append(Spacer(1, 5 * mm))
 
     # ── 푸터
-    story.append(HRFlowable(width='100%', thickness=0.5,
-                             color=BORDER, spaceBefore=2 * mm, spaceAfter=1.5 * mm))
+    story.append(HRFlowable(width='100%', thickness=0.4,
+                             color=D_BORDER, spaceBefore=2 * mm, spaceAfter=2 * mm))
     story.append(Paragraph(
         '본 보고서는 AI 기반 자동 기술적 분석으로, 투자 권유가 아닙니다.',
-        s('smfoot', 6.5, MGRAY, TA_CENTER)))
+        s('smfoot', 6.5, D_SUB, TA_CENTER)))
     story.append(Paragraph(
         'Data: Yahoo Finance (yfinance)  |  AI Chart Analyst 2026',
-        se('smfooten', 6.5, MGRAY, TA_CENTER)))
+        se('smfooten', 6.5, D_SUB, TA_CENTER)))
 
-    doc.build(story)
+    doc.build(story, onFirstPage=_draw_dark_bg, onLaterPages=_draw_dark_bg)
     return output_path
 
 
