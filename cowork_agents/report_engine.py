@@ -447,45 +447,62 @@ def trading_stage(d):
     """
     4단계 타이밍 판정
     우선순위: 약세다이버전스(최우선) > 매수 적기 > 1차 진입 > 매도 > 관망
+
+    매도 조건은 '고점권에서 하락 시작'에 한정:
+      - 52주 고점 82% 이상(고점권) + MA20 이탈 + RSI 하락
+      - MA200 위에서 MA200 근접(저항)
+      - BB 상단 근접
+      → 이미 크게 하락한 종목은 매도 판정 제외
+
     Returns: (stage_key, label, color)
     """
-    c       = d['close'];  m20 = d['ma20']; m200 = d['ma200']
-    bb_u    = d['bb_upper']
-    rsi     = d['rsi']
-    rsi_s3  = d.get('rsi_slope3', 0.0)
-    rsi_s5  = d.get('rsi_slope',  0.0)
-    macd_v  = d['macd'];  macd_s = d['macd_signal']
-    vol     = d.get('volume',     0)
-    avg_vol = max(d.get('avg_volume', 1), 1)
-    div     = d.get('rsi_divergence', 'none')
+    c        = d['close'];  m20 = d['ma20']; m200 = d['ma200']
+    bb_u     = d['bb_upper']
+    rsi      = d['rsi']
+    rsi_s3   = d.get('rsi_slope3', 0.0)
+    rsi_s5   = d.get('rsi_slope',  0.0)
+    macd_v   = d['macd'];  macd_s = d['macd_signal']
+    vol      = d.get('volume', 0)
+    avg_vol  = max(d.get('avg_volume', 1), 1)
+    div      = d.get('rsi_divergence', 'none')
+    high_52w = d.get('high_52w', c * 1.3)
 
-    vol_ratio = vol / avg_vol
-    macd_bull = macd_v > macd_s
+    vol_ratio    = vol / avg_vol
+    macd_bull    = macd_v > macd_s
+    near_high    = c >= high_52w * 0.82  # 52주 고점 82% 이상 = 아직 고점권
+    heavily_down = c <= high_52w * 0.80  # 52주 고점 대비 20% 이상 하락
 
-    # 1. 약세 다이버전스 — 최우선 매도 경고
+    # ① 약세 다이버전스 — 최우선 (고점권 여부 무관)
     if div == 'bearish':
         return ('sell_div', '매도 주의', RED)
 
-    # 2. 매수 적기 — MA20 돌파 + MACD 골든크로스 + 거래량 1.2배 이상
+    # ② 매수 적기 — MA20 돌파 + MACD 골든크로스 + 거래량 1.2배↑
     if c > m20 and macd_bull and vol_ratio >= 1.2:
         return ('buy', '매수 적기', GREEN)
 
-    # 3. 1차 진입 — RSI 과매도권에서 3일 기울기 반등
+    # ③ 1차 진입 (발가락 담그기) — 과매도권 반등 또는 폭락 후 속도 둔화
+    # A. 과매도 탈출: RSI 35 미만 + 3일 기울기 반등 시작
     if rsi < 35 and rsi_s3 > 0:
         return ('entry', '1차 진입', ORANGE)
+    # B. 폭락 후 속도 둔화: RSI 40 미만 + 20% 이상 하락 + 하락 속도 완화
+    if rsi < 40 and heavily_down and rsi_s3 > rsi_s5:
+        return ('entry', '1차 진입', ORANGE)
+    # C. 강한 과매도 (위치 무관)
+    if rsi < 30:
+        return ('entry', '1차 진입', ORANGE)
 
-    # 4. 매도 시작 — MA200 근접 OR BB상단 근접 OR MA20 이탈+하락
-    near_ma200  = c >= m200 * 0.95
+    # ④ 매도 시작 — 고점권에서의 저항 도달 또는 이탈 (이미 폭락한 종목 제외)
+    # 조건 A: MA200 위에서 MA200 근접 (장기 상승 중 조정 저항)
+    near_ma200_resist = (c > m200 and c <= m200 * 1.05)
+    # 조건 B: BB 상단 3% 이내 도달
     near_bb_top = c >= bb_u * 0.97
-    ma20_break  = (c < m20 and rsi_s5 < -1.0)
-    if near_ma200 or near_bb_top or ma20_break:
-        reasons = []
-        if near_ma200:  reasons.append('MA200 근접')
-        if near_bb_top: reasons.append('BB 상단')
-        if ma20_break:  reasons.append('MA20 이탈')
+    # 조건 C: 고점권(82% 이상)에서 MA20 이탈 + RSI 하락 중
+    ma20_break_high = (near_high and c < m20 and rsi_s5 < -1.0)
+
+    if near_ma200_resist or near_bb_top or ma20_break_high:
         return ('sell', '매도 시작', RED)
 
-    # 5. 관망
+    # ⑤ 관망
     return ('watch', '관망', MGRAY)
 
 
