@@ -445,13 +445,14 @@ def opinion_label(total):
 
 def trading_stage(d):
     """
-    4단계 타이밍 판정 (최종)
+    4단계 타이밍 판정 (v2 — 논리 오류 수정)
     우선순위: ① 매도주의 > ② 매수적기 > ③ 1차진입 > ④ 매도시작 > ⑤ 관망
 
-    ① 매도 주의: 약세 다이버전스 (최우선, 위치 무관)
-    ② 매수 적기: MA20돌파/MACD골든크로스/거래량 중 2개 이상 + 양봉
+    ① 매도 주의: 약세 다이버전스 + 고점권 한정 (바닥권 오신호 방지)
+    ② 매수 적기: MA20돌파/MACD골든크로스/거래량 중 2개 이상 + 양봉 + RSI<75
     ③ 1차 진입: 과매도 탈출(A) / 낙폭과대 둔화(B) / 강한공포(C) + 안전장치
-    ④ 매도 시작: 고점권 한정 — MA200저항(A) / BB상단+음봉(B) / MA20이탈(C)
+    ④ 매도 시작: not heavily_down + RSI>=45 한정
+                 MA200하락접근(A) / BB상단+음봉(B) / MA20이탈(C)
     ⑤ 관망: 위 조건 미충족
 
     Returns: (stage_key, label, color)
@@ -478,19 +479,22 @@ def trading_stage(d):
     is_bearish   = chg < 0                # 음봉 (전일 대비 하락 마감)
 
     # ─────────────────────────────────────────────────────────
-    # ① 매도 주의 — 약세 다이버전스 (최우선, 위치 무관)
+    # ① 매도 주의 — 약세 다이버전스 + 고점권 한정
+    #   [수정] near_high 추가: 이미 많이 하락한 종목(바닥권)은 제외
+    #   이유: heavily_down 종목의 단기 반등 꺾임에 매도 주의 오발 방지
     # ─────────────────────────────────────────────────────────
-    if div == 'bearish':
+    if div == 'bearish' and near_high:
         return ('sell_div', '매도 주의', RED)
 
     # ─────────────────────────────────────────────────────────
-    # ② 매수 적기 — 3가지 중 2가지 이상 충족 + 양봉 마감
+    # ② 매수 적기 — 3가지 중 2가지 이상 충족 + 양봉 마감 + RSI 상한
     #   1. 현재가 > MA20 (20일선 돌파)
     #   2. MACD > 시그널 (골든크로스)
-    #   3. 거래량 > 평균 거래량 (거래량 동반)
+    #   3. 거래량 >= 평균 거래량 (거래량 동반)
+    #   [수정] RSI < 75 추가: 극단 과매수(RSI>=75) 구간 고점 추격 방지
     # ─────────────────────────────────────────────────────────
     buy_signals = sum([c > m20, macd_bull, vol_ratio >= 1.0])
-    if buy_signals >= 2 and is_bullish:
+    if buy_signals >= 2 and is_bullish and rsi < 75:
         return ('buy', '매수 적기', GREEN)
 
     # ─────────────────────────────────────────────────────────
@@ -502,25 +506,32 @@ def trading_stage(d):
     else:
         low_stopped = True   # 데이터 부족 시 안전장치 패스
 
-    # A. 과매도 탈출: RSI < 35 + 3일 기울기 플러스 전환
+    # A. 과매도 탈출: RSI < 35 + 3일 기울기 플러스 전환 + 하락 멈춤
     if rsi < 35 and rsi_s3 > 0 and low_stopped:
         return ('entry', '1차 진입', ORANGE)
-    # B. 낙폭 과대 둔화: 고점 -20% 이상 + RSI < 40 + 하락 속도 감소
+    # B. 낙폭 과대 둔화: 고점 -20% 이상 + RSI < 40 + 하락 속도 감소 + 하락 멈춤
     if rsi < 40 and heavily_down and rsi_s3 > rsi_s5 and low_stopped:
         return ('entry', '1차 진입', ORANGE)
-    # C. 강한 공포: RSI < 30 (극심한 과매도, 위치 무관)
-    if rsi < 30 and low_stopped:
+    # C. 강한 공포: RSI < 30 + 급락 아님(rsi_s3 >= -2) + 하락 멈춤
+    #   [수정] rsi_s3 >= -2 추가: RSI 28이어도 급락 중이면 더 빠질 수 있음
+    if rsi < 30 and rsi_s3 >= -2 and low_stopped:
         return ('entry', '1차 진입', ORANGE)
 
     # ─────────────────────────────────────────────────────────
-    # ④ 매도 시작 — 고점 대비 20% 이상 하락 종목 제외
-    #   A. MA200 심리적 저항: MA200 위에서 MA200 5% 이내 접근
-    #   B. BB 상단 과열 이탈: BB 상단 3% 이내 + 음봉 마감
-    #   C. 추세 붕괴: 고점권(82%)에서 MA20 이탈 + RSI 하락 중
+    # ④ 매도 시작 — 두 가지 전제 모두 충족 시에만 판단
+    #   전제1: not heavily_down (고점 대비 -20% 이내 종목만)
+    #   전제2: RSI >= 45 (과매도권 종목 제외 — RSI 낮은데 매도 오발 방지)
+    #   A. MA200 하락 접근: MA200 위에서 5% 이내 + RSI 하락 추세
+    #   B. BB 상단 과열: BB 상단 3% 이내 + 음봉 마감
+    #   C. 추세 붕괴: 고점권(82%)에서 MA20 이탈 + RSI 5일 기울기 급락
     # ─────────────────────────────────────────────────────────
-    if not heavily_down:
-        near_ma200_resist = (c > m200 and c <= m200 * 1.05)
+    if not heavily_down and rsi >= 45:
+        # A. [수정] rsi_s5 < 0 추가: MA200 상승 돌파 중인 종목은 제외
+        #          하락하며 MA200에 접근하는 경우에만 저항 신호로 인정
+        near_ma200_resist = (c > m200 and c <= m200 * 1.05 and rsi_s5 < 0)
+        # B. BB 상단 근접 + 음봉: 과열 후 되돌림 시작
         bb_top_bearish    = (near_bb_top and is_bearish)
+        # C. 고점권 추세 붕괴: 고점권에서 MA20 이탈 + RSI 5일 급락
         ma20_break_high   = (near_high and c < m20 and rsi_s5 < -1.0)
         if near_ma200_resist or bb_top_bearish or ma20_break_high:
             return ('sell', '매도 시작', RED)
@@ -816,7 +827,7 @@ def build_pdf(d, chart_path, output_path):
         Paragraph(f'${d["low_52w"]:.2f}',  se(f'mv2', 12, NAVY,  TA_CENTER, bold=True)),
         Paragraph(f'${d["ma200"]:.2f}',    se(f'mv3', 12, RED if d['close'] < d['ma200'] else GREEN, TA_CENTER, bold=True)),
         Paragraph(f'{total} / 85',         se(f'mv4', 12, op_color, TA_CENTER, bold=True)),
-        Paragraph(stage_lbl,               s(f'mv5',  11, stage_clr, TA_CENTER, bold=True)),
+        Paragraph(f'<b>{stage_lbl}</b>',   s(f'mv5',  12, DGRAY if stage_clr == MGRAY else stage_clr, TA_CENTER, bold=True)),
     ]
     sub_row = [Paragraph(v, s(f'ms{i}', 7, DGRAY, TA_CENTER))
                for i, v in enumerate([
@@ -1278,7 +1289,7 @@ def _build_opinion_flowables(d, total, op_label, a_sc, b_sc):
 
     if stage_key == 'entry':
         stg_rows = [
-            [Paragraph('[1단계 진입] 발가락 담그기 — RSI 과매도 탈출 감지', s('sh1', 8, ORANGE, TA_LEFT, bold=True))],
+            [Paragraph('[1단계 진입] 발가락 담그기 — RSI 과매도 탈출 감지', s('sh1', 9, colors.HexColor('#BF4600'), TA_LEFT, bold=True))],
             [Paragraph('"틀려도 괜찮다는 마음으로, 소액만 먼저 넣어보세요."', s('sq1', 8, NAVY, lead=12))],
             [Paragraph(f'<b>진입 금액:</b>  전체 예산의 10~15%만 먼저 진입하세요. 추가 하락에도 버틸 수 있는 금액이어야 해요', s('se1', 7.5, NAVY, lead=12))],
             [Paragraph(f'<b>진입 기준:</b>  RSI {rsi:.1f}이 30선을 회복하며 올라오는 중 — 지금이 그 시점이에요', s('se2', 7.5, ORANGE, lead=12))],
@@ -1287,7 +1298,7 @@ def _build_opinion_flowables(d, total, op_label, a_sc, b_sc):
         stg_bg = ENTRY_BG; stg_hdr_bg = ENTRY_HDR; stg_clr2 = ORANGE
     elif stage_key == 'buy':
         stg_rows = [
-            [Paragraph('[매수 적기] 본격 승부 — MA20 돌파 + MACD 골든크로스 + 거래량 확인', s('sh2', 8, GREEN, TA_LEFT, bold=True))],
+            [Paragraph('[매수 적기] 본격 승부 — MA20 돌파 + MACD 골든크로스 + 거래량 확인', s('sh2', 9, colors.HexColor('#0E6E3F'), TA_LEFT, bold=True))],
             [Paragraph('"추세가 확인됐어요! 이제 본격적으로 비중을 높여도 좋아요."', s('sq2', 8, NAVY, lead=12))],
             [Paragraph(f'<b>매수 금액:</b>  전체 예산의 30~50%까지 비중을 높이세요. 추세를 타는 구간이에요', s('sb1', 7.5, NAVY, lead=12))],
             [Paragraph(f'<b>핵심 조건:</b>  MA20(${m20:.2f}) 위 안착 + MACD 골든크로스 + 거래량 평균 이상', s('sb2', 7.5, GREEN, lead=12))],
@@ -1297,7 +1308,7 @@ def _build_opinion_flowables(d, total, op_label, a_sc, b_sc):
     elif stage_key in ('sell', 'sell_div'):
         reason_str = '약세 다이버전스 감지' if stage_key == 'sell_div' else ma_bullet[:30]
         stg_rows = [
-            [Paragraph('[매도 시작] 수익 지키기 — 강력한 저항선 도달 또는 이탈 신호 (보유자 해당)', s('sh3', 8, RED, TA_LEFT, bold=True))],
+            [Paragraph('[매도 시작] 수익 지키기 — 강력한 저항선 도달 또는 이탈 신호 (보유자 해당)', s('sh3', 9, colors.HexColor('#A93226'), TA_LEFT, bold=True))],
             [Paragraph('"수익은 챙기고, 손실은 짧게 끊으세요."', s('sq3', 8, NAVY, lead=12))],
             [Paragraph(f'<b>1차 매도:</b>  보유 수익의 30~50%를 먼저 현금화하세요. 나머지는 추세 확인 후 판단하세요', s('sd1', 7.5, NAVY, lead=12))],
             [Paragraph(f'<b>위험 라인:</b>  ${stop_price:.2f}(MA20 -3%) 아래로 내려가면 미련 없이 비중을 줄이세요', s('sd2', 7.5, RED, lead=12))],
@@ -1306,7 +1317,7 @@ def _build_opinion_flowables(d, total, op_label, a_sc, b_sc):
         stg_bg = SELL_BG2; stg_hdr_bg = SELL_HDR2; stg_clr2 = RED
     else:  # watch
         stg_rows = [
-            [Paragraph('[관망] 신호 대기 중 — 아직 진입 조건 미충족', s('sh4', 8, MGRAY, TA_LEFT, bold=True))],
+            [Paragraph('[관망] 신호 대기 중 — 아직 진입 조건 미충족', s('sh4', 9, DGRAY, TA_LEFT, bold=True))],
             [Paragraph('"지금은 기다리는 것도 훌륭한 전략이에요."', s('sq4', 8, NAVY, lead=12))],
             [Paragraph(f'<b>진입 대기:</b>  RSI가 30 이하로 떨어지거나 MA20(${m20:.2f})을 돌파할 때까지 현금을 보유하세요', s('sw1', 7.5, NAVY, lead=12))],
             [Paragraph(f'<b>관심 기준:</b>  MACD 골든크로스 + 거래량 증가가 동반되면 그때 진입을 검토하세요', s('sw2', 7.5, NAVY, lead=12))],
