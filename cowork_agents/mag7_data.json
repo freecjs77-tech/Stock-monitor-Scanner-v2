@@ -23,7 +23,41 @@
       "avg_volume": 199406295.65,
       "high_52w_date": "2025년 10월",
       "low_52w_date": "2025년 04월",
-      "opinion_note": "약세 지속"
+      "opinion_note": "약세 지속",
+      "rsi_slope": -5.35,
+      "macd_hist_slope": -0.6845,
+      "ma20_slope": -2.5,
+      "adx": 274.2,
+      "plus_di": 14.5,
+      "minus_di": 30.1,
+      "rsi_divergence": "none",
+      "news": [
+        {
+          "date": "03/24",
+          "summary": "Yahoo Finance 기술 편집자 선임 기술 기자 Dan Howley와 TECHnalytic Research 사장 Bob O'Donnell이 Nvidia(NVDA)의 신제품 OpenClaw가 무엇인지, 그리고 이것이 인공 지능(AI) 환경에 정확히 얼마나 적합한지 설명합니다.",
+          "publisher": "Yahoo Finance Vide"
+        },
+        {
+          "date": "03/24",
+          "summary": "CEO는 10억 달러 규모의 AI 운영 기업 시대가 이미 도래했다고 주장합니다.",
+          "publisher": "Yahoo Finance"
+        },
+        {
+          "date": "03/24",
+          "summary": "Tematica Research의 최고 투자 책임자인 Chris Versace는 Market Domination 진행자 Josh Lipton과 함께 강력한 인공 지능(AI) 기반 칩 수요를 언급하면서 최근 Applied Materials(AMAT)의 하락이 투자자들에게 실제로 어떻게 기회를 제공할 수 있는지 설명합니다.",
+          "publisher": "Yahoo Finance Vide"
+        },
+        {
+          "date": "03/25",
+          "summary": "시장은 때때로 단기적인 역풍에 과잉 반응할 수 있지만, 이 두 탄력 있는 배당금 지급자의 주식 매도는 너무 심했습니다.",
+          "publisher": "Motley Fool"
+        },
+        {
+          "date": "03/25",
+          "summary": "Yahoo Finance에 따르면 Microsoft(MSFT) 주식은 이 글을 쓰는 시점인 3월 24일 화요일 오후 현재까지 거의 23% 하락했습니다. 한편 SPDR S&P 500 지수(SPY)는 같은 기간 약 3.75% 하락했다. 알파벳(GOOGL)은 5% 이상 하락했습니다.아마존(AMZN)은 거의 10% 하락했습니다.애플 ...",
+          "publisher": "TheStreet"
+        }
+      ]
     },
     {
       "ticker": "TSLA",
@@ -46,7 +80,41 @@
       "avg_volume": 60570429.15,
       "high_52w_date": "2025년 12월",
       "low_52w_date": "2025년 04월",
-      "opinion_note": "약세 지속"
+      "opinion_note": "약세 지속",
+      "rsi_slope": -5.06,
+      "macd_hist_slope": -2.0022,
+      "ma20_slope": -5.64,
+      "adx": 365.5,
+      "plus_di": 17.5,
+      "minus_di": 31.8,
+      "rsi_divergence": "none",
+      "news": [
+        {
+          "date": "03/24",
+          "summary": "TECHnalytic Research 사장 Bob O'Donnell은 시장 지배 앵커인 Josh Lipton과 함께 Elon Musk의 Tesla(TSLA) 및 SpaceX(SPAX.PVT)를 위한 새로운 Terafab 프로젝트와 이것이 미국에서 국내 칩 제조 개발을 위해 무엇을 의미하는지에 대해 설명합니다.&nbsp;",
+          "publisher": "Yahoo Finance Vide"
+        },
+        {
+          "date": "03/23",
+          "summary": "Tesla와 SpaceX CEO인 Elon Musk는 자신의 회사가 향하는 방향에 대한 가장 큰 비전이 무엇인지 공개했습니다.",
+          "publisher": "Yahoo Finance"
+        },
+        {
+          "date": "03/25",
+          "summary": "Yahoo Finance에 따르면 Microsoft(MSFT) 주식은 이 글을 쓰는 시점인 3월 24일 화요일 오후 현재까지 거의 23% 하락했습니다. 한편 SPDR S&P 500 지수(SPY)는 같은 기간 약 3.75% 하락했다. 알파벳(GOOGL)은 5% 이상 하락했습니다.아마존(AMZN)은 거의 10% 하락했습니다.애플 ...",
+          "publisher": "TheStreet"
+        },
+        {
+          "date": "03/24",
+          "summary": "Rivian은 Uber와 거래를 성사시키기 위해 오랜 수익성 목표를 포기해야 했습니다. 그만한 가치가 있었나요?",
+          "publisher": "Motley Fool"
+        },
+        {
+          "date": "03/24",
+          "summary": "SpaceX가 차세대 출시를 준비하고 Tesla와 함께 Terafab 칩 프로젝트를 진행함에 따라 투자자들은 Starship 경제성에 집중합니다.",
+          "publisher": "GuruFocus.com"
+        }
+      ]
     },
     {
       "ticker": "GOOGL",
@@ -69,7 +137,41 @@
       "avg_volume": 29920875.0,
       "high_52w_date": "2026년 02월",
       "low_52w_date": "2025년 04월",
-      "opinion_note": "중립/약세"
+      "opinion_note": "중립/약세",
+      "rsi_slope": -8.63,
+      "macd_hist_slope": -0.5539,
+      "ma20_slope": -0.7,
+      "adx": 362.5,
+      "plus_di": 14.5,
+      "minus_di": 33.5,
+      "rsi_divergence": "bullish",
+      "news": [
+        {
+          "date": "03/24",
+          "summary": "CEO는 10억 달러 규모의 AI 운영 기업 시대가 이미 도래했다고 주장합니다.",
+          "publisher": "Yahoo Finance"
+        },
+        {
+          "date": "03/25",
+          "summary": "Yahoo Finance에 따르면 Microsoft(MSFT) 주식은 이 글을 쓰는 시점인 3월 24일 화요일 오후 현재까지 거의 23% 하락했습니다. 한편 SPDR S&P 500 지수(SPY)는 같은 기간 약 3.75% 하락했다. 알파벳(GOOGL)은 5% 이상 하락했습니다.아마존(AMZN)은 거의 10% 하락했습니다.애플 ...",
+          "publisher": "TheStreet"
+        },
+        {
+          "date": "03/25",
+          "summary": "중동 지역의 지정학적 긴장으로 인해 에너지 가격이 급등하면서 에너지 집약적인 AI 및 데이터 센터 운영에 대한 운영 비용에 대한 우려가 커지면서 온라인 광고 대기업인 알파벳(NASDAQ:GOOGL)의 주가는 오후 세션에서 3.1% 하락했습니다.",
+          "publisher": "StockStory"
+        },
+        {
+          "date": "03/25",
+          "summary": "Fauna Robotics 인수는 Amazon이 이번 달에 인수한 두 번째 로봇 스타트업입니다.",
+          "publisher": "TechCrunch"
+        },
+        {
+          "date": "03/25",
+          "summary": "The Information은 SpaceX IPO 신청이 이번 주에 올 수 있다고 보도했습니다. Elon Musk의 우주 회사는 기록적인 750억 달러의 자금 조달을 모색할 수 있습니다.",
+          "publisher": "Investor's Busines"
+        }
+      ]
     },
     {
       "ticker": "PLTR",
@@ -92,7 +194,41 @@
       "avg_volume": 50313698.3,
       "high_52w_date": "2025년 11월",
       "low_52w_date": "2025년 04월",
-      "opinion_note": "중립/강세"
+      "opinion_note": "중립/강세",
+      "rsi_slope": 3.21,
+      "macd_hist_slope": -0.5757,
+      "ma20_slope": 4.19,
+      "adx": 254.3,
+      "plus_di": 22.1,
+      "minus_di": 17.0,
+      "rsi_divergence": "none",
+      "news": [
+        {
+          "date": "03/25",
+          "summary": "Palantir Technologies(PLTR)는 주식이 주요 이동 평균 근처의 중요한 기술 지원 영역에 앉아 있는 시점에 워싱턴에서 새로운 촉매제를 가지고 있습니다. 이달 초 국방부 메모에는 국방부가 Palantir의 Maven 디지털 전투 관리 시스템을 ...",
+          "publisher": "TheStreet"
+        },
+        {
+          "date": "03/24",
+          "summary": "3월 24일(로이터) - Anduril과 Palantir Technologies가 미국용 소프트웨어를 개발하기 위해 협력하고 있습니다.",
+          "publisher": "Reuters"
+        },
+        {
+          "date": "03/24",
+          "summary": "이전에 공개적으로 이름이 알려지지 않은 이 회사들은 올 여름에 Golden Dome 소프트웨어 테스트를 준비하는 것을 목표로 하는 방산 및 기술 회사 컨소시엄에 속해 있습니다.  또한 Google 모기업인 Alphabet의 기술을 채택한 네트워킹 회사인 Aalyria Technologies도 기여하고 있습니다. 일부 O에 따르면 인공 지능 스타트업 Scale AI 및 소프트웨어 회사 Swoop Technologies",
+          "publisher": "The Wall Street Jo"
+        },
+        {
+          "date": "03/24",
+          "summary": "Palantir Technologies Inc.(PLTR)는 최근 거래일 마감 시 $154.78에 이르렀으며, 이는 마지막 마감 대비 -3.77% 변동을 반영합니다.",
+          "publisher": "Zacks"
+        },
+        {
+          "date": "03/24",
+          "summary": "2026년 3월 24일 오늘, 투자자들은 기술 가치 평가 및 모멘텀에 대한 새로운 의구심과 새로운 방산 계약을 비교하고 있습니다.",
+          "publisher": "Motley Fool"
+        }
+      ]
     },
     {
       "ticker": "SLV",
@@ -115,7 +251,41 @@
       "avg_volume": 53427022.8,
       "high_52w_date": "2026년 01월",
       "low_52w_date": "2025년 04월",
-      "opinion_note": "중립/약세"
+      "opinion_note": "중립/약세",
+      "rsi_slope": -8.55,
+      "macd_hist_slope": -1.0408,
+      "ma20_slope": -2.0,
+      "adx": 245.1,
+      "plus_di": 19.3,
+      "minus_di": 38.9,
+      "rsi_divergence": "none",
+      "news": [
+        {
+          "date": "03/24",
+          "summary": "<p>2026년 3월 23일 일일 ETF 자금 흐름은 다음과 같습니다.</p>",
+          "publisher": "etf.com"
+        },
+        {
+          "date": "03/24",
+          "summary": "주식이 폭락하고 원자재 가격이 급등하면서 시장 혼란 속에서 레버리지 ETF가 급등했습니다. 역전 플레이가 지배적입니다. 지난 주의 최고 우승자는 다음과 같습니다.",
+          "publisher": "Zacks"
+        },
+        {
+          "date": "03/24",
+          "summary": "Silver는 방금 PSLV 투자자들에게 순수 플레이 노출이 실제로 무엇을 의미하는지 잔인하게 상기시켜주었습니다. 지난 한 달 동안 Sprott Physical Silver Trust(NYSEARCA:PSLV)는 20% 하락했으며 지난 주에만 주가가 15% 하락했습니다. 헤지, 소득 흐름, 이를 완화할 파생 완충 장치도 없습니다. PSLV 투자자들은 두 자릿수 붕괴 이후 잔혹한 알림을 받습니다.",
+          "publisher": "24/7 Wall St."
+        },
+        {
+          "date": "03/24",
+          "summary": "광범위한 시장 상장지수펀드 SPDR S&P 500 ETF Trust(SPY)가 0.2% 후퇴했고 액티브 지수는 0.2% 하락했습니다.",
+          "publisher": "MT Newswires"
+        },
+        {
+          "date": "03/23",
+          "summary": "광범위한 시장 상장지수펀드 SPDR S&P 500 ETF Trust(SPY)는 1.7% 상승했으며 활발한 거래가 이루어졌습니다.",
+          "publisher": "MT Newswires"
+        }
+      ]
     },
     {
       "ticker": "GLD",
@@ -138,7 +308,41 @@
       "avg_volume": 15633742.15,
       "high_52w_date": "2026년 01월",
       "low_52w_date": "2025년 04월",
-      "opinion_note": "중립/약세"
+      "opinion_note": "중립/약세",
+      "rsi_slope": -19.48,
+      "macd_hist_slope": -5.3123,
+      "ma20_slope": -8.96,
+      "adx": 350.3,
+      "plus_di": 15.5,
+      "minus_di": 48.1,
+      "rsi_divergence": "none",
+      "news": [
+        {
+          "date": "03/24",
+          "summary": "우리는 전쟁이 시작된 이후 최고 및 최악의 성과를 낸 부문과 ETF를 강조합니다.",
+          "publisher": "Zacks"
+        },
+        {
+          "date": "03/24",
+          "summary": "(가격 업데이트.) 금은 메타 변화에 따라 화요일 오후 중반 5회 연속 하락세로 거래되었습니다.",
+          "publisher": "MT Newswires"
+        },
+        {
+          "date": "03/24",
+          "summary": "시장 변동성과 이란 전쟁 속에서 금은 실망스러운 것으로 드러났습니다. Gavekal Research의 CEO인 Louis-Vincent Gave는 대안을 찾습니다.",
+          "publisher": "Barrons.com"
+        },
+        {
+          "date": "03/24",
+          "summary": "GLD는 수익률 상승, 달러 강세, 석유로 인한 변동성으로 인해 금 가격이 압박을 받으면서 15년 만에 최악의 한 주를 보낸 후 하락세를 보였습니다.",
+          "publisher": "Zacks"
+        },
+        {
+          "date": "03/24",
+          "summary": "광범위한 시장 상장지수펀드 SPDR S&P 500 ETF Trust(SPY)가 0.2% 후퇴했고 액티브 지수는 0.2% 하락했습니다.",
+          "publisher": "MT Newswires"
+        }
+      ]
     },
     {
       "ticker": "CRCL",
@@ -161,7 +365,41 @@
       "avg_volume": 25886875.6,
       "high_52w_date": "2025년 06월",
       "low_52w_date": "2026년 02월",
-      "opinion_note": "중립/약세"
+      "opinion_note": "중립/약세",
+      "rsi_slope": -8.15,
+      "macd_hist_slope": -2.2609,
+      "ma20_slope": 13.23,
+      "adx": 682.4,
+      "plus_di": 29.9,
+      "minus_di": 25.4,
+      "rsi_divergence": "bearish",
+      "news": [
+        {
+          "date": "03/24",
+          "summary": "서클 주식은 사상 최대의 장중 하락세를 기록했습니다.",
+          "publisher": "Yahoo Finance"
+        },
+        {
+          "date": "03/24",
+          "summary": "Yahoo Finance 수석 프로듀서 John Hyland는 화요일의 최고 변동 주식과 가장 큰 시장 소식을 추적합니다. Circle(CRCL) 주식은 더 넓은 암호화폐 공간이 압박을 받고 있기 때문에 기록상 가장 큰 하락세를 보이고 있습니다. 아마존(AMZN) 웹서비스(AWS)가 작업 자동화를 위한 인공지능(AI) 에이전트를 개발하고 있다는 정보가 보도된 후 소프트웨어(IGV) 주가가 하락하고 있다.",
+          "publisher": "Yahoo Finance Vide"
+        },
+        {
+          "date": "03/24",
+          "summary": "Circle Group 및 Coinbase를 포함한 여러 디지털 통화 관련 주식은 오늘 세션에서 투자자들이 제안된 법안 이후 전망을 재평가하면서 눈에 띄게 불리한 조치에 직면했습니다.",
+          "publisher": "Zacks"
+        },
+        {
+          "date": "03/24",
+          "summary": "법안 초안이 스테이블코인 수익률을 차단할 수 있다는 보고로 인해 이 암호화폐 리더는 2026년 3월 24일 오늘 정밀 조사를 받게 되었습니다.",
+          "publisher": "Motley Fool"
+        },
+        {
+          "date": "03/24",
+          "summary": "스테이블코인 경쟁사인 테더(Tether)가 오랫동안 기다려온 움직임과 클래리티법(Clarity Act) 추측이 커지면서 서클(CRCL) 주가는 화요일 20% 급락했다.",
+          "publisher": "decrypt"
+        }
+      ]
     }
   ]
 }
