@@ -17,6 +17,7 @@
 
 import os, sys, datetime, json, time
 import numpy as np
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 try:
     import yfinance as yf
@@ -463,133 +464,161 @@ def merge_pdfs(pdf_paths, output_path):
 # ══════════════════════════════════════════════════════════════════
 
 def run(tickers=None, send_telegram=False):
-    today     = datetime.date.today().strftime('%Y-%m-%d')
-    today_str = datetime.date.today().strftime('%Y%m%d')
-    tickers   = tickers or ALL_TICKERS
+    try:
+        today     = datetime.date.today().strftime('%Y-%m-%d')
+        today_str = datetime.date.today().strftime('%Y%m%d')
+        tickers   = tickers or ALL_TICKERS
 
-    print(f"\n{'='*60}")
-    print(f"  Mag7 Real-Data Report  |  {today}")
-    print(f"  데이터 소스: yfinance (Yahoo Finance)")
-    print(f"  종목 수:     {len(tickers)}  →  {' / '.join(tickers)}")
-    print(f"{'='*60}")
+        print(f"\n{'='*60}")
+        print(f"  Mag7 Real-Data Report  |  {today}")
+        print(f"  데이터 소스: yfinance (Yahoo Finance)")
+        print(f"  종목 수:     {len(tickers)}  →  {' / '.join(tickers)}")
+        print(f"{'='*60}")
 
-    os.makedirs(REPORTS_DIR, exist_ok=True)
-    tmp_dir = os.path.join(REPORTS_DIR, '_tmp')
-    os.makedirs(tmp_dir, exist_ok=True)
+        os.makedirs(REPORTS_DIR, exist_ok=True)
+        tmp_dir = os.path.join(REPORTS_DIR, '_tmp')
+        os.makedirs(tmp_dir, exist_ok=True)
 
-    stocks_data = []
-    generated   = []
+        stocks_data = []
+        generated   = []
 
-    for ticker in tickers:
-        sd = fetch_stock_data(ticker)
-        if sd is None:
-            print(f"  [{ticker}] SKIP (데이터 없음)")
-            continue
+        # 병렬 데이터 수집 (최대 4 워커)
+        results_map = {}
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            future_to_ticker = {executor.submit(fetch_stock_data, ticker): ticker for ticker in tickers}
+            for future in as_completed(future_to_ticker):
+                ticker = future_to_ticker[future]
+                try:
+                    results_map[ticker] = future.result()
+                except Exception as e:
+                    print(f"  [{ticker}] 병렬 수집 오류: {e}")
+                    results_map[ticker] = None
 
-        stocks_data.append(sd)
+        # 원래 순서대로 결과 처리 및 PDF 생성
+        for ticker in tickers:
+            sd = results_map.get(ticker)
+            if sd is None:
+                print(f"  [{ticker}] SKIP (데이터 없음)")
+                continue
 
-        print(f"  [{ticker}] PDF 생성 중...")
-        try:
-            path = generate_report(sd, tmp_dir)
-            generated.append((ticker, path))
-            print(f"  [{ticker}] PDF OK")
-        except Exception as e:
-            import traceback
-            print(f"  [{ticker}] PDF 오류: {e}")
-            traceback.print_exc()
+            stocks_data.append(sd)
 
-    # JSON 저장 (price_series 제외 — 파일 크기 절약)
-    if stocks_data:
-        data_out = {
-            'last_updated': today,
-            'source': 'yfinance',
-            'stocks': [
-                {k: v for k, v in s.items() if k != 'price_series'}
-                for s in stocks_data
-            ]
-        }
-        with open(DATA_FILE, 'w', encoding='utf-8') as f:
-            json.dump(data_out, f, ensure_ascii=False, indent=2)
-        print(f"\n  [DATA] {DATA_FILE} 업데이트 완료")
-
-    # PDF 병합 (요약 페이지 → 개별 종목 순)
-    merged_path = os.path.join(REPORTS_DIR, f'Mag7_Daily_Report_{today_str}.pdf')
-    if generated:
-        pdf_paths = [p for _, p in generated]
-
-        # AI 요약 생성 (GROQ_API_KEY 있을 때만)
-        ai_data = None
-        if generate_ai_summary:
-            print(f"\n  [AI] Groq 시장 요약 생성 중...")
+            print(f"  [{ticker}] PDF 생성 중...")
             try:
-                ai_data = generate_ai_summary(stocks_data)
+                path = generate_report(sd, tmp_dir)
+                generated.append((ticker, path))
+                print(f"  [{ticker}] PDF OK")
             except Exception as e:
-                print(f"  [AI] 오류 (규칙 기반으로 계속): {e}")
+                import traceback
+                print(f"  [{ticker}] PDF 오류: {e}")
+                traceback.print_exc()
 
-        # 요약 페이지 생성
-        summary_path = os.path.join(tmp_dir, f'_summary_{today_str}.pdf')
-        print(f"\n  [SUMMARY] 요약 페이지 생성 중...")
-        try:
-            generate_summary_page(stocks_data, summary_path, ai_data=ai_data)
-            print(f"  [SUMMARY] 완료")
-            pdf_paths = [summary_path] + pdf_paths
-        except Exception as e:
-            import traceback
-            print(f"  [SUMMARY] 오류 (요약 없이 계속): {e}")
-            traceback.print_exc()
+        # JSON 저장 (price_series 제외 — 파일 크기 절약)
+        if stocks_data:
+            data_out = {
+                'last_updated': today,
+                'source': 'yfinance',
+                'stocks': [
+                    {k: v for k, v in s.items() if k != 'price_series'}
+                    for s in stocks_data
+                ]
+            }
+            with open(DATA_FILE, 'w', encoding='utf-8') as f:
+                json.dump(data_out, f, ensure_ascii=False, indent=2)
+            print(f"\n  [DATA] {DATA_FILE} 업데이트 완료")
 
-        print(f"\n  [MERGE] {len(pdf_paths)}개 PDF 병합 중...")
-        merge_pdfs(pdf_paths, merged_path)
-        print(f"  [MERGE] 완료 → {os.path.basename(merged_path)}")
+        # PDF 병합 (요약 페이지 → 개별 종목 순)
+        merged_path = os.path.join(REPORTS_DIR, f'Mag7_Daily_Report_{today_str}.pdf')
+        if generated:
+            pdf_paths = [p for _, p in generated]
 
-        # 임시 파일 삭제
-        for p in pdf_paths:
+            # AI 요약 생성 (GROQ_API_KEY 있을 때만)
+            ai_data = None
+            if generate_ai_summary:
+                print(f"\n  [AI] Groq 시장 요약 생성 중...")
+                try:
+                    ai_data = generate_ai_summary(stocks_data)
+                except Exception as e:
+                    print(f"  [AI] 오류 (규칙 기반으로 계속): {e}")
+
+            # 요약 페이지 생성
+            summary_path = os.path.join(tmp_dir, f'_summary_{today_str}.pdf')
+            print(f"\n  [SUMMARY] 요약 페이지 생성 중...")
             try:
-                os.remove(p)
+                generate_summary_page(stocks_data, summary_path, ai_data=ai_data)
+                print(f"  [SUMMARY] 완료")
+                pdf_paths = [summary_path] + pdf_paths
+            except Exception as e:
+                import traceback
+                print(f"  [SUMMARY] 오류 (요약 없이 계속): {e}")
+                traceback.print_exc()
+
+            print(f"\n  [MERGE] {len(pdf_paths)}개 PDF 병합 중...")
+            merge_pdfs(pdf_paths, merged_path)
+            print(f"  [MERGE] 완료 → {os.path.basename(merged_path)}")
+
+            # 임시 파일 삭제
+            for p in pdf_paths:
+                try:
+                    os.remove(p)
+                except Exception:
+                    pass
+            try:
+                os.rmdir(tmp_dir)
             except Exception:
                 pass
-        try:
-            os.rmdir(tmp_dir)
-        except Exception:
-            pass
 
-        print(f"\n  [REPORT] {merged_path}")
-    else:
-        print("\n  [WARN] 생성된 PDF 없음")
-        return None
-
-    # 요약 파일 (telegram_sender.py 트리거용)
-    summary_path = os.path.join(REPORTS_DIR, f'daily_summary_{today}.txt')
-    with open(summary_path, 'w', encoding='utf-8') as f:
-        f.write(f"generated_date={today}\n")
-        f.write(f"source=yfinance\n")
-        f.write(f"merged={merged_path}\n")
-        for ticker, _ in generated:
-            f.write(f"{ticker}=OK\n")
-
-    print(f"  [DONE] {len(generated)}/{len(tickers)} 종목 완료")
-
-    # Telegram 전송 (--send 플래그)
-    if send_telegram:
-        sender = os.path.join(SCRIPT_DIR, 'telegram_sender.py')
-        if os.path.exists(sender):
-            import subprocess
-            print(f"\n  [TELEGRAM] 전송 시작...")
-            subprocess.run([sys.executable, sender], check=False)
+            print(f"\n  [REPORT] {merged_path}")
         else:
-            print(f"\n  [WARN] telegram_sender.py 없음: {sender}")
+            print("\n  [WARN] 생성된 PDF 없음")
+            return None
 
-        # Email 전송 (GMAIL_USER 환경변수 있을 때만)
-        if os.environ.get('GMAIL_USER'):
-            email_sender = os.path.join(SCRIPT_DIR, 'email_sender.py')
-            if os.path.exists(email_sender):
+        # 요약 파일 (telegram_sender.py 트리거용)
+        summary_path = os.path.join(REPORTS_DIR, f'daily_summary_{today}.txt')
+        with open(summary_path, 'w', encoding='utf-8') as f:
+            f.write(f"generated_date={today}\n")
+            f.write(f"source=yfinance\n")
+            f.write(f"merged={merged_path}\n")
+            for ticker, _ in generated:
+                f.write(f"{ticker}=OK\n")
+
+        print(f"  [DONE] {len(generated)}/{len(tickers)} 종목 완료")
+
+        # Telegram 전송 (--send 플래그)
+        if send_telegram:
+            sender = os.path.join(SCRIPT_DIR, 'telegram_sender.py')
+            if os.path.exists(sender):
                 import subprocess
-                print(f"\n  [EMAIL] 전송 시작...")
-                subprocess.run([sys.executable, email_sender], check=False)
-        else:
-            print(f"\n  [EMAIL] GMAIL_USER 미설정 — 이메일 전송 건너뜀")
+                print(f"\n  [TELEGRAM] 전송 시작...")
+                subprocess.run([sys.executable, sender], check=False)
+            else:
+                print(f"\n  [WARN] telegram_sender.py 없음: {sender}")
 
-    return merged_path
+            # Email 전송 (GMAIL_USER 환경변수 있을 때만)
+            if os.environ.get('GMAIL_USER'):
+                email_sender = os.path.join(SCRIPT_DIR, 'email_sender.py')
+                if os.path.exists(email_sender):
+                    import subprocess
+                    print(f"\n  [EMAIL] 전송 시작...")
+                    subprocess.run([sys.executable, email_sender], check=False)
+            else:
+                print(f"\n  [EMAIL] GMAIL_USER 미설정 — 이메일 전송 건너뜀")
+
+        return merged_path
+
+    except Exception as e:
+        import traceback
+        err_msg = f"⚠️ Mag7 리포트 생성 실패\n{datetime.date.today()}\n\n{str(e)}\n\n{traceback.format_exc()[:500]}"
+        try:
+            import requests
+            bot = os.environ.get('BOT_TOKEN', '')
+            chat = os.environ.get('CHAT_ID', '')
+            if bot and chat:
+                requests.post(f"https://api.telegram.org/bot{bot}/sendMessage",
+                             data={'chat_id': chat, 'text': err_msg}, timeout=10)
+        except:
+            pass
+        raise
 
 
 # ── main ──────────────────────────────────────────────────────────

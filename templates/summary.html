@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}타이밍 판정 요약 — {{ today_str }}{% endblock %}
+
+{% block nav %}
+<nav class="nav-bar">
+  <a href="index.html" class="active">요약</a>
+  {% for s in stocks %}<a href="{{ s.ticker }}.html">{{ s.ticker }}</a>{% endfor %}
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header" style="margin-bottom:20px;">
+    <h1>타이밍 판정 요약</h1>
+    <span class="date">{{ today_str }}  |  기술적 분석</span>
+  </div>
+
+  <!-- 판정 요약 테이블 -->
+  <table>
+    <thead>
+      <tr>
+        <th>티커</th>
+        <th>판정</th>
+        <th>RSI</th>
+        <th>rsi_s3</th>
+        <th>near_high</th>
+        <th>h_down</th>
+        <th class="td-left">근거</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in stocks %}
+      <tr>
+        <td class="bold">{{ s.ticker }}</td>
+        <td><span class="badge badge-{{ s.sk }}">{{ s.lbl }}</span></td>
+        <td class="{{ 'c-green' if s.rsi <= 35 else 'c-red' if s.rsi >= 70 else '' }}{{ ' bold' if s.rsi <= 35 or s.rsi >= 70 else '' }}">{{ "%.1f"|format(s.rsi) }}</td>
+        <td class="{{ 'c-green' if s.rsi_s3 > 0 else 'c-red' }}">{{ "%+.2f"|format(s.rsi_s3) }}</td>
+        <td class="{{ 'c-red bold' if s.near_high else 'c-sub' }}">{{ 'True' if s.near_high else 'False' }}</td>
+        <td class="{{ 'c-orange bold' if s.h_down else 'c-sub' }}">{{ 'True' if s.h_down else 'False' }}</td>
+        <td class="td-left c-mid">{{ s.reason }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div style="margin-top: 28px;">
+    <div class="section-title">
+      <h2>판정 조건 기준</h2>
+      <span>타이밍 판단에 사용된 기술적 조건 요약</span>
+    </div>
+    <table class="cond-table">
+      <tbody>
+        <tr>
+          <td class="c-green">매수 적기</td>
+          <td class="cond-text">다음 중 2가지 이상 충족 + 양봉 마감 + RSI &lt; 75<br>① MA20 돌파 &nbsp; ② MACD 골든크로스 &nbsp; ③ 거래량 평균 이상</td>
+        </tr>
+        <tr>
+          <td class="c-orange">1차 진입</td>
+          <td class="cond-text">A. RSI &lt; 35 + RSI 3일 기울기 양전환 + 하락 멈춤<br>B. RSI &lt; 40 + 52주 고점 -20% 이상 + 하락 둔화 + 하락 멈춤<br>C. RSI &lt; 30 + 급락 아님 (rsi_s3 ≥ -2) + 하락 멈춤</td>
+        </tr>
+        <tr>
+          <td class="c-red">매도 시작</td>
+          <td class="cond-text">전제: 고점 대비 -20% 이내 + RSI ≥ 45<br>A. MA200 위 5% 이내 + RSI 기울기 음수 &nbsp; B. BB 상단 3% 이내 + 음봉<br>C. 고점권(82%)에서 MA20 이탈 + RSI 5일 급락</td>
+        </tr>
+        <tr>
+          <td class="c-red">매도 주의</td>
+          <td class="cond-text">약세 다이버전스 (RSI 하락 + 주가 상승) + 52주 고점 82% 이상</td>
+        </tr>
+        <tr>
+          <td class="c-gray">관망</td>
+          <td class="cond-text">위 조건 미충족 — 신호 대기 구간</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

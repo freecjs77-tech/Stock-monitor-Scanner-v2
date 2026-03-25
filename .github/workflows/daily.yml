@@ -1,0 +1,188 @@
+name: Mag7 Daily Report
+
+on:
+  schedule:
+    # 미국 장 마감(16:00 EST) 후 데이터 확정 시점
+    # 22:30 UTC = 07:30 KST (화~토 아침, 월~금 미국장 마감 다음날)
+    - cron: '30 22 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  generate-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Show tickers
+        run: cat tickers.json
+
+      - name: Generate reports (data + PDF)
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: python local_mag7_real.py
+
+      - name: Generate HTML reports
+        run: python render_html.py
+
+      - name: Deploy to GitHub Pages (docs/)
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git add docs/
+          git add cowork_agents/mag7_data.json
+          git diff --staged --quiet || git commit -m "chore: update report $(date +'%Y-%m-%d') [skip ci]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Send Telegram notification
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: |
+          REPORT_URL="https://freecjs77-tech.github.io/mag7-stock-report/"
+          python - <<EOF
+          import os, requests, datetime, json
+
+          bot   = os.environ['BOT_TOKEN']
+          chat  = os.environ['CHAT_ID']
+          url   = "$REPORT_URL"
+          today = datetime.date.today().strftime('%Y년 %m월 %d일')
+
+          # 종목별 요약 줄 생성
+          try:
+              with open('cowork_agents/mag7_data.json', encoding='utf-8') as f:
+                  cache = json.load(f)
+              import sys
+              sys.path.insert(0, 'cowork_agents')
+              from report_engine import trading_stage
+              lines = []
+              badge = {'buy':'🟢','entry':'🟠','sell':'🔴','sell_div':'🔴','watch':'⚫'}
+              for d in cache.get('stocks', []):
+                  sk, lbl, _ = trading_stage(d)
+                  lines.append(f"{badge.get(sk,'⚫')} <b>{d['ticker']}</b>  {lbl}   RSI {d['rsi']:.1f}")
+          except Exception as e:
+              lines = [f"(종목 요약 생성 실패: {e})"]
+
+          text = f"📊 <b>Mag7 일일 리포트</b> — {today}\n\n"
+          text += "\n".join(lines)
+          text += f"\n\n👉 <a href='{url}'>전체 리포트 보기</a>"
+
+          r = requests.post(
+              f"https://api.telegram.org/bot{bot}/sendMessage",
+              data={'chat_id': chat, 'text': text,
+                    'parse_mode': 'HTML', 'disable_web_page_preview': False},
+              timeout=30
+          )
+          print(f"[TG] {'성공' if r.status_code==200 else '실패'}: {r.status_code}")
+          EOF
+
+      - name: Send Email notification
+        env:
+          GMAIL_USER:   ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PW: ${{ secrets.GMAIL_APP_PW }}
+          MAIL_TO:      ${{ secrets.MAIL_TO }}
+        run: |
+          REPORT_URL="https://freecjs77-tech.github.io/mag7-stock-report/"
+          python - <<EOF
+          import os, smtplib, datetime, json
+          from email.mime.multipart import MIMEMultipart
+          from email.mime.text import MIMEText
+
+          user  = os.environ.get('GMAIL_USER', '')
+          pw    = os.environ.get('GMAIL_APP_PW', '')
+          to    = os.environ.get('MAIL_TO', '')
+          url   = "$REPORT_URL"
+
+          if not all([user, pw, to]):
+              print("[MAIL] 환경변수 미설정, 건너뜀")
+              exit(0)
+
+          today = datetime.date.today().strftime('%Y년 %m월 %d일')
+
+          try:
+              with open('cowork_agents/mag7_data.json', encoding='utf-8') as f:
+                  cache = json.load(f)
+              import sys
+              sys.path.insert(0, 'cowork_agents')
+              from report_engine import trading_stage
+              rows = ""
+              badge = {'buy':'🟢','entry':'🟠','sell':'🔴','sell_div':'🔴','watch':'⚫'}
+              for d in cache.get('stocks', []):
+                  sk, lbl, _ = trading_stage(d)
+                  rows += f"<tr><td>{badge.get(sk,'⚫')} <b>{d['ticker']}</b></td><td>{lbl}</td><td>{d['rsi']:.1f}</td></tr>"
+          except:
+              rows = "<tr><td colspan=3>종목 요약 생성 실패</td></tr>"
+
+          body = f"""
+          <html><body style="font-family:sans-serif;background:#060D18;color:#EEF4FB;padding:20px;">
+          <h2>📊 Mag7 일일 리포트 — {today}</h2>
+          <table border="0" cellpadding="8" style="border-collapse:collapse;width:100%;max-width:400px;">
+          <tr style="background:#0A1525;"><th>종목</th><th>판정</th><th>RSI</th></tr>
+          {rows}
+          </table>
+          <br>
+          <a href="{url}" style="background:#2563EB;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;">
+            👉 전체 리포트 보기
+          </a>
+          <p style="color:#4E6E8E;font-size:12px;margin-top:20px;">
+            본 보고서는 AI 기반 자동 기술적 분석으로, 투자 권유가 아닙니다.
+          </p>
+          </body></html>
+          """
+
+          msg = MIMEMultipart('alternative')
+          msg['Subject'] = f"[Mag7] 일일 리포트 — {today}"
+          msg['From']    = user
+          msg['To']      = to
+          msg.attach(MIMEText(body, 'html', 'utf-8'))
+
+          with smtplib.SMTP_SSL('smtp.gmail.com', 465) as s:
+              s.login(user, pw)
+              s.sendmail(user, to.split(','), msg.as_string())
+          print(f"[MAIL] 발송 완료 → {to}")
+          EOF
+
+      - name: Upload PDF as artifact (7일 보관)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mag7-report-${{ github.run_id }}
+          path: cowork_agents/reports/Mag7_Daily_Report_*.pdf
+          retention-days: 7
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: |
+          python - <<EOF
+          import os, requests, datetime
+          bot  = os.environ.get('BOT_TOKEN', '')
+          chat = os.environ.get('CHAT_ID', '')
+          if bot and chat:
+              today = datetime.date.today().strftime('%Y-%m-%d')
+              requests.post(
+                  f"https://api.telegram.org/bot{bot}/sendMessage",
+                  data={'chat_id': chat,
+                        'text': f"⚠️ Mag7 리포트 생성 실패\n{today}\nGitHub Actions 로그를 확인하세요."},
+                  timeout=10
+              )
+          EOF

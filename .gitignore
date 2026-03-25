@@ -1,5 +1,9 @@
-# 생성된 리포트 (용량 큼, 매일 새로 생성됨)
+# Reports (generated, not committed)
 cowork_agents/reports/
+# Charts (generated)
+cowork_agents/charts/
+# Test output
+test_output/
 cowork_agents/__pycache__/
 __pycache__/
 *.pyc

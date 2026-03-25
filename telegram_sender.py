@@ -24,8 +24,8 @@ import requests
 # ══════════════════════════════════════════════════════════════════
 
 # GitHub Actions에서는 환경변수(Secrets)로 주입, 로컬에서는 아래 값 사용
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "8627861470:AAHkv4tuLdJfmx-BqKfF_3bb0eYZu-yZGr4")
-CHAT_ID   = os.environ.get("CHAT_ID",   "8615904260")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+CHAT_ID   = os.environ.get("CHAT_ID",   "")
 
 # 리포트 폴더 경로 (Windows 경로로 수정 필요)
 # 예: r"C:\Users\YourName\OneDrive\Documents\Claude\Stock-Analyst\cowork_agents\reports"
@@ -73,6 +73,30 @@ def send_pdf(pdf_path, caption=""):
                           timeout=60)
     result = r.json()
     return result.get('ok', False), result.get('description', '')
+
+
+def send_url(report_url, summary_lines=None):
+    """HTML 리포트 URL을 텔레그램으로 전송"""
+    if not BOT_TOKEN or not CHAT_ID:
+        print("[ERROR] BOT_TOKEN 또는 CHAT_ID 미설정")
+        return False
+
+    today_str = datetime.date.today().strftime('%Y년 %m월 %d일')
+
+    text = f"📊 <b>Mag7 일일 리포트</b>  —  {today_str}\n\n"
+    if summary_lines:
+        for line in summary_lines:
+            text += f"{line}\n"
+        text += "\n"
+    text += f"👉 <a href='{report_url}'>전체 리포트 보기</a>"
+
+    r = requests.post(f"{API_BASE}/sendMessage",
+                      data={'chat_id': CHAT_ID, 'text': text,
+                            'parse_mode': 'HTML', 'disable_web_page_preview': False},
+                      timeout=30)
+    ok = r.status_code == 200
+    print(f"  [TG] URL 발송 {'성공' if ok else '실패'}: {report_url}")
+    return ok
 
 
 def get_today_pdf():
