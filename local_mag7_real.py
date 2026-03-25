@@ -134,7 +134,10 @@ def calc_macd(close_arr, fast=12, slow=26, signal=9):
 
 
 def calc_adx(high_arr, low_arr, close_arr, period=14):
-    """ADX / +DI / -DI (Wilder 평활법)"""
+    """ADX / +DI / -DI (Wilder 평활법)
+    TR/+DM/-DM : Wilder sum-init  (누적합으로 시작 — 표준)
+    DX → ADX  : Wilder mean-init  (단순평균으로 시작 — ADX 표준)
+    """
     n = len(close_arr)
     h = high_arr.astype(float); l = low_arr.astype(float); c = close_arr.astype(float)
     tr = np.zeros(n); pdm = np.zeros(n); ndm = np.zeros(n)
@@ -143,19 +146,39 @@ def calc_adx(high_arr, low_arr, close_arr, period=14):
         up = h[i]-h[i-1]; dn = l[i-1]-l[i]
         pdm[i] = up if (up > dn and up > 0) else 0
         ndm[i] = dn if (dn > up and dn > 0) else 0
-    def wilder(arr, p):
+
+    def wilder_sum(arr, p):
+        """TR/DM용: 첫 값 = 구간 합계 (Wilder 원래 방식)"""
         s = np.full(n, np.nan)
         if p >= n: return s
         s[p] = arr[1:p+1].sum()
         for i in range(p+1, n):
             s[i] = s[i-1] - s[i-1]/p + arr[i]
         return s
-    atr  = wilder(tr, period); apdm = wilder(pdm, period); andm = wilder(ndm, period)
+
+    def wilder_mean(arr, p):
+        """ADX용: 첫 값 = 구간 평균, 이후 = (prev*(p-1) + cur) / p
+        → 항상 0~100 스케일 유지 (sum-scale Wilder와 공식이 다름)"""
+        s = np.full(n, np.nan)
+        start = np.where(~np.isnan(arr))[0]
+        if len(start) < p: return s
+        idx = start[0] + p - 1
+        if idx >= n: return s
+        s[idx] = np.nanmean(arr[start[0]:idx+1])   # 단순평균으로 초기화
+        for i in range(idx+1, n):
+            cur = arr[i] if not np.isnan(arr[i]) else s[i-1]
+            s[i] = (s[i-1] * (p - 1) + cur) / p   # 평균 스케일 업데이트
+        return s
+
+    atr  = wilder_sum(tr,  period)
+    apdm = wilder_sum(pdm, period)
+    andm = wilder_sum(ndm, period)
     pdi  = np.where(atr > 0, 100*apdm/atr, 0.0)
     ndi  = np.where(atr > 0, 100*andm/atr, 0.0)
     dsum = pdi + ndi
     dx   = np.where(dsum > 0, 100*np.abs(pdi-ndi)/dsum, 0.0)
-    return wilder(dx, period), pdi, ndi
+    dx[np.isnan(atr)] = np.nan
+    return wilder_mean(dx, period), pdi, ndi
 
 
 def detect_rsi_divergence(close_arr, rsi_arr, lookback=30):
@@ -334,14 +357,17 @@ def fetch_stock_data(ticker, retry=2):
             avg_vol = float(vol[-20:].mean())
             cur_vol = float(vol[-1])
 
-            # ── 방향성 지표 (5일 기울기) ──────────────────────────────
-            def slope5(arr):
-                seg = arr[-6:-1]; v = seg[~np.isnan(seg)]
+            # ── 방향성 지표 (5일·3일 기울기) ────────────────────────────
+            def slope_n(arr, n):
+                """최근 n일 기울기 (끝에서 n+1번째 → 어제)"""
+                seg = arr[-(n+1):-1]; v = seg[~np.isnan(seg)]
                 return float(v[-1] - v[0]) if len(v) >= 2 else 0.0
 
-            rsi_slope       = slope5(rsi_arr)
-            macd_hist_slope = slope5(hist_arr)
-            ma20_slope      = slope5(ma20_arr)
+            rsi_slope        = slope_n(rsi_arr,  5)   # 5일 추세
+            rsi_slope3       = slope_n(rsi_arr,  3)   # 3일 단기 반등 감지
+            macd_hist_slope  = slope_n(hist_arr, 5)
+            macd_hist_slope3 = slope_n(hist_arr, 3)
+            ma20_slope       = slope_n(ma20_arr, 5)
 
             # ADX / +DI / -DI
             adx_arr, pdi_arr, ndi_arr = calc_adx(high, low_h, close, 14)
@@ -390,14 +416,16 @@ def fetch_stock_data(ticker, retry=2):
                 'high_52w_date': high_52w_date,
                 'low_52w_date':  low_52w_date,
                 'opinion_note':     opinion,
-                # 방향성 지표
-                'rsi_slope':        round(rsi_slope, 2),
-                'macd_hist_slope':  round(macd_hist_slope, 4),
-                'ma20_slope':       round(ma20_slope, 2),
-                'adx':              round(safe(adx_arr, 20.0), 1),
-                'plus_di':          round(safe(pdi_arr, 25.0), 1),
-                'minus_di':         round(safe(ndi_arr, 25.0), 1),
-                'rsi_divergence':   divergence,
+                # 방향성 지표 (5일 추세 + 3일 단기)
+                'rsi_slope':         round(rsi_slope,        2),
+                'rsi_slope3':        round(rsi_slope3,       2),
+                'macd_hist_slope':   round(macd_hist_slope,  4),
+                'macd_hist_slope3':  round(macd_hist_slope3, 4),
+                'ma20_slope':        round(ma20_slope,       2),
+                'adx':               round(safe(adx_arr, 20.0), 1),
+                'plus_di':           round(safe(pdi_arr, 25.0), 1),
+                'minus_di':          round(safe(ndi_arr, 25.0), 1),
+                'rsi_divergence':    divergence,
                 'news':             news,
                 # 실제 가격 시계열 → report_engine이 차트에 직접 사용
                 'price_series':  close.tolist(),

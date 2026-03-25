@@ -440,54 +440,53 @@ def opinion_label(total):
 
 
 # ══════════════════════════════════════════════════════════════════
-#  단계별 매수 신호 (1차~3차)
+#  4단계 타이밍 판정
 # ══════════════════════════════════════════════════════════════════
-TIER_META = {
-    0: ('',           '',        MGRAY),
-    1: ('1차 진입준비', '#FFB300', ORANGE),
-    2: ('2차 매수확정', '#69F0AE', GREEN),
-    3: ('3차 추세확인', '#00C853', GREEN),
-}
-TIER_DESC = {
-    1: 'RSI 과매도 진입 + MA200 지지 유지 — 소량 분할매수 시작, 추가 하락 가능성 대비',
-    2: 'RSI 과매도 회복 + MACD 골든크로스 + 거래량 동반 — 주력 매수 진입 타이밍',
-    3: 'MA20 지지 + MACD 제로선 위 + 거래량 + 양봉 — 추세 재개 확인, 풀포지션 가능',
-}
 
-
-def buy_tier(d):
+def trading_stage(d):
     """
-    단계별 매수 신호 판정
-    Returns: tier (int 0~3)
-      0: 신호 없음
-      1: 진입 준비  — RSI ≤40 + MA200 위
-      2: 매수 확정  — RSI 28~50 + MACD 골든크로스 + 거래량 1.2x+
-      3: 추세 확인  — MA20 근접(3%) + MACD 제로 위 + 거래량 1.3x+ + 양봉
+    4단계 타이밍 판정
+    우선순위: 약세다이버전스(최우선) > 매수 적기 > 1차 진입 > 매도 > 관망
+    Returns: (stage_key, label, color)
     """
-    c   = d['close']; m20 = d['ma20']; m200 = d['ma200']
-    rsi = d['rsi'];   macd_v = d['macd']; macd_s = d['macd_signal']
-    vol_ratio   = d.get('volume', 0) / max(d.get('avg_volume', 1), 1)
-    chg         = d['change_pct']
-    above_ma200 = c > m200
-    macd_bull   = macd_v > macd_s
-    near_ma20   = abs(c - m20) / max(m20, 1) <= 0.03
+    c       = d['close'];  m20 = d['ma20']; m200 = d['ma200']
+    bb_u    = d['bb_upper']
+    rsi     = d['rsi']
+    rsi_s3  = d.get('rsi_slope3', 0.0)
+    rsi_s5  = d.get('rsi_slope',  0.0)
+    macd_v  = d['macd'];  macd_s = d['macd_signal']
+    vol     = d.get('volume',     0)
+    avg_vol = max(d.get('avg_volume', 1), 1)
+    div     = d.get('rsi_divergence', 'none')
 
-    # 3차: 추세 재개 확인 (모든 조건 충족)
-    if (above_ma200 and near_ma20
-            and macd_bull and macd_v > 0
-            and vol_ratio >= 1.3 and chg > 0.5):
-        return 3
+    vol_ratio = vol / avg_vol
+    macd_bull = macd_v > macd_s
 
-    # 2차: 반전 확정
-    if (above_ma200 and 28 <= rsi <= 50
-            and macd_bull and vol_ratio >= 1.2):
-        return 2
+    # 1. 약세 다이버전스 — 최우선 매도 경고
+    if div == 'bearish':
+        return ('sell_div', '매도 주의', RED)
 
-    # 1차: 진입 준비
-    if above_ma200 and rsi <= 40:
-        return 1
+    # 2. 매수 적기 — MA20 돌파 + MACD 골든크로스 + 거래량 1.2배 이상
+    if c > m20 and macd_bull and vol_ratio >= 1.2:
+        return ('buy', '매수 적기', GREEN)
 
-    return 0
+    # 3. 1차 진입 — RSI 과매도권에서 3일 기울기 반등
+    if rsi < 35 and rsi_s3 > 0:
+        return ('entry', '1차 진입', ORANGE)
+
+    # 4. 매도 시작 — MA200 근접 OR BB상단 근접 OR MA20 이탈+하락
+    near_ma200  = c >= m200 * 0.95
+    near_bb_top = c >= bb_u * 0.97
+    ma20_break  = (c < m20 and rsi_s5 < -1.0)
+    if near_ma200 or near_bb_top or ma20_break:
+        reasons = []
+        if near_ma200:  reasons.append('MA200 근접')
+        if near_bb_top: reasons.append('BB 상단')
+        if ma20_break:  reasons.append('MA20 이탈')
+        return ('sell', '매도 시작', RED)
+
+    # 5. 관망
+    return ('watch', '관망', MGRAY)
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -715,15 +714,16 @@ def _draw_p1_index(canvas, doc):
         canvas.drawString(x + lbl_w, y, desc)
         y -= 4.2 * mm
 
-    # 티어 1줄
+    # 4단계 타이밍 범례
     y -= 1 * mm
-    tier_items = [
-        (0,          colors.HexColor('#FFB300'), '■ 1차 진입준비', '과매도 초기, 소량 분할매수 시작'),
-        (cw * 0.36,  colors.HexColor('#69F0AE'), '■ 2차 매수확정', 'MACD 골든크로스+거래량 동반, 주력 진입 (20일 적중률 81%)'),
-        (cw * 0.72,  colors.HexColor('#00C853'), '■ 3차 추세확인', '추세 재개, 풀포지션 가능'),
+    stage_items = [
+        (0,          colors.HexColor('#FF6F00'), '■ 1차 진입', 'RSI 과매도 탈출 — 소량 분할매수'),
+        (cw * 0.28,  GREEN,                      '■ 매수 적기', 'MA20 돌파+MACD 골든크로스+거래량 동반'),
+        (cw * 0.56,  RED,                        '■ 매도 시작', 'MA200/BB상단 근접 또는 약세 다이버전스'),
+        (cw * 0.80,  MGRAY,                      '■ 관망', '조건 미충족 — 신호 대기'),
     ]
     canvas.setFont(KF, 7)
-    for dx, clr, badge, desc in tier_items:
+    for dx, clr, badge, desc in stage_items:
         canvas.setFillColor(clr)
         canvas.drawString(x + dx, y, badge)
         bw = canvas.stringWidth(badge, KF, 7)
@@ -736,8 +736,7 @@ def _draw_p1_index(canvas, doc):
 def build_pdf(d, chart_path, output_path):
     a_sc, b_sc, c_sc, d_sc, e_sc, f_sc, total = auto_score(d)
     op_label, op_color = opinion_label(total)
-    tier = buy_tier(d)
-    tier_lbl, tier_hex, tier_color = TIER_META[tier]
+    stage_key, stage_lbl, stage_clr = trading_stage(d)
     signals = auto_signals(d)
     ma200_status = '현재가 상향' if d['close'] > d['ma200'] else '현재가 하향 이탈'
 
@@ -762,10 +761,10 @@ def build_pdf(d, chart_path, output_path):
                              spaceBefore=2 * mm, spaceAfter=2.5 * mm))
 
     # Metrics bar (7 columns: 종가/고점/저점/MA200/점수/판정/단계신호)
-    tier_bg = colors.HexColor('#D8EEE6') if tier >= 2 else (colors.HexColor('#EAF2F8') if tier == 1 else colors.HexColor('#FDEAEA'))
+    stage_bg = colors.HexColor('#D8EEE6') if stage_key == 'buy' else (colors.HexColor('#FFF3E0') if stage_key == 'entry' else (colors.HexColor('#FDEAEA') if stage_key in ('sell','sell_div') else LGRAY))
     chg_sign = '+' if d['change_pct'] >= 0 else ''
     lbl_row = [Paragraph(t, s(f'ml{i}', 7, DGRAY, TA_CENTER, bold=True))
-               for i, t in enumerate(['종가', '52주 고점', '52주 저점', '200일 MA', '종합점수', '타이밍 판정', '단계 신호'])]
+               for i, t in enumerate(['종가', '52주 고점', '52주 저점', '200일 MA', '종합점수', '타이밍 판정', '타이밍 단계'])]
     val_row = [
         Paragraph(f'${d["close"]:.2f}',    se(f'mv0', 12, RED if d['change_pct'] < 0 else GREEN, TA_CENTER, bold=True)),
         Paragraph(f'${d["high_52w"]:.2f}', se(f'mv1', 12, NAVY,  TA_CENTER, bold=True)),
@@ -773,7 +772,7 @@ def build_pdf(d, chart_path, output_path):
         Paragraph(f'${d["ma200"]:.2f}',    se(f'mv3', 12, RED if d['close'] < d['ma200'] else GREEN, TA_CENTER, bold=True)),
         Paragraph(f'{total} / 85',         se(f'mv4', 12, op_color, TA_CENTER, bold=True)),
         Paragraph(op_label,                s(f'mv5',  11, op_color, TA_CENTER, bold=True)),
-        Paragraph(tier_lbl if tier else '—', s(f'mv6', 10, tier_color, TA_CENTER, bold=True)),
+        Paragraph(stage_lbl,               s(f'mv6',  10, stage_clr, TA_CENTER, bold=True)),
     ]
     sub_row = [Paragraph(v, s(f'ms{i}', 7, DGRAY, TA_CENTER))
                for i, v in enumerate([
@@ -782,13 +781,13 @@ def build_pdf(d, chart_path, output_path):
                    d.get('low_52w_date',  ''),
                    ma200_status, '/85점 만점',
                    '기술지표 종합',
-                   TIER_DESC.get(tier, '매수 조건 미충족')[:14] if tier else '해당 없음'])]
+                   '4단계 판정'])]
     col7 = [CW * 0.145] * 6 + [CW * 0.13]
     mt = Table([lbl_row, val_row, sub_row], colWidths=col7)
     mt.setStyle(TableStyle([
         ('BACKGROUND',    (0,0),(-1,-1), LGRAY),
         ('BACKGROUND',    (4,0),(5,-1),  colors.HexColor('#FEF0F0')),
-        ('BACKGROUND',    (6,0),(6,-1),  tier_bg),
+        ('BACKGROUND',    (6,0),(6,-1),  stage_bg),
         ('BOX',           (0,0),(-1,-1), 0.8, MGRAY),
         ('LINEAFTER',     (0,0),(5,-1),  0.4, MGRAY),
         ('TOPPADDING',    (0,0),(-1,-1), 4),
@@ -848,16 +847,10 @@ def _auto_opinion(d, total, op_label, a_sc, b_sc):
     macd_state = ('MACD 골든크로스' if macd_v > macd_s else 'MACD 데드크로스') + \
                  (' (제로선 상방)' if macd_v > 0 else ' (제로선 하방)')
 
-    tier = buy_tier(d)
-    tier_lbl = TIER_META[tier][0]
-    tier_line = (f'<b>[매수 단계 신호: {tier_lbl}]</b>  {TIER_DESC[tier]}<br/><br/>'
-                 if tier else '')
-
     return (
         f'[타이밍 판정: {op_label}  {total}/85점]<br/>'
         f'{d["ticker"]}의 현재 기술적 상태는 <b>{ma_state}</b>입니다. '
         f'{rsi_timing}. {macd_state}.<br/><br/>'
-        + tier_line +
         f'<b>관심 종목 (매수 관점):</b> {buy_cond}<br/>'
         f'<b>보유 종목 (매도 관점):</b> {sell_cond}<br/>'
         f'<b>손절 기준:</b> {stop_loss}'
@@ -874,19 +867,30 @@ def _build_opinion_flowables(d, total, op_label, a_sc, b_sc):
     stop_price = m20 * 0.97
 
     # ── 방향성·ADX·다이버전스 데이터 ──────────────────────────────
-    rsi_slope  = d.get('rsi_slope',  0.0)
-    hist_slope = d.get('macd_hist_slope', 0.0)
-    ma20_slope = d.get('ma20_slope', 0.0)
-    adx_val    = d.get('adx',      20.0)
-    plus_di    = d.get('plus_di',  25.0)
-    minus_di   = d.get('minus_di', 25.0)
-    divergence = d.get('rsi_divergence', 'none')
+    rsi_slope   = d.get('rsi_slope',        0.0)
+    rsi_slope3  = d.get('rsi_slope3',       0.0)   # 단기 3일
+    hist_slope  = d.get('macd_hist_slope',  0.0)
+    hist_slope3 = d.get('macd_hist_slope3', 0.0)   # 단기 3일
+    ma20_slope  = d.get('ma20_slope',       0.0)
+    adx_val     = d.get('adx',      20.0)
+    plus_di     = d.get('plus_di',  25.0)
+    minus_di    = d.get('minus_di', 25.0)
+    divergence  = d.get('rsi_divergence', 'none')
 
     def _dir(slope, thr=0.8):
         """기울기 → 방향 화살표"""
         if slope >  thr: return ' ↑'
         if slope < -thr: return ' ↓'
         return ' →'
+
+    def _dir_combo(slope5, slope3, thr5=0.8, thr3=0.5):
+        """5일 추세 + 3일 단기 반등을 함께 반영한 화살표
+        5일 하락 중이라도 3일이 반등이면 '↗ 단기반등' 표시"""
+        if slope5 > thr5 and slope3 > thr3:   return '↑'
+        if slope5 < -thr5 and slope3 > thr3:  return '↗'   # 단기 반등!
+        if slope5 < -thr5 and slope3 < -thr3: return '↓'
+        if slope5 > thr5 and slope3 < -thr3:  return '↘'   # 단기 조정
+        return '→'
 
     flowables = []
 
@@ -1010,63 +1014,57 @@ def _build_opinion_flowables(d, total, op_label, a_sc, b_sc):
     stop_price = m20 * 0.97
     macd_positive = (macd_v > 0)
 
-    rsi_dir_txt  = '↑' if rsi_slope  > 1.0  else ('↓' if rsi_slope  < -1.0  else '→')
-    macd_dir_txt = '↑' if hist_slope > 0.05 else ('↓' if hist_slope < -0.05 else '→')
+    rsi_dir_txt  = _dir_combo(rsi_slope,  rsi_slope3,  thr5=1.0,  thr3=0.5)
+    macd_dir_txt = _dir_combo(hist_slope, hist_slope3, thr5=0.05, thr3=0.02)
 
-    # ─ Signal 배지 (이모지 제거 — HYGothic 폰트 미지원) ─
-    if divergence == 'bullish' and total >= 37:
-        sig_label = '반등 기대';  sig_clr = colors.HexColor('#E65100')
-    elif total >= 63 and divergence != 'bearish':
-        sig_label = '매수 적기';  sig_clr = GREEN
-    elif total >= 50 and divergence != 'bearish':
-        sig_label = '관심 구간';  sig_clr = BLUE
-    elif total < 37:
-        sig_label = '위험';       sig_clr = RED
-    else:
-        sig_label = '주의';       sig_clr = ORANGE
+    # 단기 반등 여부 플래그
+    rsi_rebounding  = (rsi_slope  < -1.0 and rsi_slope3  > 0.5)
+    macd_rebounding = (hist_slope < -0.05 and hist_slope3 > 0.02)
 
-    # ─ 동적 헤드라인 ─
-    if divergence == 'bearish':
-        headline = f'{tk} — 가짜 상승 경보! 추격 매수 위험 구간'
-    elif divergence == 'bullish':
-        headline = f'{tk} — 하락 끝에 보이는 반등의 불빛!'
-    elif total >= 63 and up_cnt >= 2:
-        headline = f'{tk} — 강한 매수 신호 점등! 분할 진입 타이밍'
-    elif total < 37 or dn_cnt >= 2:
-        headline = f'{tk} — 약세 지속 중, 신중하게 기다리세요'
+    stage_key, stage_lbl, stage_clr = trading_stage(d)
+
+    # ─ 동적 헤드라인 (trading_stage 결과 기반) ─
+    if stage_key == 'sell_div':
+        headline = f'{tk} — 가짜 상승 경보! 약세 다이버전스 감지'
+    elif stage_key == 'buy':
+        headline = f'{tk} — 매수 적기! MA20 돌파 + MACD 상승 확인'
+    elif stage_key == 'entry':
+        headline = f'{tk} — 바닥 탈출 신호! 발가락 담그기 구간'
+    elif stage_key == 'sell':
+        headline = f'{tk} — 저항선 도달, 수익 지키기 구간 (보유자 주의)'
     else:
         headline = f'{tk} — 방향 탐색 중, 관망이 정답'
 
-    # ─ 내러티브 문단 (비유 포함) ─
-    if divergence == 'bearish':
+    # ─ 내러티브 문단 (stage_key 기반) ─
+    if stage_key == 'sell_div':
         narrative = (
             '차는 달리고 있지만 기름이 빠르게 소진되고 있어요. '
             '주가는 올랐지만 내부 에너지(RSI)는 이미 꺾이는 <b>약세 다이버전스</b>가 감지됐어요. '
             '지금 추격해서 사면 꼭대기에서 잡을 가능성이 높아요. 기다리는 게 정답입니다.'
         )
-    elif divergence == 'bullish':
+    elif stage_key == 'buy':
         narrative = (
-            '공이 바닥으로 떨어지고 있지만, 튕겨 올라오려는 탄성(RSI)이 강해지고 있어요. '
-            '주가는 아직 하락 중이지만 내부 에너지는 <b>강세 다이버전스</b>로 반등 준비 중이에요. '
-            '폭풍우가 잦아들고 파도가 낮아지는 단계 — 바닥 확인 후 분할 접근이 유리해요.'
-        )
-    elif total >= 63 and up_cnt >= 2:
-        narrative = (
-            f'RSI·MACD·MA20 흐름이 모두 위를 향하고 있어요 (↑ {up_cnt}/3). '
+            f'MA20 돌파, MACD 골든크로스, 거래량 동반 — 세 가지 조건이 모두 충족됐어요. '
             '엔진이 풀 파워로 작동하고 있는 구간이에요. '
             '단, 한 번에 다 사기보단 나눠서 담는 전략이 더 안전해요.'
         )
-    elif total < 37 or dn_cnt >= 2:
+    elif stage_key == 'entry':
         narrative = (
-            f'RSI·MACD·MA20 흐름이 아래를 향하고 있어요 (↓ {dn_cnt}/3). '
-            '지금은 약세 신호가 강한 구간이에요. '
-            '성급하게 진입하면 물릴 수 있으니 지표 방향이 바뀔 때까지 기다리세요.'
+            '공이 바닥으로 떨어지다가 튕겨 올라오려는 탄성(RSI)이 살아나고 있어요. '
+            'RSI가 과매도 구간에서 반등을 시작했어요. '
+            '완전한 추세 전환 전 <b>소액으로 먼저 탐색</b>하기 좋은 타이밍이에요.'
+        )
+    elif stage_key == 'sell':
+        narrative = (
+            '주가가 강력한 저항선에 다가왔어요. '
+            'MA200이나 볼린저 밴드 상단 근처는 많은 매도 물량이 기다리는 구간이에요. '
+            '보유자라면 수익 일부를 현금화하고, 신규 진입은 신중하게 기다리세요.'
         )
     else:
         narrative = (
             '지표 방향이 아직 뚜렷하지 않아요. '
             'RSI와 MACD가 방향을 탐색 중이고, MA20 근처에서 지지·저항을 확인하는 구간이에요. '
-            '신규 진입보단 기존 보유 유지 또는 현금 대기가 무난해요.'
+            '신규 진입보단 현금 대기가 무난해요.'
         )
 
     # ─ 불렛 — RSI ─
@@ -1074,21 +1072,31 @@ def _build_opinion_flowables(d, total, op_label, a_sc, b_sc):
         rsi_bullet = f'차는 달리는데 엔진 출력이 떨어지고 있어요 (약세 다이버전스, RSI {rsi:.1f} {rsi_dir_txt})'
     elif divergence == 'bullish':
         rsi_bullet = f'주가는 내려왔지만 엔진이 다시 살아나고 있어요 (강세 다이버전스, RSI {rsi:.1f} {rsi_dir_txt})'
+    elif rsi < 30 and rsi_rebounding:
+        rsi_bullet = (f'RSI({rsi:.1f}) {rsi_dir_txt} — 과매도 바닥권에서 단기 반등 시작! '
+                      f'5일 추세는 아직 하락이지만, 최근 3일은 올라오고 있어요. 바닥 신호를 주시하세요')
     elif rsi < 30:
-        rsi_bullet = f'RSI({rsi:.1f}) 과매도 구간 — 너무 떨어졌지만 바닥 확인이 먼저예요 {rsi_dir_txt}'
+        rsi_bullet = f'RSI({rsi:.1f}) {rsi_dir_txt} — 과매도 구간. 바닥권이지만 아직 반등 신호가 확인되지 않았어요'
     elif rsi > 70:
-        rsi_bullet = f'RSI({rsi:.1f}) 과매수 구간 — 많이 올라왔어요. 추격 매수는 위험할 수 있어요 {rsi_dir_txt}'
+        rsi_bullet = f'RSI({rsi:.1f}) {rsi_dir_txt} — 과매수 구간. 많이 올라왔어요. 추격 매수는 위험할 수 있어요'
+    elif rsi_rebounding:
+        rsi_bullet = (f'RSI({rsi:.1f}) {rsi_dir_txt} — 5일 추세는 하락이지만 최근 3일은 반등 중! '
+                      f'(5일 {rsi_slope:+.1f} / 3일 {rsi_slope3:+.1f})  단기 바닥 가능성을 주목하세요')
     elif rsi_slope < -1.0:
-        rsi_bullet = f'RSI({rsi:.1f}) 중립권에서 계속 내려가고 있어요 {rsi_dir_txt} — 엔진이 꺼지려는 느낌이에요'
+        rsi_bullet = f'RSI({rsi:.1f}) {rsi_dir_txt} — 계속 내려가고 있어요. 엔진이 꺼지려는 느낌이에요'
     elif rsi_slope > 1.0:
-        rsi_bullet = f'RSI({rsi:.1f}) 방향을 바꿔 올라오고 있어요 {rsi_dir_txt} — 모멘텀이 살아나는 신호예요'
+        rsi_bullet = f'RSI({rsi:.1f}) {rsi_dir_txt} — 방향을 바꿔 올라오고 있어요. 모멘텀이 살아나는 신호예요'
     else:
-        rsi_bullet = f'RSI({rsi:.1f}) 중립 구간에서 방향을 탐색 중이에요 {rsi_dir_txt}'
+        rsi_bullet = f'RSI({rsi:.1f}) {rsi_dir_txt} — 중립 구간에서 방향을 탐색 중이에요'
 
     # ─ 불렛 — MACD ─
-    if hist_slope < -0.05:
-        macd_bullet = (f'히스토그램이 빠르게 줄어들고 있어요 {macd_dir_txt} — 상승 에너지가 약해지며 하락 압력이 커지고 있어요'
-                       + ('' if macd_positive else ' (제로선 아래 — 아직 매수 신호 아님)'))
+    if macd_rebounding:
+        macd_bullet = (f'히스토그램 {macd_dir_txt} — 5일 추세는 감소 중이지만 최근 3일 반등 중! '
+                       f'(5일 {hist_slope:+.3f} / 3일 {hist_slope3:+.3f})'
+                       + ('' if macd_positive else '  제로선은 아직 하방'))
+    elif hist_slope < -0.05:
+        macd_bullet = (f'히스토그램이 빠르게 줄어들고 있어요 {macd_dir_txt} — 하락 압력이 커지고 있어요'
+                       + ('' if macd_positive else '  (제로선 아래 — 아직 매수 신호 아님)'))
     elif hist_slope > 0.05:
         macd_bullet = (f'히스토그램이 점점 커지고 있어요 {macd_dir_txt} — 상승 동력이 강해지고 있는 좋은 신호예요'
                        + (' (제로선 위 돌파 — 강력한 매수 신호!)' if macd_positive else ''))
@@ -1154,26 +1162,26 @@ def _build_opinion_flowables(d, total, op_label, a_sc, b_sc):
 
     # ── 레이아웃 조립 ─────────────────────────────────────────────
 
-    # ① 헤드라인 배너
+    # ① 헤드라인 배너 (좌: 제목, 우: 타이밍 단계)
     hdl_tbl = Table(
-        [[Paragraph(headline, s('hdl', 9, WHITE, TA_LEFT, bold=True))]],
-        colWidths=[CW])
+        [[Paragraph(headline, s('hdl', 9, WHITE, TA_LEFT, bold=True)),
+          Paragraph(f'[ {stage_lbl} ]', s('stg', 9, stage_clr, TA_RIGHT, bold=True))]],
+        colWidths=[CW * 0.65, CW * 0.35])
     hdl_tbl.setStyle(TableStyle([
         ('BACKGROUND',  (0,0),(-1,-1), NAVY),
         ('TOPPADDING',  (0,0),(-1,-1), 7), ('BOTTOMPADDING', (0,0),(-1,-1), 7),
-        ('LEFTPADDING', (0,0),(-1,-1), 10),
+        ('LEFTPADDING', (0,0),(-1,-1), 10), ('RIGHTPADDING', (0,0),(-1,-1), 8),
+        ('VALIGN',      (0,0),(-1,-1), 'MIDDLE'),
     ]))
 
-    # ② Section 1 헤더: 제목(좌) + Signal 배지(우)
+    # ② Section 1 헤더 (Signal 배지 제거)
     scan_hdr = Table(
-        [[Paragraph('1. 현재 상황 스캔', s('sch', 8, WHITE, TA_LEFT, bold=True)),
-          Paragraph(f'Signal: [ {sig_label} ]', s('sbg', 8, sig_clr, TA_RIGHT, bold=True))]],
-        colWidths=[CW * 0.6, CW * 0.4])
+        [[Paragraph('1. 현재 상황 스캔', s('sch', 8, WHITE, TA_LEFT, bold=True))]],
+        colWidths=[CW])
     scan_hdr.setStyle(TableStyle([
         ('BACKGROUND',  (0,0),(-1,-1), colors.HexColor('#2C3E50')),
         ('TOPPADDING',  (0,0),(-1,-1), 4), ('BOTTOMPADDING', (0,0),(-1,-1), 4),
-        ('LEFTPADDING', (0,0),(-1,-1), 8), ('RIGHTPADDING',  (0,0),(-1,-1), 8),
-        ('VALIGN',      (0,0),(-1,-1), 'MIDDLE'),
+        ('LEFTPADDING', (0,0),(-1,-1), 8),
     ]))
 
     rsi_bl_clr  = RED if rsi_slope < -1.0 else (GREEN if rsi_slope > 1.0 else NAVY)
@@ -1213,40 +1221,80 @@ def _build_opinion_flowables(d, total, op_label, a_sc, b_sc):
         ('LEFTPADDING', (0,0),(-1,-1), 8),
     ]))
 
-    # ⑤ 신규 진입 블록 (3단계)
+    # ⑤ 타이밍 단계별 전략 블록
     CART_BG  = colors.HexColor('#E8F5E9')
     CART_HDR = colors.HexColor('#C8E6C9')
-    entry_rows = [
-        [Paragraph('[신규 진입]  살까 말까 고민 중이라면?', s('esh', 8, GREEN, TA_LEFT, bold=True))],
-        [Paragraph(entry_quote, s('eq', 8, NAVY, lead=12))],
-        [Paragraph(f'<b>1단계 (정찰대):</b>  {step1}', s('e1', 7.5, NAVY, lead=12))],
-        [Paragraph(f'<b>2단계 (확인 후):</b>  {step2}',  s('e2', 7.5, NAVY, lead=12))],
-        [Paragraph(f'<b>3단계 (최종보루):</b>  {step3}', s('e3', 7.5, GREEN, lead=12))],
-    ]
-    if macd_hint:
-        entry_rows.append([Paragraph(macd_hint, s('emh', 7.5, ORANGE, lead=12))])
-    entry_blk = Table(entry_rows, colWidths=[CW])
-    entry_st = [
-        ('BACKGROUND',  (0,0),(-1,0),  CART_HDR),
-        ('BACKGROUND',  (0,1),(-1,-1), CART_BG),
-        ('BOX',         (0,0),(-1,-1), 0.5, GREEN),
-        ('LINEBELOW',   (0,0),(-1,-2), 0.3, colors.HexColor('#A5D6A7')),
+    SELL_BG2 = colors.HexColor('#FDEAEA')
+    SELL_HDR2= colors.HexColor('#FFCDD2')
+    HOLD_BG  = colors.HexColor('#E3F2FD')
+    HOLD_HDR = colors.HexColor('#BBDEFB')
+    WATCH_BG = colors.HexColor('#F5F5F5')
+    WATCH_HDR= colors.HexColor('#E0E0E0')
+    ENTRY_BG = colors.HexColor('#FFF3E0')
+    ENTRY_HDR= colors.HexColor('#FFE0B2')
+
+    if stage_key == 'entry':
+        stg_rows = [
+            [Paragraph('[1단계 진입] 발가락 담그기 — RSI 과매도 탈출 감지', s('sh1', 8, ORANGE, TA_LEFT, bold=True))],
+            [Paragraph('"틀려도 괜찮다는 마음으로, 소액만 먼저 넣어보세요."', s('sq1', 8, NAVY, lead=12))],
+            [Paragraph(f'<b>진입 금액:</b>  전체 예산의 10~15%만 먼저 진입하세요. 추가 하락에도 버틸 수 있는 금액이어야 해요', s('se1', 7.5, NAVY, lead=12))],
+            [Paragraph(f'<b>진입 기준:</b>  RSI {rsi:.1f}이 30선을 회복하며 올라오는 중 — 지금이 그 시점이에요', s('se2', 7.5, ORANGE, lead=12))],
+            [Paragraph(f'<b>다음 단계:</b>  MA20(${m20:.2f}) 위로 종가가 올라서면 2단계(본격 매수)로 전환하세요', s('se3', 7.5, NAVY, lead=12))],
+        ]
+        stg_bg = ENTRY_BG; stg_hdr_bg = ENTRY_HDR; stg_clr2 = ORANGE
+    elif stage_key == 'buy':
+        stg_rows = [
+            [Paragraph('[매수 적기] 본격 승부 — MA20 돌파 + MACD 골든크로스 + 거래량 확인', s('sh2', 8, GREEN, TA_LEFT, bold=True))],
+            [Paragraph('"추세가 확인됐어요! 이제 본격적으로 비중을 높여도 좋아요."', s('sq2', 8, NAVY, lead=12))],
+            [Paragraph(f'<b>매수 금액:</b>  전체 예산의 30~50%까지 비중을 높이세요. 추세를 타는 구간이에요', s('sb1', 7.5, NAVY, lead=12))],
+            [Paragraph(f'<b>핵심 조건:</b>  MA20(${m20:.2f}) 위 안착 + MACD 골든크로스 + 거래량 평균 이상', s('sb2', 7.5, GREEN, lead=12))],
+            [Paragraph(f'<b>손절 기준:</b>  MA20(${m20:.2f}) 아래로 다시 내려가면 진입 취소 고려하세요', s('sb3', 7.5, RED, lead=12))],
+        ]
+        stg_bg = CART_BG; stg_hdr_bg = CART_HDR; stg_clr2 = GREEN
+    elif stage_key in ('sell', 'sell_div'):
+        reason_str = '약세 다이버전스 감지' if stage_key == 'sell_div' else ma_bullet[:30]
+        stg_rows = [
+            [Paragraph('[매도 시작] 수익 지키기 — 강력한 저항선 도달 또는 이탈 신호 (보유자 해당)', s('sh3', 8, RED, TA_LEFT, bold=True))],
+            [Paragraph('"수익은 챙기고, 손실은 짧게 끊으세요."', s('sq3', 8, NAVY, lead=12))],
+            [Paragraph(f'<b>1차 매도:</b>  보유 수익의 30~50%를 먼저 현금화하세요. 나머지는 추세 확인 후 판단하세요', s('sd1', 7.5, NAVY, lead=12))],
+            [Paragraph(f'<b>위험 라인:</b>  ${stop_price:.2f}(MA20 -3%) 아래로 내려가면 미련 없이 비중을 줄이세요', s('sd2', 7.5, RED, lead=12))],
+            [Paragraph(f'<b>신규 진입:</b>  지금은 새로 사지 마세요. 조정 후 지지를 확인한 뒤 재진입을 노리세요', s('sd3', 7.5, ORANGE, lead=12))],
+        ]
+        stg_bg = SELL_BG2; stg_hdr_bg = SELL_HDR2; stg_clr2 = RED
+    else:  # watch
+        stg_rows = [
+            [Paragraph('[관망] 신호 대기 중 — 아직 진입 조건 미충족', s('sh4', 8, MGRAY, TA_LEFT, bold=True))],
+            [Paragraph('"지금은 기다리는 것도 훌륭한 전략이에요."', s('sq4', 8, NAVY, lead=12))],
+            [Paragraph(f'<b>진입 대기:</b>  RSI가 30 이하로 떨어지거나 MA20(${m20:.2f})을 돌파할 때까지 현금을 보유하세요', s('sw1', 7.5, NAVY, lead=12))],
+            [Paragraph(f'<b>관심 기준:</b>  MACD 골든크로스 + 거래량 증가가 동반되면 그때 진입을 검토하세요', s('sw2', 7.5, NAVY, lead=12))],
+            [Paragraph(f'<b>손절 기준:</b>  이미 보유 중이라면 ${stop_price:.2f}(MA20 -3%) 이탈 시 비중 축소를 고려하세요', s('sw3', 7.5, MGRAY, lead=12))],
+        ]
+        stg_bg = WATCH_BG; stg_hdr_bg = WATCH_HDR; stg_clr2 = MGRAY
+
+    stg_blk = Table(stg_rows, colWidths=[CW])
+    stg_st = [
+        ('BACKGROUND',  (0,0),(-1,0),  stg_hdr_bg),
+        ('BACKGROUND',  (0,1),(-1,-1), stg_bg),
+        ('BOX',         (0,0),(-1,-1), 0.5, stg_clr2),
+        ('LINEBELOW',   (0,0),(-1,-2), 0.3, colors.HexColor('#E0E0E0')),
         ('TOPPADDING',  (0,0),(-1,-1), 5), ('BOTTOMPADDING', (0,0),(-1,-1), 5),
         ('LEFTPADDING', (0,0),(-1,-1), 10), ('RIGHTPADDING', (0,0),(-1,-1), 10),
         ('VALIGN',      (0,0),(-1,-1), 'MIDDLE'),
     ]
-    if macd_hint:
-        entry_st.append(('BACKGROUND', (0,-1),(-1,-1), colors.HexColor('#FFF8E1')))
-    entry_blk.setStyle(TableStyle(entry_st))
+    stg_blk.setStyle(TableStyle(stg_st))
 
-    # ⑥ 보유자 대응 블록
-    HOLD_BG  = colors.HexColor('#E3F2FD')
-    HOLD_HDR = colors.HexColor('#BBDEFB')
+    # ⑥ 보유자 대응 블록 (항상 표시)
+    if c > m200:
+        take_profit = f'MA50(${m50:.2f})~MA200(${m200:.2f}) 구간에서 주춤거리면 일부 수익을 실현하고 현금을 확보하세요'
+    else:
+        take_profit = f'MA20(${m20:.2f}) 근처에서 반등이 막히면 일부 수익을 실현하고 현금을 확보하세요'
+    danger_line = f'${stop_price:.2f}(MA20 -3%) 아래로 종가가 내려가면 미련 없이 비중을 줄이세요'
+
     hold_blk = Table([
         [Paragraph('[보유자 대응]  이미 가지고 있다면?', s('hsh', 8, BLUE, TA_LEFT, bold=True))],
-        [Paragraph(hold_quote, s('hq', 8, NAVY, lead=12))],
-        [Paragraph(f'<b>• 익절 라인:</b>  {take_profit}', s('hp', 8, NAVY, lead=12))],
-        [Paragraph(f'<b>• 위험 라인:</b>  {danger_line}',  s('hd', 8, RED,  lead=12))],
+        [Paragraph('"손절선을 지키면서 수익을 관리하세요."', s('hq', 8, NAVY, lead=12))],
+        [Paragraph(f'<b>익절 라인:</b>  {take_profit}', s('hp', 8, NAVY, lead=12))],
+        [Paragraph(f'<b>위험 라인:</b>  {danger_line}', s('hd', 8, RED,  lead=12))],
     ], colWidths=[CW])
     hold_blk.setStyle(TableStyle([
         ('BACKGROUND',  (0,0),(-1,0),  HOLD_HDR),
@@ -1264,7 +1312,7 @@ def _build_opinion_flowables(d, total, op_label, a_sc, b_sc):
     flowables.append(scan_body)
     flowables.append(Spacer(1, 1.5*mm))
     flowables.append(timing_hdr)
-    flowables.append(entry_blk)
+    flowables.append(stg_blk)
     flowables.append(Spacer(1, 1*mm))
     flowables.append(hold_blk)
 
@@ -1376,36 +1424,38 @@ def build_index_page(output_path):
     story.append(idx_t)
     story.append(Spacer(1, 10 * mm))
 
-    story.append(Paragraph('매수 단계 신호 (티어)', s('tier_title', 16, D_TEXT, TA_LEFT, bold=True)))
+    story.append(Paragraph('4단계 타이밍 판정 기준', s('stage_title', 16, D_TEXT, TA_LEFT, bold=True)))
     story.append(HRFlowable(width='100%', thickness=2, color=D_LINE,
                              spaceBefore=3 * mm, spaceAfter=5 * mm))
 
-    tier_rows = [
-        ('#FFD54F', '■ 1차 진입준비', 'MA200 위 + RSI ≤ 40',
-         '과매도 진입 초기. 소량 분할매수 시작, 추가 하락 가능성 대비'),
-        ('#69F0AE', '■ 2차 매수확정', 'MA200 위 + RSI 28~50 + MACD 골든크로스 + 거래량 1.2배↑',
-         '주력 매수 타이밍. 백테스트 20일 적중률 81.4%, 평균 수익 +7.8%'),
-        ('#00E676', '■ 3차 추세확인', 'MA200 위 + MA20 근접 + MACD 제로선 위 + 거래량 1.3배↑ + 양봉',
-         '추세 재개 확인. 풀포지션 진입 가능 구간'),
+    stage_rows = [
+        ('#FF6F00', '1차 진입',  'RSI < 35 + 3일 기울기 반등',
+         '과매도 탈출 초기 신호. 전체 예산 10~15% 소액 분할 진입'),
+        ('#00C853', '매수 적기', 'MA20 돌파 + MACD 골든크로스 + 거래량 1.2배 이상',
+         '추세 전환 확인. 전체 예산 30~50%까지 비중 확대'),
+        ('#E53935', '매도 시작', 'MA200/BB상단 근접 OR MA20 이탈 OR 약세 다이버전스',
+         '수익 30~50% 현금화. 약세 다이버전스 발생시 최우선 매도 경고'),
+        ('#9E9E9E', '관망',     '위 조건 미충족',
+         '진입 조건 대기. 현금 보유가 최선인 구간'),
     ]
-    tier_data = []
-    for i, (hex_c, badge, cond, desc) in enumerate(tier_rows):
-        tier_data.append([
+    stage_data = []
+    for i, (hex_c, badge, cond, desc) in enumerate(stage_rows):
+        stage_data.append([
             Paragraph(f'<font color="{hex_c}"><b>{badge}</b></font>',
-                      s(f'tl{i}', 11, D_TEXT, TA_LEFT)),
-            Paragraph(cond, se(f'tc{i}', 10, D_SUB, TA_LEFT)),
-            Paragraph(desc, s(f'td{i}', 10, D_SUB, TA_LEFT)),
+                      s(f'sl{i}', 11, D_TEXT, TA_LEFT)),
+            Paragraph(cond, se(f'sc{i}', 10, D_SUB, TA_LEFT)),
+            Paragraph(desc, s(f'sd{i}', 10, D_SUB, TA_LEFT)),
         ])
-    tier_t = Table(tier_data, colWidths=[CW * 0.20, CW * 0.38, CW * 0.42])
-    tier_t.setStyle(TableStyle([
+    stage_t = Table(stage_data, colWidths=[CW * 0.18, CW * 0.38, CW * 0.44])
+    stage_t.setStyle(TableStyle([
         ('VALIGN',        (0,0), (-1,-1), 'MIDDLE'),
-        ('ROWBACKGROUNDS',(0,0), (-1,-1), [D_ROW1, D_ROW2, D_ROW1]),
+        ('ROWBACKGROUNDS',(0,0), (-1,-1), [D_ROW1, D_ROW2, D_ROW1, D_ROW2]),
         ('LEFTPADDING',   (0,0), (-1,-1), 12), ('RIGHTPADDING',  (0,0), (-1,-1), 12),
         ('TOPPADDING',    (0,0), (-1,-1), 10), ('BOTTOMPADDING', (0,0), (-1,-1), 10),
         ('LINEBELOW',     (0,0), (-1,-2), 0.3, D_BORDER),
         ('BOX',           (0,0), (-1,-1), 0.8, D_BORDER),
     ]))
-    story.append(tier_t)
+    story.append(stage_t)
 
     doc.build(story, onFirstPage=_draw_dark_bg, onLaterPages=_draw_dark_bg)
 
@@ -1447,13 +1497,13 @@ def generate_summary_page(stocks_list, output_path):
 
     # ── 데이터 계산 ───────────────────────────────────────────────
     scores = []
-    tier_counts = {1: 0, 2: 0, 3: 0}
+    stage_counts = {'entry': 0, 'buy': 0, 'sell': 0, 'sell_div': 0}
     for d in stocks_list:
         _, _, _, _, _, _, total = auto_score(d)
         scores.append((d, total))
-        t = buy_tier(d)
-        if t in tier_counts:
-            tier_counts[t] += 1
+        sk, _, _ = trading_stage(d)
+        if sk in stage_counts:
+            stage_counts[sk] += 1
 
     avg_score  = sum(sc for _, sc in scores) / len(scores) if scores else 0
     bull_count = sum(1 for _, sc in scores if sc >= 50)
@@ -1484,13 +1534,13 @@ def generate_summary_page(stocks_list, output_path):
         ('매수 타이밍',  str(bull_count),          D_GREEN),
         ('관망',         str(neut_count),          D_ORANGE),
         ('매도 주의',    str(bear_count),          D_RED),
-        ('2차 확정',     str(tier_counts[2]),      D_TEAL),
+        ('매수 적기',    str(stage_counts['buy']),  D_TEAL),
     ]
     kpi_label_row = [Paragraph(lbl, s(f'dkl{i}', 7.5, D_SUB, TA_CENTER))
                      for i, (lbl, _, _) in enumerate(kpi_data)]
     kpi_val_row   = [Paragraph(val, se(f'dkv{i}', 24, clr, TA_CENTER, bold=True))
                      for i, (_, val, clr) in enumerate(kpi_data)]
-    _kpi_subs = ['', f'({mkt_label})', 'score ≥ 50', '37 ~ 49', 'score < 37', '티어 신호']
+    _kpi_subs = ['', f'({mkt_label})', 'score ≥ 50', '37 ~ 49', 'score < 37', '단계 신호']
     _kpi_eng  = {2, 3, 4}   # 영문 항목 인덱스
     kpi_sub_row = [Paragraph(sub, se(f'dks{i}', 6.5, D_SUB, TA_CENTER) if i in _kpi_eng
                              else s(f'dks{i}', 6.5, D_SUB, TA_CENTER))
@@ -1525,11 +1575,10 @@ def generate_summary_page(stocks_list, output_path):
         op_label, _ = opinion_label(total)
         op_color = D_GREEN if total >= 63 else (colors.HexColor('#5DADE2') if total >= 50
                    else (D_ORANGE if total >= 37 else (colors.HexColor('#FF8A65') if total >= 24 else D_RED)))
-        tier = buy_tier(d)
-        tier_lbl, tier_hex, _ = TIER_META[tier]
-        tier_color = (colors.HexColor('#FFD54F') if tier == 1
-                      else (colors.HexColor('#69F0AE') if tier == 2
-                      else (colors.HexColor('#00E676') if tier == 3 else D_SUB)))
+        sk, stage_lbl2, _ = trading_stage(d)
+        stage_color2 = (colors.HexColor('#FF6F00') if sk == 'entry'
+                        else (colors.HexColor('#00C853') if sk == 'buy'
+                        else (colors.HexColor('#E53935') if sk in ('sell','sell_div') else D_SUB)))
 
         c      = d['close']
         chg    = d['change_pct']
@@ -1556,7 +1605,7 @@ def generate_summary_page(stocks_list, output_path):
             Paragraph(macd_txt,        se(f'dr{ri}6', 8,   macd_color, TA_CENTER, bold=True)),
             Paragraph(f'{total} / 85', se(f'dr{ri}7', 9,   op_color,  TA_CENTER, bold=True)),
             Paragraph(op_label,        s( f'dr{ri}8', 8.5, op_color,  TA_CENTER, bold=True)),
-            Paragraph(tier_lbl if tier_lbl else '—', s(f'dr{ri}9', 8, tier_color, TA_CENTER, bold=True)),
+            Paragraph(stage_lbl2, s(f'dr{ri}9', 8, stage_color2, TA_CENTER, bold=True)),
         ]
         rows.append(row)
         bg = D_BUY if total >= 50 else (D_ROW1 if ri % 2 == 1 else D_ROW2)
@@ -1603,7 +1652,7 @@ def generate_summary_page(stocks_list, output_path):
     # ── 주석 + 푸터 ───────────────────────────────────────────────
     story.append(Paragraph(
         'MA: 정배열=MA20/50/200 모두 상향  |  MA200↓=장기선 이탈  |  역배열=전부 하향  '
-        '/  MACD: ↑ 상승전환  ↓ 하락전환  /  단계 신호: 1~3차 매수 티어',
+        '/  MACD: ↑ 상승전환  ↓ 하락전환  /  타이밍 단계: 4단계 판정 (1차 진입/매수 적기/매도 시작/관망)',
         s('dnote', 6.5, D_SUB, TA_LEFT)))
     story.append(Spacer(1, 2 * mm))
     story.append(HRFlowable(width='100%', thickness=0.5, color=D_BORDER,
