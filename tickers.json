@@ -1,6 +1,12 @@
 {
   "tickers": [
-    "SLV"
+    "NVDA",
+    "TSLA",
+    "GOOGL",
+    "PLTR",
+    "SLV",
+    "GLD",
+    "CRCL"
   ],
   "updated": "2026-03-25"
 }
