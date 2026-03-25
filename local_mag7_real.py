@@ -45,6 +45,11 @@ except ImportError as e:
     print(f"        cowork_agents/ 폴더가 {AGENTS_DIR} 에 있는지 확인하세요.")
     sys.exit(1)
 
+try:
+    from ai_summary import generate_ai_summary
+except ImportError:
+    generate_ai_summary = None
+
 # ── tickers.json에서 종목 목록 로드 ────────────────────────────────
 TICKERS_FILE = os.path.join(SCRIPT_DIR, 'tickers.json')
 
@@ -512,11 +517,20 @@ def run(tickers=None, send_telegram=False):
     if generated:
         pdf_paths = [p for _, p in generated]
 
+        # AI 요약 생성 (GROQ_API_KEY 있을 때만)
+        ai_data = None
+        if generate_ai_summary:
+            print(f"\n  [AI] Groq 시장 요약 생성 중...")
+            try:
+                ai_data = generate_ai_summary(stocks_data)
+            except Exception as e:
+                print(f"  [AI] 오류 (규칙 기반으로 계속): {e}")
+
         # 요약 페이지 생성
         summary_path = os.path.join(tmp_dir, f'_summary_{today_str}.pdf')
         print(f"\n  [SUMMARY] 요약 페이지 생성 중...")
         try:
-            generate_summary_page(stocks_data, summary_path)
+            generate_summary_page(stocks_data, summary_path, ai_data=ai_data)
             print(f"  [SUMMARY] 완료")
             pdf_paths = [summary_path] + pdf_paths
         except Exception as e:

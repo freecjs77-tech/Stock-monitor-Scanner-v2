@@ -1514,8 +1514,10 @@ def build_index_page(output_path):
     doc.build(story, onFirstPage=_draw_dark_bg, onLaterPages=_draw_dark_bg)
 
 
-def generate_summary_page(stocks_list, output_path):
-    """종목별 맞춤 전략 서머리 — 라이트 테마 카드형 레이아웃"""
+def generate_summary_page(stocks_list, output_path, ai_data=None):
+    """종목별 맞춤 전략 서머리 — 라이트 테마 카드형 레이아웃
+    ai_data: generate_ai_summary() 반환값 (없으면 규칙 기반 텍스트 사용)
+    """
 
     # ── 팔레트
     CARD_HDR = colors.HexColor('#1B3A5C')
@@ -1638,11 +1640,29 @@ def generate_summary_page(stocks_list, output_path):
     story.append(hdr)
     story.append(Spacer(1, 3 * mm))
 
-    # ── 전체 시황 요약 1줄
-    overview = (f'분석 종목 {len(scored)}개  |  평균 점수 {avg_score:.1f}점  |  '
-                f'1차 진입 {len(entry_tickers)}개  /  매수 적기 {len(buy_tickers)}개  /  '
-                f'매도 주의 {len(sell_tickers)}개  /  관망 {len(watch_tickers)}개')
-    story.append(Paragraph(overview, s('smov', 8, MGRAY, TA_LEFT)))
+    # ── 전체 시황 요약 (AI 또는 통계)
+    if ai_data and ai_data.get('market_overview'):
+        # AI 요약 박스
+        AI_BG     = colors.HexColor('#EEF6FF')
+        AI_BORDER = colors.HexColor('#1F6BB5')
+        ai_tbl = Table(
+            [[Paragraph(f'<b>오늘의 시장 분위기</b>  —  {ai_data["market_overview"]}',
+                        s('smov_ai', 8.5, NAVY, lead=14))]],
+            colWidths=[CW])
+        ai_tbl.setStyle(TableStyle([
+            ('BACKGROUND',  (0, 0), (-1, -1), AI_BG),
+            ('BOX',         (0, 0), (-1, -1), 1.2, AI_BORDER),
+            ('TOPPADDING',  (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+        ]))
+        story.append(ai_tbl)
+    else:
+        overview = (f'분석 종목 {len(scored)}개  |  평균 점수 {avg_score:.1f}점  |  '
+                    f'1차 진입 {len(entry_tickers)}개  /  매수 적기 {len(buy_tickers)}개  /  '
+                    f'매도 주의 {len(sell_tickers)}개  /  관망 {len(watch_tickers)}개')
+        story.append(Paragraph(overview, s('smov', 8, MGRAY, TA_LEFT)))
     story.append(Spacer(1, 4 * mm))
 
     # ── 종목 카드
@@ -1653,7 +1673,10 @@ def generate_summary_page(stocks_list, output_path):
         sc  = _sc(sk)
         sbg = _sbg(sk)
 
-        sit = _situation(d, sk)
+        # AI 요약 우선, 없으면 규칙 기반
+        ai_stock = (ai_data or {}).get('stocks', {}).get(d['ticker'], {})
+        sit = ai_stock.get('summary') or _situation(d, sk)
+        kpt = ai_stock.get('key_point') or ''
         act = _action(d, sk)
         prc = _prices(d, sk)
 
@@ -1671,31 +1694,54 @@ def generate_summary_page(stocks_list, output_path):
             ('VALIGN',       (0, 0), (-1, -1), 'MIDDLE'),
         ]))
 
-        # 카드 바디 (3행: 현황 / 행동 / 핵심 가격)
+        # 카드 바디 (현황 / [포인트] / 행동 / 핵심 가격)
         body_rows = [
             [Paragraph('현황', s(f'smla{idx}', 7.5, NAVY, TA_CENTER, bold=True)),
              Paragraph(sit,   s(f'smta{idx}', 8,   NAVY, lead=12))],
+        ]
+        if kpt:
+            body_rows.append([
+                Paragraph('포인트', s(f'smld{idx}', 7.5, NAVY, TA_CENTER, bold=True)),
+                Paragraph(f'<i>{kpt}</i>', s(f'smtd{idx}', 8, colors.HexColor('#1F6BB5'), lead=12)),
+            ])
+        body_rows += [
             [Paragraph('행동', s(f'smlb{idx}', 7.5, WHITE, TA_CENTER, bold=True)),
              Paragraph(act,   s(f'smtb{idx}', 8,   NAVY, lead=12))],
             [Paragraph('핵심 가격', s(f'smlc{idx}', 7, NAVY, TA_CENTER, bold=True)),
              Paragraph(prc,   se(f'smtc{idx}', 7.5, NAVY, lead=12))],
         ]
+        n = len(body_rows)
+        act_row = n - 2   # 행동 행 인덱스
+        prc_row = n - 1   # 핵심 가격 행 인덱스
         card_body = Table(body_rows, colWidths=[LBLW, TXTW])
-        card_body.setStyle(TableStyle([
-            ('BACKGROUND',   (0, 0), (-1, 0), CARD_R1),
-            ('BACKGROUND',   (0, 1), (-1, 1), sbg),
-            ('BACKGROUND',   (0, 1), (0,  1), sc),
-            ('BACKGROUND',   (0, 2), (-1, 2), CARD_R2),
-            ('BACKGROUND',   (0, 0), (0,  0), LABEL_BG),
-            ('BACKGROUND',   (0, 2), (0,  2), LABEL_BG),
-            ('BOX',          (0, 0), (-1, -1), 0.6, BORDER),
-            ('LINEBELOW',    (0, 0), (-1, -2), 0.3, BORDER),
-            ('LINEBEFORE',   (1, 0), (1,  -1), 0.5, BORDER),
-            ('TOPPADDING',   (0, 0), (-1, -1), 5), ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-            ('LEFTPADDING',  (0, 0), (0,  -1), 4), ('RIGHTPADDING',  (0, 0), (0,  -1), 4),
-            ('LEFTPADDING',  (1, 0), (1,  -1), 8), ('RIGHTPADDING',  (1, 0), (1,  -1), 8),
-            ('VALIGN',       (0, 0), (-1, -1), 'MIDDLE'),
-        ]))
+        style_cmds = [
+            ('BOX',         (0, 0), (-1, -1), 0.6, BORDER),
+            ('LINEBELOW',   (0, 0), (-1, -2), 0.3, BORDER),
+            ('LINEBEFORE',  (1, 0), (1,  -1), 0.5, BORDER),
+            ('TOPPADDING',  (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ('LEFTPADDING', (0, 0), (0,  -1), 4),
+            ('RIGHTPADDING',(0, 0), (0,  -1), 4),
+            ('LEFTPADDING', (1, 0), (1,  -1), 8),
+            ('RIGHTPADDING',(1, 0), (1,  -1), 8),
+            ('VALIGN',      (0, 0), (-1, -1), 'MIDDLE'),
+            # 현황 행
+            ('BACKGROUND',  (0, 0), (-1, 0), CARD_R1),
+            ('BACKGROUND',  (0, 0), (0,  0), LABEL_BG),
+            # 행동 행
+            ('BACKGROUND',  (0, act_row), (-1, act_row), sbg),
+            ('BACKGROUND',  (0, act_row), (0,  act_row), sc),
+            # 핵심 가격 행
+            ('BACKGROUND',  (0, prc_row), (-1, prc_row), CARD_R2),
+            ('BACKGROUND',  (0, prc_row), (0,  prc_row), LABEL_BG),
+        ]
+        # 포인트 행 (있을 경우)
+        if kpt:
+            style_cmds += [
+                ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor('#F0F7FF')),
+                ('BACKGROUND', (0, 1), (0,  1), LABEL_BG),
+            ]
+        card_body.setStyle(TableStyle(style_cmds))
 
         story.append(card_hdr)
         story.append(card_body)

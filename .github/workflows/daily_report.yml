@@ -33,6 +33,8 @@ jobs:
           cat tickers.json
 
       - name: Generate reports (real data via yfinance)
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: python local_mag7_real.py
 
       - name: Send report via Telegram
