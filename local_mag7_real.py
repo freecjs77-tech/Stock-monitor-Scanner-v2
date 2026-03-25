@@ -133,6 +133,56 @@ def calc_macd(close_arr, fast=12, slow=26, signal=9):
     return macd, sig, hist
 
 
+def calc_adx(high_arr, low_arr, close_arr, period=14):
+    """ADX / +DI / -DI (Wilder 평활법)"""
+    n = len(close_arr)
+    h = high_arr.astype(float); l = low_arr.astype(float); c = close_arr.astype(float)
+    tr = np.zeros(n); pdm = np.zeros(n); ndm = np.zeros(n)
+    for i in range(1, n):
+        tr[i]  = max(h[i]-l[i], abs(h[i]-c[i-1]), abs(l[i]-c[i-1]))
+        up = h[i]-h[i-1]; dn = l[i-1]-l[i]
+        pdm[i] = up if (up > dn and up > 0) else 0
+        ndm[i] = dn if (dn > up and dn > 0) else 0
+    def wilder(arr, p):
+        s = np.full(n, np.nan)
+        if p >= n: return s
+        s[p] = arr[1:p+1].sum()
+        for i in range(p+1, n):
+            s[i] = s[i-1] - s[i-1]/p + arr[i]
+        return s
+    atr  = wilder(tr, period); apdm = wilder(pdm, period); andm = wilder(ndm, period)
+    pdi  = np.where(atr > 0, 100*apdm/atr, 0.0)
+    ndi  = np.where(atr > 0, 100*andm/atr, 0.0)
+    dsum = pdi + ndi
+    dx   = np.where(dsum > 0, 100*np.abs(pdi-ndi)/dsum, 0.0)
+    return wilder(dx, period), pdi, ndi
+
+
+def detect_rsi_divergence(close_arr, rsi_arr, lookback=30):
+    """
+    RSI 다이버전스 감지 (최근 lookback일 기준)
+    Returns: 'bullish' | 'bearish' | 'none'
+    - 강세: 가격 신저점 + RSI 고저점 → 반전 매수 신호
+    - 약세: 가격 신고점 + RSI 저고점 → 조정 경고
+    """
+    if len(close_arr) < lookback + 3:
+        return 'none'
+    c   = close_arr[-lookback:].astype(float)
+    rsi = rsi_arr[-lookback:].astype(float)
+    if np.isnan(rsi).sum() > lookback // 2:
+        return 'none'
+    mid     = lookback // 2
+    cur_c   = float(c[-3:].mean())
+    cur_rsi = float(np.nanmean(rsi[-3:]))
+    # 강세 다이버전스
+    if cur_c <= float(c[:mid].min()) * 1.02 and cur_rsi >= float(np.nanmin(rsi[:mid])) + 5:
+        return 'bullish'
+    # 약세 다이버전스
+    if cur_c >= float(c[:mid].max()) * 0.98 and cur_rsi <= float(np.nanmax(rsi[:mid])) - 5:
+        return 'bearish'
+    return 'none'
+
+
 def calc_bollinger(close_arr, period=20, std_dev=2):
     n = len(close_arr)
     c = close_arr.astype(float)
@@ -152,6 +202,63 @@ def calc_bollinger(close_arr, period=20, std_dev=2):
 # ══════════════════════════════════════════════════════════════════
 #  yfinance 데이터 다운로드 + 지표 계산
 # ══════════════════════════════════════════════════════════════════
+
+def _translate_ko(text):
+    """영문 텍스트를 한국어로 번역 — 실패 시 원문 반환"""
+    try:
+        from deep_translator import GoogleTranslator
+        result = GoogleTranslator(source='auto', target='ko').translate(text[:500])
+        return result or text
+    except Exception:
+        return text
+
+
+def fetch_news(tk, ticker):
+    """최근 7일 뉴스 수집 + 한글 번역 (최대 5건)"""
+    cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=7)
+    news_list = []
+    try:
+        raw = tk.news or []
+    except Exception:
+        return []
+
+    for item in raw:
+        try:
+            content   = item.get('content', item)           # 신/구 구조 모두 대응
+            title_en  = (content.get('title') or '').strip()
+            pub_date  = content.get('pubDate') or ''
+            publisher = ''
+            provider  = content.get('provider', {})
+            if isinstance(provider, dict):
+                publisher = (provider.get('displayName') or '')[:18]
+            else:
+                publisher = str(provider)[:18]
+
+            if not title_en:
+                continue
+
+            # 날짜 파싱 (ISO 8601: "2026-03-24T22:00:10Z")
+            if pub_date:
+                pub_dt = datetime.datetime.fromisoformat(pub_date.replace('Z', '+00:00'))
+            else:
+                continue
+
+            if pub_dt < cutoff.replace(tzinfo=datetime.timezone.utc):
+                continue
+
+            date_str   = pub_dt.strftime('%m/%d')
+            # 요약 내용 우선, 없으면 제목 사용
+            summary_en = (content.get('summary') or title_en)[:400]
+            summary_ko = _translate_ko(summary_en)
+            news_list.append({'date': date_str, 'summary': summary_ko, 'publisher': publisher})
+
+            if len(news_list) >= 5:
+                break
+        except Exception:
+            continue
+
+    return news_list
+
 
 def fetch_stock_data(ticker, retry=2):
     """실제 1년 OHLCV 다운로드 및 기술적 지표 계산"""
@@ -192,8 +299,8 @@ def fetch_stock_data(ticker, retry=2):
             # RSI
             rsi_arr = calc_rsi(close, 14)
 
-            # MACD
-            macd_arr, macd_sig_arr, _ = calc_macd(close)
+            # MACD (히스토그램 포함)
+            macd_arr, macd_sig_arr, hist_arr = calc_macd(close)
 
             # 현재값 추출
             cur_close  = float(close[-1])
@@ -227,6 +334,21 @@ def fetch_stock_data(ticker, retry=2):
             avg_vol = float(vol[-20:].mean())
             cur_vol = float(vol[-1])
 
+            # ── 방향성 지표 (5일 기울기) ──────────────────────────────
+            def slope5(arr):
+                seg = arr[-6:-1]; v = seg[~np.isnan(seg)]
+                return float(v[-1] - v[0]) if len(v) >= 2 else 0.0
+
+            rsi_slope       = slope5(rsi_arr)
+            macd_hist_slope = slope5(hist_arr)
+            ma20_slope      = slope5(ma20_arr)
+
+            # ADX / +DI / -DI
+            adx_arr, pdi_arr, ndi_arr = calc_adx(high, low_h, close, 14)
+
+            # RSI 다이버전스
+            divergence = detect_rsi_divergence(close, rsi_arr)
+
             # 의견 메모
             above_ma = sum([cur_close > ma20_val, cur_close > ma50_val, cur_close > ma200_val])
             if above_ma == 3:
@@ -241,6 +363,10 @@ def fetch_stock_data(ticker, retry=2):
             info = COMPANY_INFO.get(ticker, {'company': ticker, 'sector': 'N/A', 'exchange': 'NASDAQ'})
 
             print(f"  [{ticker}] 완료  종가=${cur_close:.2f}  MA20={ma20_val:.2f}  RSI={rsi_val:.1f}  MACD={macd_val:.3f}")
+
+            print(f"  [{ticker}] 뉴스 수집 중...")
+            news = fetch_news(tk, ticker)
+            print(f"  [{ticker}] 뉴스 {len(news)}건 (7일 이내)")
 
             return {
                 'ticker':        ticker,
@@ -263,7 +389,16 @@ def fetch_stock_data(ticker, retry=2):
                 'avg_volume':    avg_vol,
                 'high_52w_date': high_52w_date,
                 'low_52w_date':  low_52w_date,
-                'opinion_note':  opinion,
+                'opinion_note':     opinion,
+                # 방향성 지표
+                'rsi_slope':        round(rsi_slope, 2),
+                'macd_hist_slope':  round(macd_hist_slope, 4),
+                'ma20_slope':       round(ma20_slope, 2),
+                'adx':              round(safe(adx_arr, 20.0), 1),
+                'plus_di':          round(safe(pdi_arr, 25.0), 1),
+                'minus_di':         round(safe(ndi_arr, 25.0), 1),
+                'rsi_divergence':   divergence,
+                'news':             news,
                 # 실제 가격 시계열 → report_engine이 차트에 직접 사용
                 'price_series':  close.tolist(),
             }
