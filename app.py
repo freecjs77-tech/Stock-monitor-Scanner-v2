@@ -688,7 +688,7 @@ for row in rows:
                     _as = ", ".join(_above_list)
                     _bs = ", ".join(_below_list)
                     ma_desc = f"종가 &gt; {_as} &nbsp;<span style='opacity:.55'>({_bs} 아래)</span>"
-                    ma_col  = "#FFB300" if above == 2 else "#FF5252"
+                    ma_col  = "#FFB300" if above >= 1 else "#FF5252"
 
                 rsi_col = "#FF5252" if rsi >= 70 else ("#00E676" if rsi <= 35 else "rgba(255,255,255,0.7)")
 
