@@ -148,13 +148,18 @@ def render(target_tickers=None, open_browser=False):
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # 차트 이미지 복사
-    charts_src = os.path.join(ROOT, 'cowork_agents', 'charts')
+    # 차트 직접 생성 → docs/charts/
     charts_dst = os.path.join(OUTPUT_DIR, 'charts')
-    if os.path.exists(charts_src):
-        if os.path.exists(charts_dst):
-            shutil.rmtree(charts_dst)
-        shutil.copytree(charts_src, charts_dst)
+    os.makedirs(charts_dst, exist_ok=True)
+    try:
+        from report_engine import build_chart
+        for d in stocks_all:
+            chart_fn  = f"{d['ticker']}_chart.png"
+            chart_out = os.path.join(charts_dst, chart_fn)
+            build_chart(d, chart_out)
+            print(f"  [CHART] {d['ticker']} 차트 생성 완료")
+    except Exception as e:
+        print(f"  [CHART] 생성 실패: {e}")
 
     today_str   = datetime.date.today().strftime('%Y년 %m월 %d일')
     report_date = datetime.date.today().strftime('%Y%m%d')
