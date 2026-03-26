@@ -29,6 +29,16 @@ from report_engine import trading_stage, trading_stage2, auto_score, _stage_reas
 # Jinja2 환경
 env = Environment(loader=FileSystemLoader(TEMPLATE_DIR), autoescape=False)
 
+_DARK_TO_LIGHT = {
+    '#34D399': '#059669',
+    '#F87171': '#dc2626',
+    '#FBBF24': '#d97706',
+    '#A8C4DE': '#475569',
+    '#EEF4FB': '#334155',
+}
+def color_for_print(dark_hex):
+    return _DARK_TO_LIGHT.get(dark_hex, '#334155')
+
 def get_badge_class(sk):
     return {
         'entry3': 'buy',
@@ -240,8 +250,53 @@ def render(target_tickers=None, open_browser=False):
             f.write(html)
         print(f"  [HTML] {d['ticker']}.html 생성 완료")
 
+    # 전체 리포트 PDF 저장용 페이지
+    stocks_detail = []
+    for d in stocks_all:
+        sk1, lbl1, _ = trading_stage(d)
+        sk2, lbl2, _ = trading_stage2(d)
+        c   = d['close']
+        h52 = d.get('high_52w', c * 1.3)
+        l52 = d.get('low_52w',  c * 0.7)
+        rng = max(h52 - l52, 0.01)
+        pos_pct = max(0.0, min(1.0, (c - l52) / rng))
+        chart_fn   = f"{d['ticker']}_chart.png"
+        chart_path = (f"charts/{chart_fn}"
+                      if os.path.exists(os.path.join(charts_dst, chart_fn))
+                      else None)
+        try:
+            sd1 = get_stage_desc(d, sk1, lbl1)
+            sd2 = get_stage_desc(d, sk2, lbl2)
+        except Exception:
+            sd1, sd2 = lbl1, lbl2
+        raw_metrics = build_metrics(d, sk2)
+        for m in raw_metrics:
+            m['color_print'] = color_for_print(m['color'])
+        stocks_detail.append({
+            'ticker':      d['ticker'],
+            'company':     d.get('company', d['ticker']),
+            'exchange':    d.get('exchange', ''),
+            'sector':      d.get('sector', ''),
+            'close':       c,
+            'chg':         d.get('change_pct', d.get('chg_pct', 0.0)),
+            'high_52w':    h52,
+            'low_52w':     l52,
+            'pos_pct':     pos_pct,
+            'sk1':         get_badge_class(sk1), 'lbl1': lbl1, 'stage_desc1': sd1,
+            'sk2':         get_badge_class(sk2), 'lbl2': lbl2, 'stage_desc2': sd2,
+            'metrics':     raw_metrics,
+            'action':      build_action(d, sk2),
+            'chart_path':  chart_path,
+        })
+    tmpl = env.get_template('print_all.html')
+    html = tmpl.render(today_str=today_str, stocks=summary_stocks, stocks_detail=stocks_detail)
+    out = os.path.join(OUTPUT_DIR, 'print-all.html')
+    with open(out, 'w', encoding='utf-8') as f:
+        f.write(html)
+    print(f"  [HTML] print-all.html 생성 완료")
+
     index = os.path.join(OUTPUT_DIR, 'index.html')
-    print(f"\n  [완료] docs/ → {len(stocks_all)+1}개 HTML 파일")
+    print(f"\n  [완료] docs/ → {len(stocks_all)+2}개 HTML 파일")
     print(f"  [URL]  file://{index}")
 
     if open_browser:

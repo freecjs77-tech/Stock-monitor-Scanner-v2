@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mag7 전체 리포트 — {{ today_str }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ─── 기본 (화면 + 인쇄 공통) ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #ffffff;
+  --panel:  #f5f7fa;
+  --border: #d1dbe8;
+  --accent: #1d4ed8;
+  --text:   #0f172a;
+  --mid:    #334155;
+  --sub:    #64748b;
+  --green:  #059669;
+  --orange: #d97706;
+  --red:    #dc2626;
+  --gray:   #64748b;
+  --green-bg:  #ecfdf5;
+  --orange-bg: #fffbeb;
+  --red-bg:    #fef2f2;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans KR', system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ─── 인쇄 버튼 (인쇄 시 숨김) ─── */
+.print-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+  background: #1d4ed8; color: white;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 24px;
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.print-bar .hint { font-size: 11px; opacity: 0.8; }
+.btn-pdf {
+  background: white; color: #1d4ed8;
+  border: none; border-radius: 4px;
+  padding: 7px 18px; font-size: 13px; font-weight: 700;
+  cursor: pointer;
+}
+.btn-pdf:hover { background: #e0eaff; }
+body { padding-top: 44px; } /* 고정바 높이 보정 */
+
+/* ─── 페이지 래퍼 ─── */
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 28px 40px;
+  border-bottom: 2px dashed #d1dbe8;
+}
+.page:last-child { border-bottom: none; }
+
+/* ─── 표지 헤더 ─── */
+.cover-header {
+  border-bottom: 3px solid var(--accent);
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.cover-header h1 { font-size: 22px; font-weight: 700; color: var(--accent); }
+.cover-header .date { font-size: 12px; color: var(--sub); text-align: right; }
+
+/* ─── 요약 테이블 ─── */
+table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+th {
+  background: #e8eef7;
+  color: var(--mid);
+  font-size: 11px; font-weight: 700;
+  padding: 9px 8px;
+  text-align: center;
+  border-bottom: 2px solid var(--accent);
+}
+td {
+  padding: 9px 8px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+tr:nth-child(even) td { background: #f8fafc; }
+.td-left { text-align: left; padding-left: 10px; }
+
+/* ─── 배지 ─── */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px; font-weight: 700;
+}
+.badge-buy   { color: var(--green);  background: var(--green-bg);  border: 1px solid #a7f3d0; }
+.badge-entry { color: var(--orange); background: var(--orange-bg); border: 1px solid #fde68a; }
+.badge-sell  { color: var(--red);    background: var(--red-bg);    border: 1px solid #fecaca; }
+.badge-watch { color: var(--gray);   background: #f1f5f9;          border: 1px solid #cbd5e1; }
+
+/* ─── 색상 유틸 ─── */
+.c-green  { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); }
+.c-red    { color: var(--red); font-weight: 700; }
+.c-gray   { color: var(--gray); }
+.c-sub    { color: var(--sub); }
+.bold     { font-weight: 700; }
+
+/* ─── 종목 섹션 헤더 ─── */
+.stock-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2.5px solid var(--accent);
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+}
+.stock-header .left h2 { font-size: 20px; font-weight: 700; color: var(--accent); }
+.stock-header .left .meta { font-size: 11px; color: var(--sub); margin-top: 2px; }
+.stock-header .right .price { font-size: 22px; font-weight: 700; }
+
+/* ─── 판정 박스 ─── */
+.verdict-row {
+  display: flex; gap: 14px; margin-bottom: 12px;
+}
+.verdict-box {
+  flex: 1;
+  border-radius: 6px;
+  padding: 10px 14px;
+  border-left: 4px solid;
+}
+.verdict-box.buy    { background: var(--green-bg);  border-color: var(--green); }
+.verdict-box.entry  { background: var(--orange-bg); border-color: var(--orange); }
+.verdict-box.sell   { background: var(--red-bg);    border-color: var(--red); }
+.verdict-box.watch  { background: #f1f5f9;          border-color: var(--gray); }
+.verdict-box .v-label { font-size: 10px; color: var(--sub); margin-bottom: 3px; }
+.verdict-box .v-badge { margin-bottom: 4px; }
+.verdict-box .v-desc  { font-size: 11px; color: var(--mid); }
+
+/* ─── 52주 바 ─── */
+.range-wrap {
+  background: #f5f7fa; border: 1px solid var(--border);
+  border-radius: 6px; padding: 12px 14px; margin-bottom: 12px;
+}
+.range-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--sub); margin-bottom: 6px; }
+.range-bar { height: 7px; background: #d1dbe8; border-radius: 4px; position: relative; }
+.range-bar .filled { height: 100%; background: var(--accent); border-radius: 4px; }
+.range-bar .marker {
+  position: absolute; top: -5px;
+  width: 14px; height: 14px;
+  background: white; border: 2px solid var(--accent);
+  border-radius: 50%; transform: translateX(-50%);
+}
+
+/* ─── 차트 ─── */
+.chart-wrap { text-align: center; margin-bottom: 12px; }
+.chart-wrap img { max-width: 100%; border-radius: 6px; border: 1px solid var(--border); }
+
+/* ─── 메트릭 카드 ─── */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.metric-card {
+  background: #f8fafc; border: 1px solid var(--border);
+  border-radius: 6px; padding: 12px;
+}
+.metric-card .label { font-size: 10px; color: var(--sub); margin-bottom: 3px; }
+.metric-card .value { font-size: 18px; font-weight: 700; }
+.metric-card .dir   { font-size: 10px; color: var(--sub); margin-top: 2px; }
+
+/* ─── 액션 ─── */
+.action-box {
+  background: #f5f7fa; border: 1px solid var(--border);
+  border-radius: 6px; padding: 12px 16px;
+}
+.action-item {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 7px 0; border-bottom: 1px solid var(--border);
+}
+.action-item:last-child { border-bottom: none; }
+.action-icon { font-size: 16px; flex-shrink: 0; }
+.action-content .title { font-size: 11px; font-weight: 700; color: var(--mid); margin-bottom: 1px; }
+.action-content .desc  { font-size: 12px; }
+
+/* ─── 조건 표 ─── */
+.cond-section { margin-top: 20px; }
+.cond-section h3 { font-size: 13px; font-weight: 700; color: var(--accent); border-bottom: 1.5px solid var(--accent); padding-bottom: 5px; margin-bottom: 10px; }
+.cond-table td { font-size: 11px; text-align: left; padding: 7px 10px; }
+.cond-table td:first-child { white-space: nowrap; font-weight: 700; color: var(--mid); width: 80px; }
+
+/* ─── 푸터 ─── */
+.report-footer {
+  text-align: center; font-size: 10px; color: var(--sub);
+  margin-top: 20px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+/* ═══════════════════════════════════
+   인쇄 전용 스타일
+   ═══════════════════════════════════ */
+@media print {
+  @page { size: A4; margin: 15mm 12mm; }
+  body { padding-top: 0 !important; font-size: 11px; }
+  .print-bar { display: none !important; }
+  .page { border-bottom: none; padding: 0; max-width: 100%; }
+  .stock-page { page-break-before: always; }
+  .chart-wrap img { max-height: 320px; }
+  .metric-grid { grid-template-columns: repeat(3, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- 인쇄 버튼 바 (화면에서만 표시) -->
+<div class="print-bar">
+  <div>
+    <strong>Mag7 전체 리포트</strong>
+    <span class="hint">&nbsp;—&nbsp;{{ today_str }}</span>
+  </div>
+  <div style="display:flex; gap:10px; align-items:center;">
+    <span class="hint">브라우저 인쇄 → 대상: PDF로 저장</span>
+    <button class="btn-pdf" onclick="window.print()">📄 PDF 저장</button>
+  </div>
+</div>
+
+<!-- ════════════ 1페이지: 요약 ════════════ -->
+<div class="page">
+  <div class="cover-header">
+    <div>
+      <h1>Mag7 타이밍 판정 요약</h1>
+      <div style="font-size:12px; color:var(--sub); margin-top:4px;">기술적 분석 자동 생성 보고서</div>
+    </div>
+    <div class="date">
+      {{ today_str }}<br>
+      <span style="font-size:11px;">Data: Yahoo Finance</span>
+    </div>
+  </div>
+
+  <!-- 판정 범례 -->
+  <div style="display:flex; gap:16px; margin-bottom:10px; font-size:11px; color:var(--sub);">
+    <span>판정1: <b style="color:var(--text);">시장필터 포함</b> (QQQ MA200 기준)</span>
+    <span>|</span>
+    <span>판정2: <b style="color:var(--text);">기술신호만</b> (종목 자체 조건)</span>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>티커</th>
+        <th>판정1<br><span style="font-size:9px; font-weight:400;">시장필터</span></th>
+        <th>판정2<br><span style="font-size:9px; font-weight:400;">기술신호</span></th>
+        <th>종가</th>
+        <th>변동률</th>
+        <th>RSI</th>
+        <th class="td-left">근거 (판정2)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in stocks %}
+      <tr>
+        <td class="bold">{{ s.ticker }}</td>
+        <td><span class="badge badge-{{ s.sk1 }}">{{ s.lbl1 }}</span></td>
+        <td><span class="badge badge-{{ s.sk2 }}">{{ s.lbl2 }}</span></td>
+        <td class="bold">${{ "%.2f"|format(s.close) }}</td>
+        <td class="{{ 'c-green' if s.chg >= 0 else 'c-red' }}">{{ "%+.2f"|format(s.chg) }}%</td>
+        <td class="{{ 'c-green' if s.rsi <= 35 else 'c-red' if s.rsi >= 70 else '' }}">{{ "%.1f"|format(s.rsi) }}</td>
+        <td class="td-left c-sub">{{ s.reason2 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- 조건 기준 표 -->
+  <div class="cond-section">
+    <h3>판정 조건 기준</h3>
+    <table class="cond-table">
+      <tbody>
+        <tr>
+          <td style="color:var(--sub);">0️⃣ 시장 필터</td>
+          <td>QQQ 종가 &gt; MA200(200일선) 위 → 매수 허용 &nbsp;|&nbsp; 아래 → 전종목 매수 금지 (대세 하락장)</td>
+        </tr>
+        <tr>
+          <td class="c-orange">1차 매수<br><span style="font-size:9px; font-weight:400;">자금 20%</span></td>
+          <td>6조건 중 3개 이상 충족 &nbsp;|&nbsp; 🚫 RSI &gt; 50 또는 당일 -5% 이상 시 금지<br>
+            ① RSI(14) ≤ 38 &nbsp; ② ADX(14) ≤ 25 &nbsp; ③ 종가 ≤ BB하단 × 1.02<br>
+            ④ 종가 &lt; MA20 &nbsp; ⑤ 하락 멈춤(오늘 ≥ 최근 3일 최저) &nbsp; ⑥ 당일 +2% 이상 반등</td>
+        </tr>
+        <tr>
+          <td class="c-orange">2차 매수<br><span style="font-size:9px; font-weight:400;">자금 30%</span></td>
+          <td>4조건 모두(ALL) 충족<br>
+            ① 이중 바닥: 최근 5일 최저 ≥ 이전 5일 최저 × 0.98<br>
+            ② RSI &gt; 35 + 3일 연속 상승 &nbsp; ③ MACD 골든크로스 또는 히스토그램 3일 연속 증가<br>
+            ④ 거래량 ≥ 20일 평균 × 1.2</td>
+        </tr>
+        <tr>
+          <td class="c-green">3차 매수<br><span style="font-size:9px; font-weight:400;">자금 50%</span></td>
+          <td>4조건 모두(ALL) 충족 &nbsp;|&nbsp; 🚫 RSI &gt; 75 또는 장대음봉 시 금지<br>
+            ① 종가 2일 연속 MA20 위 마감 &nbsp; ② MA20 기울기 양수 (3일 전 대비)<br>
+            ③ MACD 라인 0선 위 돌파 &nbsp; ④ 거래량 ≥ 20일 평균 × 1.3</td>
+        </tr>
+        <tr>
+          <td class="c-gray">관망</td>
+          <td>위 조건 미충족 — 현금 보유, 다음 신호 대기</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="report-footer">
+    본 보고서는 AI 기반 자동 기술적 분석으로, 투자 권유가 아닙니다. | Data: Yahoo Finance (yfinance)
+  </div>
+</div>
+
+<!-- ════════════ 종목별 페이지 ════════════ -->
+{% for s in stocks_detail %}
+<div class="page stock-page">
+
+  <!-- 종목 헤더 -->
+  <div class="stock-header">
+    <div class="left">
+      <h2>{{ s.ticker }} &nbsp;<span style="font-size:14px; font-weight:400; color:var(--sub);">{{ s.company }}</span></h2>
+      <div class="meta">{{ s.exchange }} | {{ s.sector }} | {{ today_str }}</div>
+    </div>
+    <div class="right" style="text-align:right;">
+      <div class="price">${{ "%.2f"|format(s.close) }}</div>
+      <div class="{{ 'c-green' if s.chg >= 0 else 'c-red' }}" style="font-size:13px;">{{ "%+.2f"|format(s.chg) }}%</div>
+    </div>
+  </div>
+
+  <!-- 판정 박스 2개 나란히 -->
+  <div class="verdict-row">
+    <div class="verdict-box {{ s.sk1 }}">
+      <div class="v-label">판정1 — 시장필터 포함 (QQQ MA200)</div>
+      <div class="v-badge"><span class="badge badge-{{ s.sk1 }}">{{ s.lbl1 }}</span></div>
+      <div class="v-desc">{{ s.stage_desc1 }}</div>
+    </div>
+    <div class="verdict-box {{ s.sk2 }}">
+      <div class="v-label">판정2 — 기술신호만 (종목 자체)</div>
+      <div class="v-badge"><span class="badge badge-{{ s.sk2 }}">{{ s.lbl2 }}</span></div>
+      <div class="v-desc">{{ s.stage_desc2 }}</div>
+    </div>
+  </div>
+
+  <!-- 52주 범위 바 -->
+  <div class="range-wrap">
+    <div class="range-labels">
+      <span>52주 저점 ${{ "%.2f"|format(s.low_52w) }}</span>
+      <span>현재 위치 {{ "%.0f"|format(s.pos_pct*100) }}%</span>
+      <span>52주 고점 ${{ "%.2f"|format(s.high_52w) }}</span>
+    </div>
+    <div class="range-bar">
+      <div class="filled" style="width:{{ "%.1f"|format(s.pos_pct*100) }}%;"></div>
+      <div class="marker" style="left:{{ "%.1f"|format(s.pos_pct*100) }}%;"></div>
+    </div>
+  </div>
+
+  <!-- 차트 -->
+  {% if s.chart_path %}
+  <div class="chart-wrap">
+    <img src="{{ s.chart_path }}" alt="{{ s.ticker }} 차트">
+  </div>
+  {% endif %}
+
+  <!-- 메트릭 카드 -->
+  <div class="metric-grid">
+    {% for m in s.metrics %}
+    <div class="metric-card">
+      <div class="label">{{ m.label }}</div>
+      <div class="value" style="color:{{ m.color_print }};">{{ m.value }}</div>
+      <div class="dir">{{ m.direction }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- 액션 -->
+  <div class="action-box">
+    <div class="action-item">
+      <div class="action-icon">⏰</div>
+      <div class="action-content">
+        <div class="title">{{ s.action.wait_title }}</div>
+        <div class="desc">{{ s.action.wait_cond }}</div>
+      </div>
+    </div>
+    <div class="action-item">
+      <div class="action-icon">📈</div>
+      <div class="action-content">
+        <div class="title">{{ s.action.confirm_title }}</div>
+        <div class="desc">{{ s.action.confirm_cond }}</div>
+      </div>
+    </div>
+    <div class="action-item">
+      <div class="action-icon">🚫</div>
+      <div class="action-content">
+        <div class="title">{{ s.action.stop_title }}</div>
+        <div class="desc c-red">{{ s.action.stop_cond }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="report-footer">
+    본 보고서는 AI 기반 자동 기술적 분석으로, 투자 권유가 아닙니다. | Data: Yahoo Finance (yfinance)
+  </div>
+</div>
+{% endfor %}
+
+</body>
+</html>
