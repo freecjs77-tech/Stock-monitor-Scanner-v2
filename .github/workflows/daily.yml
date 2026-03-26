@@ -73,7 +73,7 @@ jobs:
               sys.path.insert(0, 'cowork_agents')
               from report_engine import trading_stage
               lines = []
-              badge = {'buy1':'🟡','buy2':'🟢','buy3':'🟢','watch':'⚪','watch_market':'🔴'}
+              badge = {'entry1':'🟡','entry2':'🟢','entry3':'🟢','watch':'⚪','watch_market':'🔴'}
               for d in cache.get('stocks', []):
                   sk, lbl, _ = trading_stage(d)
                   lines.append(f"{badge.get(sk,'⚪')} <b>{d['ticker']}</b>  {lbl}   RSI {d['rsi']:.1f}")
@@ -123,7 +123,7 @@ jobs:
               sys.path.insert(0, 'cowork_agents')
               from report_engine import trading_stage
               rows = ""
-              badge = {'buy1':'🟡','buy2':'🟢','buy3':'🟢','watch':'⚪','watch_market':'🔴'}
+              badge = {'entry1':'🟡','entry2':'🟢','entry3':'🟢','watch':'⚪','watch_market':'🔴'}
               for d in cache.get('stocks', []):
                   sk, lbl, _ = trading_stage(d)
                   rows += f"<tr><td>{badge.get(sk,'⚪')} <b>{d['ticker']}</b></td><td>{lbl}</td><td>{d['rsi']:.1f}</td></tr>"
@@ -158,14 +158,6 @@ jobs:
               s.sendmail(user, to.split(','), msg.as_string())
           print(f"[MAIL] 발송 완료 → {to}")
           EOF
-
-      - name: Upload PDF as artifact (7일 보관)
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: mag7-report-${{ github.run_id }}
-          path: cowork_agents/reports/Mag7_Daily_Report_*.pdf
-          retention-days: 7
 
       - name: Notify on failure
         if: failure()
