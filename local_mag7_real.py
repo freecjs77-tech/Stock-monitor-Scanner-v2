@@ -47,9 +47,10 @@ except ImportError as e:
     sys.exit(1)
 
 try:
-    from ai_summary import generate_ai_summary
+    from ai_summary import generate_ai_summary, generate_condition_explanation
 except ImportError:
     generate_ai_summary = None
+    generate_condition_explanation = None
 
 # ── tickers.json에서 종목 목록 로드 ────────────────────────────────
 TICKERS_FILE = os.path.join(SCRIPT_DIR, 'tickers.json')
@@ -562,6 +563,16 @@ def run(tickers=None, send_telegram=False):
 
             # QQQ 시장 필터 주입
             sd['qqq_above_ma200'] = qqq_above_ma200
+
+            # AI 판정 근거 설명 생성 (GROQ_API_KEY 있을 때만)
+            if generate_condition_explanation:
+                try:
+                    sd['condition_explanation'] = generate_condition_explanation(sd)
+                except Exception as e:
+                    print(f"  [{ticker}] 조건 설명 생성 오류: {e}")
+                    sd['condition_explanation'] = ''
+            else:
+                sd['condition_explanation'] = ''
 
             stocks_data.append(sd)
 

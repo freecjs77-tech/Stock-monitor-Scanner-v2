@@ -100,5 +100,47 @@
       </div>
     </div>
   </div>
+
+  <!-- 판정 근거 설명 -->
+  {% if breakdown %}
+  <div style="background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:16px; margin-top:12px;">
+    <div style="font-size:13px; font-weight:700; color:var(--fg); margin-bottom:12px;">🔍 판정 근거 상세</div>
+
+    {% if breakdown.ai_explanation %}
+    <div style="background:var(--bg); border-left:3px solid var(--accent,#60a5fa); border-radius:0 4px 4px 0; padding:10px 14px; margin-bottom:14px; font-size:12px; color:var(--mid); line-height:1.7;">
+      {{ breakdown.ai_explanation }}
+    </div>
+    {% endif %}
+
+    {% for stage_key in ['entry1', 'entry2', 'entry3'] %}
+    {% set stage = breakdown[stage_key] %}
+    <div style="margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div style="font-size:12px; font-weight:600; color:var(--fg);">{{ stage.title }}</div>
+        <div style="font-size:11px; color:{% if stage.met >= stage.required %}#34D399{% else %}#FBBF24{% endif %}; font-weight:600;">
+          {{ stage.met }}/{{ stage.total }} 충족
+        </div>
+      </div>
+      {% if stage.blocked and stage.block_reason %}
+      <div style="font-size:11px; color:#F87171; background:rgba(248,113,113,0.1); border-radius:4px; padding:4px 8px; margin-bottom:6px;">
+        ⛔ {{ stage.block_reason }}
+      </div>
+      {% endif %}
+      <div style="border:1px solid var(--border); border-radius:4px; overflow:hidden;">
+        {% for cond in stage.conditions %}
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:{% if not loop.last %}1px solid var(--border){% else %}none{% endif %}; background:{% if cond.pass %}rgba(52,211,153,0.05){% else %}rgba(248,113,113,0.04){% endif %};">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">{{ '✅' if cond.pass else '❌' }}</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:11px; font-weight:600; color:var(--fg);">{{ cond.name }}</div>
+            <div style="font-size:11px; color:var(--sub); margin-top:2px;">{{ cond.ok if cond.pass else cond.fail }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
 </div>
 {% endblock %}

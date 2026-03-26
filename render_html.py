@@ -24,7 +24,7 @@ TEMPLATE_DIR = os.path.join(ROOT, 'templates')
 OUTPUT_DIR   = os.path.join(ROOT, 'docs')   # GitHub Pages는 docs/ 사용
 
 sys.path.insert(0, os.path.join(ROOT, 'cowork_agents'))
-from report_engine import trading_stage, trading_stage2, auto_score, _stage_reason, _stage_reason2, build_chart
+from report_engine import trading_stage, trading_stage2, auto_score, _stage_reason, _stage_reason2, build_chart, get_condition_breakdown
 
 # Jinja2 환경
 env = Environment(loader=FileSystemLoader(TEMPLATE_DIR), autoescape=False)
@@ -242,6 +242,11 @@ def render(target_tickers=None, open_browser=False):
             stage_desc1 = lbl1
             stage_desc2 = lbl2
 
+        try:
+            breakdown = get_condition_breakdown(d)
+        except Exception:
+            breakdown = None
+
         html = tmpl.render(
             d=d,
             sk1=get_badge_class(sk1), lbl1=lbl1, stage_desc1=stage_desc1,
@@ -252,6 +257,7 @@ def render(target_tickers=None, open_browser=False):
             metrics=build_metrics(d, sk2),
             pos_pct=pos_pct,
             stocks=nav_stocks,
+            breakdown=breakdown,
         )
         out = os.path.join(OUTPUT_DIR, f"{d['ticker']}.html")
         with open(out, 'w', encoding='utf-8') as f:
