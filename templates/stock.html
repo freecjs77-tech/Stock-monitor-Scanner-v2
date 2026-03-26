@@ -107,7 +107,7 @@
     <div style="font-size:13px; font-weight:700; color:var(--fg); margin-bottom:12px;">🔍 판정 근거 상세</div>
 
     {% if breakdown.ai_explanation %}
-    <div style="background:var(--bg); border-left:3px solid var(--accent,#60a5fa); border-radius:0 4px 4px 0; padding:10px 14px; margin-bottom:14px; font-size:12px; color:var(--mid); line-height:1.7;">
+    <div style="background:var(--bg); border-left:3px solid var(--accent,#60a5fa); border-radius:0 4px 4px 0; padding:10px 14px; margin-bottom:14px; font-size:12px; color:#ffffff; line-height:1.7;">
       {{ breakdown.ai_explanation }}
     </div>
     {% endif %}
@@ -132,7 +132,7 @@
           <span style="font-size:13px; flex-shrink:0; margin-top:1px;">{{ '✅' if cond.pass else '❌' }}</span>
           <div style="flex:1; min-width:0;">
             <div style="font-size:11px; font-weight:600; color:var(--fg);">{{ cond.name }}</div>
-            <div style="font-size:11px; color:var(--sub); margin-top:2px;">{{ cond.ok if cond.pass else cond.fail }}</div>
+            <div style="font-size:11px; color:#ffffff; margin-top:2px;">{{ cond.ok if cond.pass else cond.fail }}</div>
           </div>
         </div>
         {% endfor %}
