@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-03-25",
+  "last_updated": "2026-03-26",
   "source": "yfinance",
   "stocks": [
     {
@@ -7,33 +7,38 @@
       "company": "NVIDIA Corporation",
       "sector": "AI / 반도체",
       "exchange": "NASDAQ",
-      "close": 175.2,
-      "change_pct": -0.25,
+      "close": 178.68,
+      "change_pct": 1.99,
       "high_52w": 212.17,
       "low_52w": 86.6,
-      "ma20": 181.44,
-      "ma50": 184.21,
-      "ma200": 178.76,
-      "rsi": 41.53,
-      "macd": -2.4636,
-      "macd_signal": -1.603,
-      "bb_upper": 190.93,
-      "bb_lower": 171.94,
-      "volume": 142336713.0,
-      "avg_volume": 199406295.65,
+      "ma20": 180.59,
+      "ma50": 184.09,
+      "ma200": 178.95,
+      "rsi": 46.39,
+      "macd": -2.3172,
+      "macd_signal": -1.7459,
+      "bb_upper": 187.6,
+      "bb_lower": 173.59,
+      "volume": 162047260.0,
+      "avg_volume": 195243358.0,
       "high_52w_date": "2025년 10월",
       "low_52w_date": "2025년 04월",
       "opinion_note": "약세 지속",
-      "rsi_slope": -5.35,
-      "rsi_slope3": -1.62,
-      "macd_hist_slope": -0.6845,
-      "macd_hist_slope3": -0.4636,
-      "ma20_slope": -2.5,
-      "adx": 19.6,
-      "plus_di": 14.5,
-      "minus_di": 30.1,
+      "rsi_slope": -4.1,
+      "rsi_slope3": 3.7,
+      "macd_hist_slope": -0.5958,
+      "macd_hist_slope3": -0.0178,
+      "ma20_slope": -3.0,
+      "adx": 19.4,
+      "plus_di": 19.8,
+      "minus_di": 27.8,
       "rsi_divergence": "none",
       "news": [
+        {
+          "date": "03/24",
+          "summary": "Arm 주가는 자체 데이터 센터 칩을 출시한 후 급등하여 Intel과 AMD가 주목을 받았습니다.",
+          "publisher": "Yahoo Finance"
+        },
         {
           "date": "03/25",
           "summary": "이란 상황을 모니터링하는 것 외에도 Anthropic의 새로운 역량으로 인해 소프트웨어 주식이 다시 뜨거운 자리에 놓일 수 있으므로 우리는 소프트웨어 주식을 관찰하고 있습니다.",
@@ -46,17 +51,12 @@
         },
         {
           "date": "03/25",
-          "summary": "이 주식은 초기 투자자들을 천재처럼 보이게 만들었고, 지난 3년 동안 주가가 1,600%나 급등했습니다.",
+          "summary": "한 거대 기업이 자사의 비즈니스를 위협할 수 있는 기술을 공개했습니다.",
           "publisher": "Motley Fool"
         },
         {
           "date": "03/25",
-          "summary": "Microsoft는 20년 넘게 매년 탄탄한 배당금을 늘려온 배당 투자자들에게 과소평가된 선택입니다.",
-          "publisher": "Motley Fool"
-        },
-        {
-          "date": "03/25",
-          "summary": "이더리움은 강력한 블록체인이지만 속도나 비용 측면에서 솔라나와 경쟁할 수 없습니다.",
+          "summary": "시중에는 암호화폐가 너무 많기 때문에 무엇을 피해야 하는지 아는 것이 도움이 됩니다.",
           "publisher": "Motley Fool"
         }
       ]
@@ -66,57 +66,57 @@
       "company": "Tesla Inc.",
       "sector": "EV / 에너지",
       "exchange": "NASDAQ",
-      "close": 383.03,
-      "change_pct": 0.57,
+      "close": 385.95,
+      "change_pct": 0.76,
       "high_52w": 498.83,
       "low_52w": 214.25,
-      "ma20": 396.21,
-      "ma50": 412.95,
-      "ma200": 395.12,
-      "rsi": 41.52,
-      "macd": -9.3131,
-      "macd_signal": -8.1416,
-      "bb_upper": 418.78,
-      "bb_lower": 373.63,
-      "volume": 59674483.0,
-      "avg_volume": 60570429.15,
+      "ma20": 394.64,
+      "ma50": 411.69,
+      "ma200": 395.57,
+      "rsi": 43.29,
+      "macd": -8.8642,
+      "macd_signal": -8.2861,
+      "bb_upper": 415.39,
+      "bb_lower": 373.88,
+      "volume": 54787532.0,
+      "avg_volume": 60585841.6,
       "high_52w_date": "2025년 12월",
       "low_52w_date": "2025년 04월",
       "opinion_note": "약세 지속",
-      "rsi_slope": -5.06,
-      "rsi_slope3": 3.79,
-      "macd_hist_slope": -2.0022,
-      "macd_hist_slope3": -1.0011,
-      "ma20_slope": -5.64,
-      "adx": 26.1,
-      "plus_di": 17.5,
-      "minus_di": 31.8,
+      "rsi_slope": -0.44,
+      "rsi_slope3": 9.58,
+      "macd_hist_slope": -1.4129,
+      "macd_hist_slope3": 0.6535,
+      "ma20_slope": -6.03,
+      "adx": 25.5,
+      "plus_di": 20.9,
+      "minus_di": 29.6,
       "rsi_divergence": "none",
       "news": [
         {
-          "date": "03/24",
-          "summary": "TECHnalytic Research 사장 Bob O'Donnell은 시장 지배 앵커인 Josh Lipton과 함께 Elon Musk의 Tesla(TSLA) 및 SpaceX(SPAX.PVT)를 위한 새로운 Terafab 프로젝트와 이것이 미국에서 국내 칩 제조 개발을 위해 무엇을 의미하는지에 대해 설명합니다.&nbsp;",
+          "date": "03/25",
+          "summary": "Yahoo Finance 수석 기자 Brooke DiPalma는 Yahoo Finance 수석 자동차 기자 Pras Subramanian과 Elon Musk의 SpaceX(SPAX.PVT) 및 이번 주에 IPO를 신청할 수 있는지에 대한 최근 추측에 대해 이야기합니다.",
           "publisher": "Yahoo Finance Vide"
         },
         {
           "date": "03/25",
-          "summary": "The Information은 SpaceX IPO 신청이 이번 주에 올 수 있다고 보도했습니다. Elon Musk의 우주 회사는 기록적인 750억 달러의 자금 조달을 모색할 수 있습니다.",
+          "summary": "이란 전쟁에 대한 희망과 의구심 속에 증시는 상승세를 삭감했습니다. 우주기업 카르만 홀딩스(Karman Holdings)가 실적을 늦게 보고했다.",
           "publisher": "Investor's Busines"
         },
         {
           "date": "03/25",
-          "summary": "Tesla(NasdaqGS:TSLA)는 1년여 만에 유럽에서 처음으로 긍정적인 매출 성장을 기록했습니다. 이러한 반등은 BYD를 포함한 중국 EV 제조업체가 주요 유럽 시장에서 경쟁 압력을 강화함에 따라 발생합니다. 이러한 지역 모멘텀의 변화는 판매 실적이 감소하고 Tesla의 유럽 제품 라인업에 대한 의문이 제기된 기간에 따른 것입니다. Tesla의 유럽에서의 새로운 판매 모멘텀이 도래했습니다.",
-          "publisher": "Simply Wall St."
+          "summary": "결국 유가 상승이 다른 부문의 수익성에 부담을 주기 시작할 것으로 예상하는 것은 합리적입니다. 아직 거기까지는 이르지 못했지만, 현재 진행 중인 공급 측면 문제가 앞으로 몇 달 동안 지속된다면, 총 수익 추정치는 압박을 받을 것으로 예상해야 합니다.",
+          "publisher": "Zacks"
         },
         {
           "date": "03/25",
-          "summary": "Meta Platforms는 심화되는 AI 인재 경쟁에서 앞서 나가기 위해 2031년까지 시가총액 9조 달러를 목표로 하는 야심찬 임원 급여 인센티브를 공개했습니다.  화요일 늦게 제출된 서류에 따르면 CEO 마크 주커버그가 아닌 6명의 리더가 포함된 스톡 옵션 프로그램 하에서 옵션의 전체 가치는 메타 주가가 500% 이상 상승한 3,727달러에 도달한 경우에만 실현될 것이라고 합니다.",
-          "publisher": "Barrons.com"
+          "summary": "골드만삭스, 모건스탠리 및 기타 28개 은행은 400억~600억 달러의 수요를 줄인 것으로 알려졌으며 머스크는 경쟁사 IPO로 인해 풀이 고갈되기 전에 빠르게 움직이도록 압력을 받고 있다.",
+          "publisher": "Moby"
         },
         {
           "date": "03/25",
-          "summary": "Tesla-Owner (TSLA) Elon Musk의 SpaceX는 최초 공모 안내서를 다시 제출할 계획입니다.",
-          "publisher": "MT Newswires"
+          "summary": "The Information은 SpaceX IPO 신청이 이번 주에 올 수 있다고 보도했습니다. Elon Musk의 우주 회사는 기록적인 750억 달러의 자금 조달을 모색할 수 있습니다. 우주주가 급등했다.",
+          "publisher": "Investor's Busines"
         }
       ]
     },
@@ -125,33 +125,43 @@
       "company": "Alphabet Inc.",
       "sector": "검색 / 클라우드 / AI",
       "exchange": "NASDAQ",
-      "close": 290.44,
-      "change_pct": -3.85,
+      "close": 290.93,
+      "change_pct": 0.17,
       "high_52w": 348.75,
       "low_52w": 140.04,
-      "ma20": 304.78,
-      "ma50": 316.58,
-      "ma200": 260.84,
-      "rsi": 33.67,
-      "macd": -3.7997,
-      "macd_signal": -3.3393,
-      "bb_upper": 314.69,
-      "bb_lower": 294.88,
-      "volume": 36679100.0,
-      "avg_volume": 29920875.0,
+      "ma20": 303.7,
+      "ma50": 315.76,
+      "ma200": 261.43,
+      "rsi": 34.31,
+      "macd": -4.4778,
+      "macd_signal": -3.567,
+      "bb_upper": 314.62,
+      "bb_lower": 292.77,
+      "volume": 29331608.0,
+      "avg_volume": 29898535.4,
       "high_52w_date": "2026년 02월",
       "low_52w_date": "2025년 04월",
       "opinion_note": "중립/약세",
-      "rsi_slope": -8.63,
-      "rsi_slope3": -4.63,
-      "macd_hist_slope": -0.5539,
-      "macd_hist_slope3": -0.6148,
-      "ma20_slope": -0.7,
-      "adx": 25.9,
-      "plus_di": 14.5,
-      "minus_di": 33.5,
+      "rsi_slope": -14.33,
+      "rsi_slope3": -7.77,
+      "macd_hist_slope": -1.4809,
+      "macd_hist_slope3": -1.0513,
+      "ma20_slope": -1.94,
+      "adx": 27.0,
+      "plus_di": 13.5,
+      "minus_di": 32.3,
       "rsi_divergence": "bullish",
       "news": [
+        {
+          "date": "03/25",
+          "summary": "Yahoo Finance의 Dan Howley가 앵커 Josh Lipton과 Meta(META)와 Google(GOOG, GOOGL)이 중독성 플랫폼 설계 혐의로 600만 달러의 손해배상 책임을 져야 한다는 획기적인 법원 판결에 대해 이야기합니다. 이는 수천 건의 유사한 사건이 다가오는 가운데 중요한 선례를 세웠습니다.",
+          "publisher": "Yahoo Finance Vide"
+        },
+        {
+          "date": "03/25",
+          "summary": "소셜 미디어 회사를 상대로 한 획기적인 소송에서 배심원단은 수요일 원고에게 유리한 판결을 내렸습니다.",
+          "publisher": "Yahoo Finance"
+        },
         {
           "date": "03/24",
           "summary": "CEO는 10억 달러 규모의 AI 운영 기업 시대가 이미 도래했다고 주장합니다.",
@@ -159,23 +169,13 @@
         },
         {
           "date": "03/25",
-          "summary": "The Information은 SpaceX IPO 신청이 이번 주에 올 수 있다고 보도했습니다. Elon Musk의 우주 회사는 기록적인 750억 달러의 자금 조달을 모색할 수 있습니다.",
-          "publisher": "Investor's Busines"
+          "summary": "<body><p>스토리: 수요일 획기적인 판결에서 Meta와 Google은 어린이와 청소년에게 위험한 플랫폼을 설계한 책임이 있다고 판결했습니다.</p><p>두 회사 모두 600만 달러에 달하는 손해 배상금을 선고받았습니다.</p><p>로스앤젤레스 배심원단은 이 중 Meta가 420만 달러, Alphabet의 Google이 180만 달러에 대해 책임이 있다고 판결했습니다.</p><p>이 금액은 세계에서 가장 가치 있는 두 회사에 대한 소액입니다... 하지만",
+          "publisher": "Reuters Videos"
         },
         {
           "date": "03/25",
-          "summary": "(세 번째, 네 번째 문단에 블룸버그의 세부 내용이 업데이트되어 있습니다.) SK 하이닉스는 수요일에 이렇게 말했습니다.",
-          "publisher": "MT Newswires"
-        },
-        {
-          "date": "03/25",
-          "summary": "캘리포니아의 억만장자들에게 세금을 부과하겠다는 제안은 엄청난 부자들이 자신들의 몫을 지불하게 하려는 미국의 열정의 한계를 시험하고 있습니다.",
-          "publisher": "USA TODAY"
-        },
-        {
-          "date": "03/25",
-          "summary": "Kane Wu, Aditya Kalra 및 Vibhuti Sharma 홍콩/뉴델리, 3월 25일(로이터) - 인도 억만장자 Mukesh Ambani의 Reliance Jio Platforms가 13개 주요 외국인 투자자들과 매각 협상을 가졌습니다.",
-          "publisher": "Reuters"
+          "summary": "한 거대 기업이 자사의 비즈니스를 위협할 수 있는 기술을 공개했습니다.",
+          "publisher": "Motley Fool"
         }
       ]
     },
@@ -184,57 +184,57 @@
       "company": "Palantir Technologies",
       "sector": "AI / 방산 소프트웨어",
       "exchange": "NASDAQ",
-      "close": 154.78,
-      "change_pct": -3.77,
+      "close": 154.96,
+      "change_pct": 0.12,
       "high_52w": 207.52,
       "low_52w": 66.12,
-      "ma20": 150.44,
-      "ma50": 150.79,
-      "ma200": 163.76,
-      "rsi": 53.86,
-      "macd": 2.3283,
-      "macd_signal": 1.3526,
-      "bb_upper": 164.44,
-      "bb_lower": 136.45,
-      "volume": 54262366.0,
-      "avg_volume": 50313698.3,
+      "ma20": 151.48,
+      "ma50": 150.31,
+      "ma200": 163.89,
+      "rsi": 54.02,
+      "macd": 2.2944,
+      "macd_signal": 1.5409,
+      "bb_upper": 163.44,
+      "bb_lower": 139.53,
+      "volume": 37993457.0,
+      "avg_volume": 49654122.85,
       "high_52w_date": "2025년 11월",
       "low_52w_date": "2025년 04월",
       "opinion_note": "중립/강세",
-      "rsi_slope": 3.21,
-      "rsi_slope3": 3.19,
-      "macd_hist_slope": -0.5757,
-      "macd_hist_slope3": -0.1547,
-      "ma20_slope": 4.19,
-      "adx": 18.2,
-      "plus_di": 22.1,
-      "minus_di": 17.0,
+      "rsi_slope": -0.49,
+      "rsi_slope3": 2.81,
+      "macd_hist_slope": -0.5239,
+      "macd_hist_slope3": 0.0325,
+      "ma20_slope": 4.62,
+      "adx": 17.8,
+      "plus_di": 20.9,
+      "minus_di": 16.0,
       "rsi_divergence": "none",
       "news": [
         {
           "date": "03/25",
-          "summary": "Palantir Technologies(NasdaqGS:PLTR)는 Maven AI 플랫폼을 미 국방부에서 국방부의 \"기록 프로그램\"으로 공식 채택했습니다. 이번 변경으로 Maven AI는 미군 인프라의 영구 구성 요소로 포함되어 지점 전반에 걸쳐 예산이 반복적으로 처리됩니다. Palantir는 또한 UK Financial Conduct Au와의 중요한 재판을 포함하여 새로운 공공 부문 작업도 확보했습니다.",
-          "publisher": "Simply Wall St."
+          "summary": "이러한 상황에서는 투자자들은 워렌 버핏의 조언을 따라야 합니다.",
+          "publisher": "Motley Fool"
         },
         {
           "date": "03/25",
-          "summary": "Palantir Technologies(PLTR)는 주식이 주요 이동 평균 근처의 중요한 기술 지원 영역에 앉아 있는 시점에 워싱턴에서 새로운 촉매제를 가지고 있습니다. 이달 초 국방부 메모에는 국방부가 Palantir의 Maven 디지털 전투 관리 시스템을 ...",
-          "publisher": "TheStreet"
+          "summary": "SpaceX는 기업공개(IPO) 신청을 검토 중인 것으로 알려졌습니다. 민간 지분을 보유한 펀드가 급증하고 있다. 그러나 구매자는 조심하십시오.",
+          "publisher": "Barrons.com"
         },
         {
-          "date": "03/24",
-          "summary": "3월 24일(로이터) - Anduril과 Palantir Technologies가 미국용 소프트웨어를 개발하기 위해 협력하고 있습니다.",
-          "publisher": "Reuters"
+          "date": "03/25",
+          "summary": "애널리스트들이 도널드 트럼프 대통령의 골든 돔(Golden Dome) 프로젝트가 수십억 달러의 매출을 올릴 수 있을 것으로 추정하고 있음에도 불구하고 팔란티어(Palantir) 주식은 주요 저항 수준보다 낮은 수준을 유지하고 있습니다.",
+          "publisher": "Barrons.com"
         },
         {
-          "date": "03/24",
-          "summary": "이전에 공개적으로 이름이 알려지지 않은 이 회사들은 올 여름에 Golden Dome 소프트웨어 테스트를 준비하는 것을 목표로 하는 방산 및 기술 회사 컨소시엄에 속해 있습니다.  또한 Google 모기업인 Alphabet의 기술을 채택한 네트워킹 회사인 Aalyria Technologies도 기여하고 있습니다. 일부 O에 따르면 인공 지능 스타트업 Scale AI 및 소프트웨어 회사 Swoop Technologies",
-          "publisher": "The Wall Street Jo"
+          "date": "03/25",
+          "summary": "주가가 엄청나게 뛰었지만 계속할 수 있을까요?",
+          "publisher": "Motley Fool"
         },
         {
-          "date": "03/24",
-          "summary": "Palantir Technologies Inc.(PLTR)는 최근 거래일 마감 시 $154.78에 이르렀으며, 이는 마지막 마감 대비 -3.77% 변동을 반영합니다.",
-          "publisher": "Zacks"
+          "date": "03/25",
+          "summary": "낙관적인 전망은 Golden Dome 이니셔티브의 잠재적 수익을 강조합니다.",
+          "publisher": "GuruFocus.com"
         }
       ]
     },
@@ -243,33 +243,38 @@
       "company": "SLV",
       "sector": "N/A",
       "exchange": "NASDAQ",
-      "close": 62.95,
-      "change_pct": 0.77,
+      "close": 65.21,
+      "change_pct": 3.59,
       "high_52w": 109.83,
       "low_52w": 26.57,
-      "ma20": 73.95,
-      "ma50": 77.84,
-      "ma200": 51.72,
-      "rsi": 36.12,
-      "macd": -3.436,
-      "macd_signal": -1.8169,
-      "bb_upper": 87.02,
-      "bb_lower": 60.87,
-      "volume": 45119456.0,
-      "avg_volume": 53427022.8,
+      "ma20": 73.2,
+      "ma50": 77.6,
+      "ma200": 51.88,
+      "rsi": 40.09,
+      "macd": -3.4736,
+      "macd_signal": -2.1482,
+      "bb_upper": 86.49,
+      "bb_lower": 59.92,
+      "volume": 37556994.0,
+      "avg_volume": 52215644.7,
       "high_52w_date": "2026년 01월",
       "low_52w_date": "2025년 04월",
       "opinion_note": "중립/약세",
-      "rsi_slope": -8.55,
-      "rsi_slope3": -2.18,
-      "macd_hist_slope": -1.0408,
-      "macd_hist_slope3": -0.4762,
-      "ma20_slope": -2.0,
-      "adx": 17.5,
-      "plus_di": 19.3,
-      "minus_di": 38.9,
+      "rsi_slope": -4.42,
+      "rsi_slope3": 2.46,
+      "macd_hist_slope": -0.7045,
+      "macd_hist_slope3": -0.0122,
+      "ma20_slope": -2.73,
+      "adx": 17.9,
+      "plus_di": 22.7,
+      "minus_di": 36.6,
       "rsi_divergence": "none",
       "news": [
+        {
+          "date": "03/25",
+          "summary": "광범위한 시장 상장지수펀드 SPDR S&P 500 ETF Trust(SPY)는 0.9% 상승했고 적극적으로 거래되었습니다.",
+          "publisher": "MT Newswires"
+        },
         {
           "date": "03/24",
           "summary": "<p>2026년 3월 23일 일일 ETF 자금 흐름은 다음과 같습니다.</p>",
@@ -289,11 +294,6 @@
           "date": "03/24",
           "summary": "광범위한 시장 상장지수펀드 SPDR S&P 500 ETF Trust(SPY)가 0.2% 후퇴했고 액티브 지수는 0.2% 하락했습니다.",
           "publisher": "MT Newswires"
-        },
-        {
-          "date": "03/23",
-          "summary": "광범위한 시장 상장지수펀드 SPDR S&P 500 ETF Trust(SPY)는 1.7% 상승했으며 활발한 거래가 이루어졌습니다.",
-          "publisher": "MT Newswires"
         }
       ]
     },
@@ -302,57 +302,57 @@
       "company": "GLD",
       "sector": "N/A",
       "exchange": "NASDAQ",
-      "close": 404.13,
-      "change_pct": 0.02,
+      "close": 416.29,
+      "change_pct": 3.01,
       "high_52w": 509.7,
       "low_52w": 272.58,
-      "ma20": 458.55,
-      "ma50": 455.73,
-      "ma200": 375.08,
-      "rsi": 27.51,
-      "macd": -11.7549,
-      "macd_signal": -2.9514,
-      "bb_upper": 509.36,
-      "bb_lower": 407.74,
-      "volume": 17122643.0,
-      "avg_volume": 15633742.15,
+      "ma20": 455.69,
+      "ma50": 455.61,
+      "ma200": 375.63,
+      "rsi": 35.25,
+      "macd": -12.6065,
+      "macd_signal": -4.8825,
+      "bb_upper": 509.19,
+      "bb_lower": 402.19,
+      "volume": 15607771.0,
+      "avg_volume": 15784208.55,
       "high_52w_date": "2026년 01월",
       "low_52w_date": "2025년 04월",
       "opinion_note": "중립/약세",
-      "rsi_slope": -19.48,
-      "rsi_slope3": -6.11,
-      "macd_hist_slope": -5.3123,
-      "macd_hist_slope3": -2.7612,
-      "ma20_slope": -8.96,
-      "adx": 25.0,
-      "plus_di": 15.5,
-      "minus_di": 48.1,
+      "rsi_slope": -12.64,
+      "rsi_slope3": -2.31,
+      "macd_hist_slope": -4.6505,
+      "macd_hist_slope3": -1.4977,
+      "ma20_slope": -11.81,
+      "adx": 25.7,
+      "plus_di": 21.4,
+      "minus_di": 43.8,
       "rsi_divergence": "none",
       "news": [
         {
           "date": "03/25",
-          "summary": "자금 Bogle은 뭐라고 말할까요? Vanguard Group의 창립자 Jack Bogle은 상장지수펀드를 Purdey 산탄총에 비유한 것으로 유명하며, \"아프리카에서 큰 사냥감을 사냥하는 데에도 좋지만 자살에도 좋습니다.\"",
+          "summary": "비용 비율과 거래 유동성이 이러한 금 ETF를 차별화합니다. 각 요소가 포트폴리오 전략에 어떤 영향을 미칠 수 있는지 알아보세요.",
+          "publisher": "Motley Fool"
+        },
+        {
+          "date": "03/25",
+          "summary": "Dow Jones Market Data에 따르면 금 가격은 현재 2008년 10월 이후 최악의 달을 기록하고 있습니다. 하지만 이는 구매 기회를 창출할 수 있습니다.",
           "publisher": "Barrons.com"
         },
         {
-          "date": "03/24",
-          "summary": "우리는 전쟁이 시작된 이후 최고 및 최악의 성과를 낸 부문과 ETF를 강조합니다.",
-          "publisher": "Zacks"
-        },
-        {
-          "date": "03/24",
-          "summary": "(가격 업데이트.) 금은 메타 변화에 따라 화요일 오후 중반 5회 연속 하락세로 거래되었습니다.",
+          "date": "03/25",
+          "summary": "(가격 업데이트.) 금은 수요일 초반에 높게 거래되어 국고로 거의 3개월 최저치를 기록했습니다.",
           "publisher": "MT Newswires"
         },
         {
-          "date": "03/24",
-          "summary": "시장 변동성과 이란 전쟁 속에서 금은 실망스러운 것으로 드러났습니다. Gavekal Research의 CEO인 Louis-Vincent Gave는 대안을 찾습니다.",
-          "publisher": "Barrons.com"
+          "date": "03/25",
+          "summary": "금은 전쟁 기대 완화와 중앙은행 활동이 전망을 형성함에 따라 2월 28일 이후 15% 이상 하락한 후 상승폭을 확대했습니다.",
+          "publisher": "GuruFocus.com"
         },
         {
-          "date": "03/24",
-          "summary": "GLD는 수익률 상승, 달러 강세, 석유로 인한 변동성으로 인해 금 가격이 압박을 받으면서 15년 만에 최악의 한 주를 보낸 후 하락세를 보였습니다.",
-          "publisher": "Zacks"
+          "date": "03/25",
+          "summary": "가치 하락 거래는 꽤 많은 승자를 배출했습니다. 가장 확실한 것 중 하나는 SPDR Gold Shares ETF(NYSEMKT: GLD)입니다. 2026년 3월 중순에 이 펀드는 1분기에만 약 150억 달러의 순유입에 힘입어 관리 중인 자산이 1,800억 달러에 달했습니다. GLD에 대한 신뢰가 자산 1,800억 달러를 달성했습니다. 실제로 투자자를 더 많이 만든 ETF는 다음과 같습니다.",
+          "publisher": "24/7 Wall St."
         }
       ]
     },
@@ -361,57 +361,57 @@
       "company": "CRCL",
       "sector": "N/A",
       "exchange": "NASDAQ",
-      "close": 101.17,
-      "change_pct": -20.11,
+      "close": 103.86,
+      "change_pct": 2.66,
       "high_52w": 298.99,
       "low_52w": 49.9,
-      "ma20": 110.4,
-      "ma50": 83.83,
-      "ma200": 120.59,
-      "rsi": 48.26,
-      "macd": 11.9963,
-      "macd_signal": 13.0922,
-      "bb_upper": 141.02,
-      "bb_lower": 79.77,
-      "volume": 56381212.0,
-      "avg_volume": 25886875.6,
+      "ma20": 111.43,
+      "ma50": 84.25,
+      "ma200": 120.57,
+      "rsi": 50.11,
+      "macd": 10.1097,
+      "macd_signal": 12.4957,
+      "bb_upper": 139.6,
+      "bb_lower": 83.26,
+      "volume": 21169052.0,
+      "avg_volume": 23796482.6,
       "high_52w_date": "2025년 06월",
       "low_52w_date": "2026년 02월",
       "opinion_note": "중립/약세",
-      "rsi_slope": -8.15,
-      "rsi_slope3": -2.53,
-      "macd_hist_slope": -2.2609,
-      "macd_hist_slope3": -1.4861,
-      "ma20_slope": 13.23,
-      "adx": 48.7,
-      "plus_di": 29.9,
-      "minus_di": 25.4,
+      "rsi_slope": -31.77,
+      "rsi_slope3": -23.14,
+      "macd_hist_slope": -4.3676,
+      "macd_hist_slope3": -2.9141,
+      "ma20_slope": 11.73,
+      "adx": 45.9,
+      "plus_di": 27.9,
+      "minus_di": 23.7,
       "rsi_divergence": "bearish",
       "news": [
         {
-          "date": "03/24",
-          "summary": "서클 주식은 사상 최대의 장중 하락세를 기록했습니다.",
+          "date": "03/25",
+          "summary": "서클 주식은 사상 최대 일일 하락 이후 수요일에 회복되었습니다.",
           "publisher": "Yahoo Finance"
         },
         {
-          "date": "03/24",
-          "summary": "Yahoo Finance 수석 프로듀서 John Hyland는 화요일의 최고 변동 주식과 가장 큰 시장 소식을 추적합니다. Circle(CRCL) 주식은 더 넓은 암호화폐 공간이 압박을 받고 있기 때문에 기록상 가장 큰 하락세를 보이고 있습니다. 아마존(AMZN) 웹서비스(AWS)가 작업 자동화를 위한 인공지능(AI) 에이전트를 개발하고 있다는 정보가 보도된 후 소프트웨어(IGV) 주가가 하락하고 있다.",
-          "publisher": "Yahoo Finance Vide"
+          "date": "03/25",
+          "summary": "최신 Punchbowl News 보고서에 따르면 CLARITY 법은 Coinbase Global(Nasdaq: COIN)의 반대에 다시 직면한 것으로 알려졌습니다. 미국에서 암호화폐가 어떻게 규제되는지 정의하는 것을 목표로 하는 법안에는 스테이블코인 보상에 관한 조항이 있습니다.",
+          "publisher": "TheStreet"
         },
         {
           "date": "03/25",
-          "summary": "아침 강세 - 미국 시장 아침 업데이트 2026년 3월 25일 수요일 미국 주식 선물은 오늘 아침 상승세를 보이고 있습니다. E mini S&P 500 계약은 약 1% 상승했고 Nasdaq 100 선물은 1% 조금 넘게 상승했습니다. 그 배경에는 지정학적 우려 완화와 고질적인 인플레이션 리스크가 혼재되어 있다. 미국 10년 만기 국채 수익률은 약 4.4%로 상대적으로 높은 편이며, 이는 금리 하락에 대한 우려를 반영한 ​​것입니다.",
+          "summary": "Circle Internet Group(NYSE:CRCL)은 Sasai Fintech와 제휴하여 아프리카 시장에서 USDC 사용을 확대했습니다. 이번 협력은 USDC의 디지털 금융 인프라와 실제 결제 사용 사례를 가속화하는 데 중점을 두고 있습니다. 이 계약은 프로그래밍 가능한 결제를 지원하고 아프리카의 주요 핀테크 플랫폼 중 하나에서 결제 마찰을 줄이는 것을 목표로 합니다. Circle Internet Group, $103.86, ha에 거래됨",
           "publisher": "Simply Wall St."
         },
         {
           "date": "03/25",
-          "summary": "kpk는 공격 중에 비상 대응 시스템이 의도한 대로 작동했다고 밝혔습니다. 한 공격자가 Resolv의 USR 스테이블코인을 붕괴시켜 DeFi를 통해 파문을 일으켰습니다. 온체인 자산 관리자는 이미 보안 프로세스를 개선하기 위해 노력하고 있습니다.",
-          "publisher": "DLNews"
+          "summary": "Cathie Wood, ARK Invest는 스테이블코인에 대한 새로운 Clarity Act 언어에 대한 주가가 급락하면서 Circle 주식을 매입합니다. 법안을 통과시킬 시간이 얼마 남지 않았습니다.",
+          "publisher": "Investor's Busines"
         },
         {
           "date": "03/25",
-          "summary": "화요일에 서클 주식이 급락했습니다. 명확성법(Clarity Act)에 포함된 새로운 문구는 투자자들을 놀라게 했습니다. 그러나 번스타인은 시장이 찻잎을 잘못 읽고 있다고 말했습니다.",
-          "publisher": "DLNews"
+          "summary": "핵심 포인트: 스테이블코인 보상 규칙이 강화됨에 따라 Circle은 20% 하락합니다. CLARITY Act 토론은 수익률과 규제 균형에 관한 논쟁 센터입니다. 분석가들은 매도가 과도하다고 말하고, 2030년까지 750억 달러의 상승 여력이 있다고 말합니다. Circle의 주식은 이번 주에 급격한 타격을 입어 3월 24일에 거의 20% 하락했습니다. 이는 새로운 ...",
+          "publisher": "TheStreet"
         }
       ]
     }
