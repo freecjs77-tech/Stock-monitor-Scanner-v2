@@ -24,7 +24,7 @@ TEMPLATE_DIR = os.path.join(ROOT, 'templates')
 OUTPUT_DIR   = os.path.join(ROOT, 'docs')   # GitHub Pages는 docs/ 사용
 
 sys.path.insert(0, os.path.join(ROOT, 'cowork_agents'))
-from report_engine import trading_stage, auto_score, _stage_reason
+from report_engine import trading_stage, auto_score, _stage_reason, build_chart
 
 # Jinja2 환경
 env = Environment(loader=FileSystemLoader(TEMPLATE_DIR), autoescape=False)
@@ -151,15 +151,14 @@ def render(target_tickers=None, open_browser=False):
     # 차트 직접 생성 → docs/charts/
     charts_dst = os.path.join(OUTPUT_DIR, 'charts')
     os.makedirs(charts_dst, exist_ok=True)
-    try:
-        from report_engine import build_chart
-        for d in stocks_all:
-            chart_fn  = f"{d['ticker']}_chart.png"
-            chart_out = os.path.join(charts_dst, chart_fn)
+    for d in stocks_all:
+        chart_fn  = f"{d['ticker']}_chart.png"
+        chart_out = os.path.join(charts_dst, chart_fn)
+        try:
             build_chart(d, chart_out)
-            print(f"  [CHART] {d['ticker']} 차트 생성 완료")
-    except Exception as e:
-        print(f"  [CHART] 생성 실패: {e}")
+            print(f"  [CHART] {d['ticker']} 생성 완료")
+        except Exception as e:
+            print(f"  [CHART] {d['ticker']} 실패: {e}")
 
     today_str   = datetime.date.today().strftime('%Y년 %m월 %d일')
     report_date = datetime.date.today().strftime('%Y%m%d')
