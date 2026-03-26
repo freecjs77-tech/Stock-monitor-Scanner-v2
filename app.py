@@ -88,10 +88,11 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     padding: 18px 16px 14px 16px;
     position: relative;
     overflow: hidden;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     display: flex;
     flex-direction: column;
-    min-height: 310px;
+    height: 340px;
+    box-sizing: border-box;
 }
 .ticker-card:hover {
     border-color: rgba(27,79,138,0.6);
@@ -211,7 +212,8 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     border: 1.5px dashed rgba(255,255,255,0.1);
     border-radius: 16px;
     padding: 18px 16px 14px 16px;
-    min-height: 310px;
+    height: 340px;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
 }
@@ -292,9 +294,10 @@ div[data-testid="stButton"] button {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
 
-/* 신호 힌트 고정 영역 — 신호가 없어도 공간 확보 */
+/* 신호 힌트 고정 영역 — 항상 52px 고정, 초과 태그는 숨김 */
 .signal-hint-area {
-    min-height: 52px;
+    height: 52px;
+    flex-shrink: 0;
     margin-top: auto;
     padding-top: 8px;
     display: flex;
@@ -302,17 +305,7 @@ div[data-testid="stButton"] button {
     gap: 4px;
     align-items: flex-start;
     align-content: flex-start;
-}
-
-/* 같은 행 카드 높이 동기화 */
-div[data-testid="stHorizontalBlock"] {
-    align-items: stretch !important;
-}
-div[data-testid="stColumn"] > div[data-testid="stVerticalBlock"] {
-    height: 100%;
-}
-div[data-testid="stColumn"] > div[data-testid="stVerticalBlock"] > div {
-    height: 100%;
+    overflow: hidden;
 }
 
 /* Streamlit 기본 요소 숨기기 */
@@ -431,10 +424,11 @@ def get_signal_hint(p):
     if cnt == 0:
         return '<div class="signal-hint-area"></div>'
     color = '#00E676' if cnt >= 3 else '#FFB300' if cnt >= 2 else 'rgba(255,255,255,0.3)'
+    visible = met[:5]   # 최대 5개 표시 (1행 내 수용 가능)
     tags = ''.join(
         f'<span style="font-size:11px;color:{color};background:rgba(255,255,255,0.05);'
         f'border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:2px 6px">{m}</span>'
-        for m in met
+        for m in visible
     )
     return (f'<div class="signal-hint-area">'
             f'<span style="font-size:11px;color:rgba(255,255,255,0.3);margin-right:2px">'
