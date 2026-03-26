@@ -113,22 +113,22 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     margin-bottom: 10px;
 }
 .ticker-symbol {
-    font-size: 20px; font-weight: 800;
+    font-size: 26px; font-weight: 800;
     color: #FFFFFF; letter-spacing: 1px;
 }
 .ticker-exchange {
-    font-size: 10px; color: rgba(255,255,255,0.3);
+    font-size: 13px; color: rgba(255,255,255,0.3);
     font-weight: 500; margin-top: 2px;
 }
 .price-badge {
     text-align: right;
 }
 .price-val {
-    font-size: 17px; font-weight: 700; color: #fff;
+    font-size: 22px; font-weight: 700; color: #fff;
     line-height: 1.1;
 }
 .price-chg {
-    font-size: 12px; font-weight: 600;
+    font-size: 13px; font-weight: 600;
     border-radius: 6px; padding: 2px 7px;
     display: inline-block; margin-top: 3px;
 }
@@ -148,11 +148,11 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 }
 .ts-item { text-align: center; }
 .ts-val {
-    font-size: 12px; font-weight: 700;
+    font-size: 16px; font-weight: 700;
     color: rgba(255,255,255,0.8);
 }
 .ts-lbl {
-    font-size: 9px; color: rgba(255,255,255,0.3);
+    font-size: 11px; color: rgba(255,255,255,0.3);
     text-transform: uppercase; letter-spacing: 0.4px;
     margin-top: 1px;
 }
@@ -189,15 +189,16 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     margin-top: 8px;
 }
 .timing-pill {
-    font-size: 10px; font-weight: 700;
-    border-radius: 20px; padding: 3px 10px;
+    font-size: 13px; font-weight: 700;
+    border-radius: 20px; padding: 4px 12px;
     border: 1px solid;
 }
 .tp-bull { background: rgba(0,200,83,0.12);  color: #00E676; border-color: rgba(0,200,83,0.25); }
 .tp-bear { background: rgba(211,47,47,0.12); color: #FF5252; border-color: rgba(211,47,47,0.25); }
 .tp-neut { background: rgba(245,124,0,0.12); color: #FFB300; border-color: rgba(245,124,0,0.25); }
+.tp-gray { background: rgba(100,116,139,0.12); color: #94A3B8; border-color: rgba(100,116,139,0.25); }
 .score-txt {
-    font-size: 10px; font-weight: 700;
+    font-size: 11px; font-weight: 700;
     color: rgba(255,255,255,0.35);
 }
 
@@ -325,75 +326,90 @@ KNOWN = {
     'IONQ':'IonQ', 'MSTR':'MicroStrategy', 'IBIT':'iShares Bitcoin ETF',
 }
 
-def compute_score(p):
-    """report_engine.auto_score 인라인 — 외부 의존성 없음"""
-    c = p['close']; m20 = p['ma20']; m50 = p['ma50']; m200 = p['ma200']
-    rsi = p['rsi']; macd_v = p['macd']; macd_s = p['macd_signal']
+def trading_stage_v2(p):
+    """v2.0 판정1: QQQ MA200 필터 포함 — report_engine.trading_stage() 인라인"""
+    def sig(key, default=False): return bool(p.get(key, default))
 
-    above = sum([c > m20, c > m50, c > m200])
-    a = min(above * 5 + (3 if (m20 > m50 > m200) and above == 3 else 0) + (2 if above >= 2 else 0), 20)
+    if not sig('qqq_above_ma200', True):
+        return 'watch_market', '시장 관망', '#94A3B8'
 
-    rsi_s = 2 if rsi >= 70 else (5 if rsi >= 60 else (8 if rsi >= 45 else (9 if rsi >= 30 else 4)))
-    macd_s = (10 if macd_v > macd_s and macd_v > 0 else
-              (7 if macd_v > macd_s else (4 if macd_v > 0 else 2)))
-    b = min(rsi_s + macd_s, 20)
+    # 3차: 4조건 ALL + RSI≤75 차단
+    if (not sig('sig_block_rsi75') and
+            all([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
+                 sig('sig_macd_above_zero'), sig('sig_vol_1p3')])):
+        return 'buy3', '3차 매수', '#00E676'
 
-    bb_r = p['bb_upper'] - p['bb_lower']
-    bp = (c - p['bb_lower']) / bb_r if bb_r > 0 else 0.5
-    c_s = (4 if bp <= 0.0 else 13 if bp <= 0.20 else 10 if bp <= 0.45 else
-           7 if bp <= 0.60 else 5 if bp <= 0.80 else 3)
-    c_s = min(max(c_s, 0), 15)
+    # 2차: 4조건 ALL
+    if all([sig('sig_double_bottom'),
+            sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),
+            sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'),
+            sig('sig_vol_1p2')]):
+        return 'buy2', '2차 매수', '#69F0AE'
 
-    vr = p.get('volume', 0) / max(p.get('avg_volume', 1), 1)
-    chg = p['change_pct']
-    d_s = (13 if chg > 1.0 and vr >= 1.5 else 10 if chg > 0 and vr >= 1.2 else
-           2 if chg < -1.0 and vr >= 1.5 else 4 if chg < 0 and vr >= 1.2 else 7)
-    d_s = min(max(d_s, 0), 15)
+    # 1차: 6조건 중 3개 이상
+    if not (sig('sig_block_rsi50') or sig('sig_block_bigdrop')):
+        conds = [sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
+                 sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')]
+        if sum(conds) >= 3:
+            return 'buy1', '1차 매수', '#FBBF24'
 
-    nm = min(abs(c-m20)/max(m20,1), abs(c-m50)/max(m50,1), abs(c-m200)/max(m200,1))
-    am = c > m200
-    e_s = (14 if am and nm < 0.02 else 11 if am and nm < 0.05 else 8 if am and nm < 0.10 else
-           6 if am else 4 if nm < 0.03 else 2)
-    e_s = min(max(e_s, 0), 15)
-
-    # F. 매도 압력 페널티 (백테스트 기반)
-    macd_dead = macd_v < macd_s
-    f_s = 0
-    if c < m50 and macd_dead and macd_v > 0:   f_s -= 15  # MA50 이탈 + 데드크로스(제로위)
-    if chg < -1.0 and vr >= 1.5:               f_s -= 8   # 거래량 급증 하락
-    if bp >= 0.90:                              f_s -= 8   # BB 극과열
-    elif bp >= 0.85 and rsi >= 65:             f_s -= 5   # BB 과열 + RSI 고점
-    f_s = max(f_s, -20)
-
-    return max(0, a + b + c_s + d_s + e_s + f_s)
+    return 'watch', '관망', '#94A3B8'
 
 
-def timing_label(total):
-    if total >= 63: return '매수 적기',  '#00E676', 'bull'
-    if total >= 50: return '매수 검토',  '#69F0AE', 'bull'
-    if total >= 37: return '관망',       '#FFB300', 'neut'
-    if total >= 24: return '비중 축소',  '#FF7043', 'bear'
-    return '매도 적기', '#FF5252', 'bear'
+def trading_stage2_v2(p):
+    """v2.0 판정2: 기술신호만 (QQQ 필터 없음) — report_engine.trading_stage2() 인라인"""
+    def sig(key, default=False): return bool(p.get(key, default))
+
+    if (not sig('sig_block_rsi75') and
+            all([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
+                 sig('sig_macd_above_zero'), sig('sig_vol_1p3')])):
+        return 'buy3', '3차 매수', '#00E676'
+
+    if all([sig('sig_double_bottom'),
+            sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),
+            sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'),
+            sig('sig_vol_1p2')]):
+        return 'buy2', '2차 매수', '#69F0AE'
+
+    if not (sig('sig_block_rsi50') or sig('sig_block_bigdrop')):
+        conds = [sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
+                 sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')]
+        if sum(conds) >= 3:
+            return 'buy1', '1차 매수', '#FBBF24'
+
+    return 'watch', '관망', '#94A3B8'
 
 
-def compute_buy_tier(p):
-    """단계별 매수 신호 (0~3차)"""
-    c   = p['close']; m20 = p['ma20']; m200 = p['ma200']
-    rsi = p['rsi'];   macd_v = p['macd']; macd_s = p['macd_signal']
-    vol_ratio   = p.get('volume', 0) / max(p.get('avg_volume', 1), 1)
-    chg         = p['change_pct']
-    above_ma200 = c > m200
-    macd_bull   = macd_v > macd_s
-    near_ma20   = abs(c - m20) / max(m20, 1) <= 0.03
+def stage_pill_cls(sk):
+    return {'buy3': 'tp-bull', 'buy2': 'tp-bull',
+            'buy1': 'tp-neut', 'watch': 'tp-gray',
+            'watch_market': 'tp-gray'}.get(sk, 'tp-gray')
 
-    if (above_ma200 and near_ma20 and macd_bull and macd_v > 0
-            and vol_ratio >= 1.3 and chg > 0.5):
-        return 3, '3차 추세확인', '#00E676'
-    if (above_ma200 and 28 <= rsi <= 50 and macd_bull and vol_ratio >= 1.2):
-        return 2, '2차 매수확정', '#69F0AE'
-    if above_ma200 and rsi <= 40:
-        return 1, '1차 진입준비', '#FFB300'
-    return 0, '', ''
+
+def get_signal_hint(p):
+    """1차 조건 충족 신호 힌트 HTML 반환"""
+    def sig(key): return bool(p.get(key, False))
+    names = {
+        'sig_rsi_le38':    'RSI≤38',
+        'sig_adx_le25':    'ADX≤25',
+        'sig_near_bb_low': 'BB하단',
+        'sig_below_ma20':  'MA20↓',
+        'sig_low_stopped': '하락멈춤',
+        'sig_bounce2pct':  '반등+2%',
+    }
+    met = [v for k, v in names.items() if sig(k)]
+    cnt = len(met)
+    if cnt == 0:
+        return ''
+    color = '#00E676' if cnt >= 3 else '#FFB300' if cnt >= 2 else 'rgba(255,255,255,0.3)'
+    tags = ''.join(
+        f'<span style="font-size:11px;color:{color};background:rgba(255,255,255,0.05);'
+        f'border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:2px 6px">{m}</span>'
+        for m in met
+    )
+    return (f'<div style="margin-top:9px;display:flex;flex-wrap:wrap;gap:4px;align-items:center">'
+            f'<span style="font-size:11px;color:rgba(255,255,255,0.3);margin-right:2px">'
+            f'1차 {cnt}/6</span>{tags}</div>')
 
 # ══════════════════════════════════════════════════════════════════
 #  GitHub API
@@ -545,9 +561,9 @@ missing = [t for t in st.session_state.tickers if t not in price_map]
 # ══════════════════════════════════════════════════════════════════
 n          = len(st.session_state.tickers)
 buy_count  = sum(1 for t in st.session_state.tickers
-                 if price_map.get(t) and compute_score(price_map[t]) >= 50)
+                 if price_map.get(t) and trading_stage_v2(price_map[t])[0] in ('buy1','buy2','buy3'))
 sell_count = sum(1 for t in st.session_state.tickers
-                 if price_map.get(t) and compute_score(price_map[t]) < 37)
+                 if price_map.get(t) and trading_stage_v2(price_map[t])[0] == 'watch_market')
 
 st.markdown(f"""
 <div class="header-wrap">
@@ -565,11 +581,11 @@ st.markdown(f"""
     </div>
     <div class="stat-box">
       <div class="stat-val" style="color:#00E676">{buy_count}</div>
-      <div class="stat-lbl">매수 타이밍</div>
+      <div class="stat-lbl">매수 신호</div>
     </div>
     <div class="stat-box">
       <div class="stat-val" style="color:#FF5252">{sell_count}</div>
-      <div class="stat-lbl">매도 주의</div>
+      <div class="stat-lbl">시장 관망</div>
     </div>
   </div>
 </div>
@@ -635,22 +651,21 @@ for row in rows:
                 ma_txt = {3:"정배열", 2:"MA200↓", 1:"MA50↓", 0:"역배열"}[above]
                 ma_col = {3:"#00E676", 2:"#FFB300", 1:"#FF5252", 0:"#FF5252"}[above]
 
-                rsi_col = "#FF5252" if rsi >= 70 else ("#00E676" if rsi <= 35 else "rgba(255,255,255,0.6)")
+                rsi_col = "#FF5252" if rsi >= 70 else ("#00E676" if rsi <= 35 else "rgba(255,255,255,0.7)")
 
-                # 타이밍 점수 & 판정
-                score = compute_score(p)
-                op_lbl, op_color, op_cls = timing_label(score)
-                bar_pct = round(score / 85 * 100)
+                # v2.0 판정1 + 판정2
+                sk1, v1_lbl, v1_color = trading_stage_v2(p)
+                sk2, v2_lbl, v2_color = trading_stage2_v2(p)
+                v1_cls = stage_pill_cls(sk1)
+                v2_cls = stage_pill_cls(sk2)
 
-                # 단계 신호
-                tier_num, tier_lbl, tier_color = compute_buy_tier(p)
-                tier_badge = (
-                    f'<span style="font-size:9px;font-weight:700;'
-                    f'background:rgba(0,0,0,0.25);color:{tier_color};'
-                    f'border:1px solid {tier_color}44;border-radius:10px;'
-                    f'padding:2px 7px;margin-left:6px">{tier_lbl}</span>'
-                    if tier_num else ''
-                )
+                # QQQ MA200 필터 상태
+                qqq_above = p.get('qqq_above_ma200', True)
+                qqq_txt   = 'MA200↑' if qqq_above else 'MA200↓'
+                qqq_col   = '#00E676' if qqq_above else '#FF5252'
+
+                # 1차 조건 신호 힌트
+                signal_hint = get_signal_hint(p)
 
                 st.markdown(f"""
                 <div class="ticker-card {card_cls}">
@@ -664,10 +679,17 @@ for row in rows:
                       <span class="price-chg {chg_cls}">{chg_sign}{chg:.2f}%</span>
                     </div>
                   </div>
-                  <div class="score-bar-wrap">
-                    <div class="score-bar-fill" style="width:{bar_pct}%;background:{op_color}"></div>
-                  </div>
                   <hr class="ticker-divider">
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+                    <div>
+                      <div class="ts-lbl" style="margin-bottom:4px;text-align:left">판정1 시장필터</div>
+                      <span class="timing-pill {v1_cls}" style="color:{v1_color}">{v1_lbl}</span>
+                    </div>
+                    <div style="text-align:right">
+                      <div class="ts-lbl" style="margin-bottom:4px">판정2 기술신호</div>
+                      <span class="timing-pill {v2_cls}" style="color:{v2_color}">{v2_lbl}</span>
+                    </div>
+                  </div>
                   <div class="ticker-stats">
                     <div class="ts-item">
                       <div class="ts-val" style="color:{rsi_col}">{rsi:.0f}</div>
@@ -678,14 +700,11 @@ for row in rows:
                       <div class="ts-lbl">MA</div>
                     </div>
                     <div class="ts-item">
-                      <div class="ts-val" style="color:{op_color}">{score}</div>
-                      <div class="ts-lbl">/ 85점</div>
+                      <div class="ts-val" style="color:{qqq_col}">{qqq_txt}</div>
+                      <div class="ts-lbl">QQQ</div>
                     </div>
                   </div>
-                  <div class="timing-row">
-                    <span class="timing-pill tp-{op_cls}">{op_lbl}</span>
-                    {tier_badge}
-                  </div>
+                  {signal_hint}
                 </div>
                 """, unsafe_allow_html=True)
             else:
