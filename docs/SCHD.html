@@ -339,6 +339,172 @@ tr:nth-child(even) td { background: var(--row2); }
       </div>
     </div>
   </div>
+
+  <!-- 판정 근거 설명 -->
+  
+  <div style="background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:16px; margin-top:12px;">
+    <div style="font-size:13px; font-weight:700; color:var(--fg); margin-bottom:12px;">🔍 판정 근거 상세</div>
+
+    
+
+    
+    
+    <div style="margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div style="font-size:12px; font-weight:600; color:var(--fg);">🟡 1차 매수 조건 (6개 중 3개 이상)</div>
+        <div style="font-size:11px; color:#34D399; font-weight:600;">
+          3/6 충족
+        </div>
+      </div>
+      
+      <div style="border:1px solid var(--border); border-radius:4px; overflow:hidden;">
+        
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(248,113,113,0.04);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">❌</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:11px; font-weight:600; color:var(--fg);">RSI(14) ≤ 38</div>
+            <div style="font-size:11px; color:var(--sub); margin-top:2px;">RSI 42.9 — 기준(38)보다 아직 높아요</div>
+          </div>
+        </div>
+        
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(248,113,113,0.04);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">❌</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:11px; font-weight:600; color:var(--fg);">ADX(14) ≤ 25</div>
+            <div style="font-size:11px; color:var(--sub); margin-top:2px;">ADX 28.8 — 아직 추세가 강하게 지속 중이에요</div>
+          </div>
+        </div>
+        
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(52,211,153,0.05);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">✅</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:11px; font-weight:600; color:var(--fg);">종가 < MA20</div>
+            <div style="font-size:11px; color:var(--sub); margin-top:2px;">$30.54 < $31.02 — 단기 이평선 아래에 있어요</div>
+          </div>
+        </div>
+        
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(52,211,153,0.05);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">✅</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:11px; font-weight:600; color:var(--fg);">하락 멈춤</div>
+            <div style="font-size:11px; color:var(--sub); margin-top:2px;">최근 3일 저점보다 높아요 — 하락이 일단 멈췄어요</div>
+          </div>
+        </div>
+        
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(52,211,153,0.05);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">✅</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:11px; font-weight:600; color:var(--fg);">BB 하단 근처</div>
+            <div style="font-size:11px; color:var(--sub); margin-top:2px;">볼린저 밴드 하단 지지구간에 있어요</div>
+          </div>
+        </div>
+        
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:none; background:rgba(248,113,113,0.04);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">❌</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:11px; font-weight:600; color:var(--fg);">당일 +2% 이상 반등</div>
+            <div style="font-size:11px; color:var(--sub); margin-top:2px;">오늘 -0.3% — 아직 반등 신호가 없어요</div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+    
+    
+    <div style="margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div style="font-size:12px; font-weight:600; color:var(--fg);">🟢 2차 매수 조건 (4개 모두 충족)</div>
+        <div style="font-size:11px; color:#FBBF24; font-weight:600;">
+          2/4 충족
+        </div>
+      </div>
+      
+      <div style="border:1px solid var(--border); border-radius:4px; overflow:hidden;">
+        
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(52,211,153,0.05);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">✅</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:11px; font-weight:600; color:var(--fg);">이중 바닥 패턴</div>
+            <div style="font-size:11px; color:var(--sub); margin-top:2px;">W자 바닥 패턴이 확인됐어요</div>
+          </div>
+        </div>
+        
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(248,113,113,0.04);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">❌</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:11px; font-weight:600; color:var(--fg);">RSI > 35 + 3일 연속 상승</div>
+            <div style="font-size:11px; color:var(--sub); margin-top:2px;">RSI 42.9 — 반등이 아직 확인되지 않았어요</div>
+          </div>
+        </div>
+        
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(52,211,153,0.05);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">✅</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:11px; font-weight:600; color:var(--fg);">MACD 골든크로스 or 히스토그램 3일↑</div>
+            <div style="font-size:11px; color:var(--sub); margin-top:2px;">상승 전환 신호가 나왔어요</div>
+          </div>
+        </div>
+        
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:none; background:rgba(248,113,113,0.04);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">❌</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:11px; font-weight:600; color:var(--fg);">거래량 평균 1.2배 이상</div>
+            <div style="font-size:11px; color:var(--sub); margin-top:2px;">거래량이 평균 이하예요 — 아직 조용한 상태예요</div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+    
+    
+    <div style="margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div style="font-size:12px; font-weight:600; color:var(--fg);">🟢 3차 매수 조건 (4개 모두 충족)</div>
+        <div style="font-size:11px; color:#FBBF24; font-weight:600;">
+          0/4 충족
+        </div>
+      </div>
+      
+      <div style="border:1px solid var(--border); border-radius:4px; overflow:hidden;">
+        
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(248,113,113,0.04);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">❌</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:11px; font-weight:600; color:var(--fg);">MA20 위에서 2일 연속</div>
+            <div style="font-size:11px; color:var(--sub); margin-top:2px;">이평선 위로 아직 안착하지 못했어요</div>
+          </div>
+        </div>
+        
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(248,113,113,0.04);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">❌</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:11px; font-weight:600; color:var(--fg);">MA20 기울기 상향</div>
+            <div style="font-size:11px; color:var(--sub); margin-top:2px;">이평선이 아직 내려가고 있어요</div>
+          </div>
+        </div>
+        
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(248,113,113,0.04);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">❌</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:11px; font-weight:600; color:var(--fg);">MACD 0선 위</div>
+            <div style="font-size:11px; color:var(--sub); margin-top:2px;">모멘텀이 아직 음수 영역이에요</div>
+          </div>
+        </div>
+        
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:none; background:rgba(248,113,113,0.04);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">❌</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:11px; font-weight:600; color:var(--fg);">거래량 평균 1.3배 이상</div>
+            <div style="font-size:11px; color:var(--sub); margin-top:2px;">거래량이 충분하지 않아요</div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+    
+  </div>
+  
+
 </div>
 
 <div class="container">
