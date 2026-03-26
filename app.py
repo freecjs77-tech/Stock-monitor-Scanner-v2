@@ -6,6 +6,7 @@ Stock Report Manager — Streamlit Web App
 """
 
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh
 import json, os, base64, requests, time
 from datetime import datetime, timezone
 
@@ -504,8 +505,9 @@ def trigger_workflow():
 
 
 
+@st.cache_data(ttl=60, show_spinner=False)
 def load_price_data():
-    """GitHub repo의 mag7_data.json 우선 로드, 없으면 로컬 파일"""
+    """GitHub repo의 mag7_data.json 우선 로드, 없으면 로컬 파일 (60초 캐시)"""
     # GitHub repo에서 최신 데이터 시도
     try:
         r = requests.get(f"{API_BASE}/contents/cowork_agents/mag7_data.json",
@@ -566,8 +568,10 @@ if "run_id_seen" not in st.session_state: st.session_state.run_id_seen  = None
 if "price_map"   not in st.session_state: st.session_state.price_map    = {}
 if "last_updated" not in st.session_state: st.session_state.last_updated = ""
 
-# 가격 데이터 로드 (항상 최신 — 세션 캐시 + 30초 TTL)
+# 가격 데이터 로드 (60초 캐시 — force_reload 시 캐시 클리어 후 재요청)
 if not st.session_state.price_map or st.session_state.get("force_reload"):
+    if st.session_state.get("force_reload"):
+        load_price_data.clear()          # 워크플로우 완료 후 강제 갱신
     pm, lu = load_price_data()
     if pm:
         st.session_state.price_map    = pm
@@ -928,11 +932,9 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-# 폴링 중이면 15초마다 자동 새로고침
+# 폴링 중이면 15초마다 자동 새로고침 (UI 블로킹 없음)
 if st.session_state.polling:
-    time.sleep(15)
-    get_latest_run.clear()
-    st.rerun()
+    st_autorefresh(interval=15_000, key="workflow_poller")
 
 st.write("")
 st.markdown(

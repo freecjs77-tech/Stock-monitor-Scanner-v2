@@ -524,7 +524,7 @@ def run(tickers=None, send_telegram=False):
         os.makedirs(tmp_dir, exist_ok=True)
 
         # ── QQQ 시장 필터 (MA200 체크) ──────────────────────────────
-        qqq_above_ma200 = True   # 기본값: 허용 (fetch 실패 시 보수적으로 허용)
+        qqq_above_ma200 = False  # 기본값: 시장관망 (fetch 실패 시 보수적으로 차단)
         try:
             print("  [QQQ] 시장 필터 체크 중...")
             qqq_hist = yf.Ticker('QQQ').history(period='1y', interval='1d', auto_adjust=True)
@@ -536,7 +536,7 @@ def run(tickers=None, send_telegram=False):
                 status = "위 (매수 허용)" if qqq_above_ma200 else "아래 (매수 금지 — 대세 하락장)"
                 print(f"  [QQQ] 종가=${qqq_cur:.2f}  MA200=${qqq_ma200:.2f}  → {status}")
         except Exception as e:
-            print(f"  [QQQ] 필터 체크 실패 ({e}) → 기본값 허용 유지")
+            print(f"  [QQQ] 필터 체크 실패 ({e}) → 기본값 시장관망 유지")
 
         stocks_data = []
         generated   = []
