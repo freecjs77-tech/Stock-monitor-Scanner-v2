@@ -441,6 +441,7 @@ def get_signal_hint(p):
 REPO      = "freecjs77-tech/mag7-stock-report"
 TICKERS_F = "tickers.json"
 API_BASE  = f"https://api.github.com/repos/{REPO}"
+PAGES_URL = f"https://freecjs77-tech.github.io/mag7-stock-report"
 
 
 def gh_token():
@@ -758,8 +759,12 @@ for row in rows:
                 </div>
                 """, unsafe_allow_html=True)
 
-            if st.button("✕ 삭제", key=f"del_{ticker}", use_container_width=True):
-                to_remove = ticker
+            btn_col, del_col = st.columns([1, 1], gap="small")
+            with btn_col:
+                st.link_button("📊 리포트", f"{PAGES_URL}/{ticker}.html", use_container_width=True)
+            with del_col:
+                if st.button("✕ 삭제", key=f"del_{ticker}", use_container_width=True):
+                    to_remove = ticker
 
 if to_remove:
     st.session_state.tickers.remove(to_remove)
@@ -786,7 +791,7 @@ div[data-testid="stHorizontalBlock"]:has(div[data-testid="stTextInput"]) {
 </style>
 """, unsafe_allow_html=True)
 
-col_in, col_add, col_run = st.columns([3, 1, 1.2], gap="small")
+col_in, col_add, col_run, col_report = st.columns([3, 1, 1.2, 1.4], gap="small")
 
 with col_in:
     new_t = st.text_input(
@@ -800,6 +805,9 @@ with col_add:
 
 with col_run:
     run_btn = st.button("▶ 지금 실행", use_container_width=True)
+
+with col_report:
+    st.link_button("📊 레포트 보기", PAGES_URL, use_container_width=True)
 
 if add_btn:
     if not new_t:
