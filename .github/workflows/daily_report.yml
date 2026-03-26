@@ -1,11 +1,10 @@
-name: Mag7 Daily Report
+# ⚠️ 구형 워크플로우 — 비활성화됨 (daily.yml로 통합)
+# UI 트리거 및 스케줄은 daily.yml 사용
+name: "[DEPRECATED] Mag7 Daily Report"
 
 on:
-  schedule:
-    # 매일 오전 9:00 KST (= 00:00 UTC) 월~금
-    - cron: '0 0 * * 1-5'
   workflow_dispatch:
-    # GitHub Actions 탭 또는 Streamlit UI "▶ 지금 실행" 버튼으로 수동 실행
+    # 비활성화: daily.yml을 사용하세요
 
 jobs:
   generate-and-send:

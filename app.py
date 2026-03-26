@@ -493,7 +493,7 @@ def save_tickers(tickers, sha):
 def trigger_workflow():
     try:
         r = requests.post(
-            f"{API_BASE}/actions/workflows/daily_report.yml/dispatches",
+            f"{API_BASE}/actions/workflows/daily.yml/dispatches",
             json={"ref": "main"}, headers=gh_headers(), timeout=15,
         )
         return r.status_code == 204, ("워크플로우 실행 요청됨" if r.status_code == 204 else f"오류 ({r.status_code})")
@@ -532,7 +532,7 @@ def get_latest_run():
     """최근 워크플로우 실행 정보 반환"""
     try:
         r = requests.get(
-            f"{API_BASE}/actions/workflows/daily_report.yml/runs?per_page=1",
+            f"{API_BASE}/actions/workflows/daily.yml/runs?per_page=1",
             headers=gh_headers(), timeout=10,
         )
         if r.status_code == 200:

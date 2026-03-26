@@ -73,10 +73,10 @@ jobs:
               sys.path.insert(0, 'cowork_agents')
               from report_engine import trading_stage
               lines = []
-              badge = {'buy':'🟢','entry':'🟠','sell':'🔴','sell_div':'🔴','watch':'⚫'}
+              badge = {'buy1':'🟡','buy2':'🟢','buy3':'🟢','watch':'⚪','watch_market':'🔴'}
               for d in cache.get('stocks', []):
                   sk, lbl, _ = trading_stage(d)
-                  lines.append(f"{badge.get(sk,'⚫')} <b>{d['ticker']}</b>  {lbl}   RSI {d['rsi']:.1f}")
+                  lines.append(f"{badge.get(sk,'⚪')} <b>{d['ticker']}</b>  {lbl}   RSI {d['rsi']:.1f}")
           except Exception as e:
               lines = [f"(종목 요약 생성 실패: {e})"]
 
@@ -123,10 +123,10 @@ jobs:
               sys.path.insert(0, 'cowork_agents')
               from report_engine import trading_stage
               rows = ""
-              badge = {'buy':'🟢','entry':'🟠','sell':'🔴','sell_div':'🔴','watch':'⚫'}
+              badge = {'buy1':'🟡','buy2':'🟢','buy3':'🟢','watch':'⚪','watch_market':'🔴'}
               for d in cache.get('stocks', []):
                   sk, lbl, _ = trading_stage(d)
-                  rows += f"<tr><td>{badge.get(sk,'⚫')} <b>{d['ticker']}</b></td><td>{lbl}</td><td>{d['rsi']:.1f}</td></tr>"
+                  rows += f"<tr><td>{badge.get(sk,'⚪')} <b>{d['ticker']}</b></td><td>{lbl}</td><td>{d['rsi']:.1f}</td></tr>"
           except:
               rows = "<tr><td colspan=3>종목 요약 생성 실패</td></tr>"
 
