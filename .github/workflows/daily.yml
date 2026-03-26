@@ -71,11 +71,17 @@ jobs:
                   cache = json.load(f)
               import sys
               sys.path.insert(0, 'cowork_agents')
-              from report_engine import trading_stage
+              from report_engine import trading_stage, trading_stage2
               lines = []
               badge = {'entry1':'🟡','entry2':'🟢','entry3':'🟢','watch':'⚪','watch_market':'🔴'}
               for d in cache.get('stocks', []):
-                  sk, lbl, _ = trading_stage(d)
+                  sk1, lbl1, _ = trading_stage(d)
+                  sk2, lbl2, _ = trading_stage2(d)
+                  # 판정1이 시장관망이면 표시, 아니면 판정2(기술적 신호) 사용
+                  if sk1 == 'watch_market':
+                      sk, lbl = sk1, f"📉 시장관망 / 기술:{lbl2}"
+                  else:
+                      sk, lbl = sk2, lbl2
                   lines.append(f"{badge.get(sk,'⚪')} <b>{d['ticker']}</b>  {lbl}   RSI {d['rsi']:.1f}")
           except Exception as e:
               lines = [f"(종목 요약 생성 실패: {e})"]
@@ -121,11 +127,17 @@ jobs:
                   cache = json.load(f)
               import sys
               sys.path.insert(0, 'cowork_agents')
-              from report_engine import trading_stage
+              from report_engine import trading_stage, trading_stage2
               rows = ""
               badge = {'entry1':'🟡','entry2':'🟢','entry3':'🟢','watch':'⚪','watch_market':'🔴'}
               for d in cache.get('stocks', []):
-                  sk, lbl, _ = trading_stage(d)
+                  sk1, lbl1, _ = trading_stage(d)
+                  sk2, lbl2, _ = trading_stage2(d)
+                  # 판정1이 시장관망이면 표시, 아니면 판정2(기술적 신호) 사용
+                  if sk1 == 'watch_market':
+                      sk, lbl = sk1, f"📉 시장관망 / 기술:{lbl2}"
+                  else:
+                      sk, lbl = sk2, lbl2
                   rows += f"<tr><td>{badge.get(sk,'⚪')} <b>{d['ticker']}</b></td><td>{lbl}</td><td>{d['rsi']:.1f}</td></tr>"
           except:
               rows = "<tr><td colspan=3>종목 요약 생성 실패</td></tr>"
