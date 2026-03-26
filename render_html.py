@@ -94,7 +94,7 @@ def build_metrics(d, sk):
     ]
 
 def build_action(d, sk):
-    """판정2 기준 v2.0 단계별 맞춤 액션 (buy1/buy2/buy3/watch/watch_market)"""
+    """판정2 기준 v2.0 단계별 맞춤 액션 (entry1/entry2/entry3/watch/watch_market)"""
     c    = d['close']
     m20  = d.get('ma20', c)
     m50  = d.get('ma50', c)
@@ -122,7 +122,7 @@ def build_action(d, sk):
             'stop_cond':     f'${stop_2:.2f} 아래로 내려가면 미련 없이 일부 정리하세요',
         },
         # ── 1차 매수: 자금의 20% ──────────────────────────────────
-        'buy1': {
+        'entry1': {
             'wait_title':    '1차 매수 타이밍이에요 (자금의 20%)',
             'wait_cond':     f'현재가 ${c:.2f} 근처에서 소액 분할 진입 — 추가 하락 여지를 남겨두세요',
             'confirm_title': '2차 매수 신호를 기다리세요',
@@ -131,7 +131,7 @@ def build_action(d, sk):
             'stop_cond':     f'${stop_1:.2f} 아래로 내려가면 손절 — 진입가 대비 -5% 룰을 지키세요',
         },
         # ── 2차 매수: 자금의 30% ──────────────────────────────────
-        'buy2': {
+        'entry2': {
             'wait_title':    '2차 매수 타이밍이에요 (자금의 30%)',
             'wait_cond':     f'이중 바닥 + RSI 반등 + MACD 개선 확인 — ${c:.2f} 근처에서 비중 확대',
             'confirm_title': '3차 매수 신호를 준비하세요',
@@ -140,7 +140,7 @@ def build_action(d, sk):
             'stop_cond':     f'${stop_2:.2f} 아래로 내려가면 전량 손절 — MA20 -3% 이탈 시 포지션 정리',
         },
         # ── 3차 매수: 자금의 50% ──────────────────────────────────
-        'buy3': {
+        'entry3': {
             'wait_title':    '3차 매수 타이밍이에요 (자금의 50%)',
             'wait_cond':     f'추세 전환 확인 — MA20(${m20:.2f}) 위 안착 + MACD 0선 돌파로 본격 상승 진입',
             'confirm_title': '목표가와 비중을 점검하세요',
