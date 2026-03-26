@@ -13,8 +13,8 @@
   <!-- 헤더 -->
   <div class="page-header" style="margin-bottom:16px; border-radius:6px 6px 0 0;">
     <div>
-      <h1 style="font-size:18px;">{{ d.ticker }} &nbsp;<span style="font-weight:400; color:var(--mid); font-size:14px;">{{ d.company }}</span></h1>
-      <div style="font-size:11px; color:var(--sub); margin-top:4px;">{{ d.exchange }} | {{ d.sector }} | {{ today_str }}</div>
+      <h1 style="font-size:18px;">{{ d.ticker }} &nbsp;<span style="font-weight:400; color:#ffffff; font-size:14px;">{{ d.company }}</span></h1>
+      <div style="font-size:11px; color:#ffffff; margin-top:4px;">{{ d.exchange }} | {{ d.sector }} | {{ today_str }}</div>
     </div>
     <div style="text-align:right;">
       <div style="font-size:24px; font-weight:700;">${{ "%.2f"|format(d.close) }}</div>
@@ -26,7 +26,7 @@
 
   <!-- 52주 범위 바 -->
   <div class="range-bar-wrap">
-    <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--sub);">
+    <div style="display:flex; justify-content:space-between; font-size:11px; color:#ffffff;">
       <span>52주 저점 ${{ "%.2f"|format(d.low_52w) }}</span>
       <span>현재 위치 {{ "%.0f"|format(pos_pct*100) }}%</span>
       <span>52주 고점 ${{ "%.2f"|format(d.high_52w) }}</span>
