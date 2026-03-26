@@ -83,7 +83,7 @@ def send_url(report_url, summary_lines=None):
 
     today_str = datetime.date.today().strftime('%Y년 %m월 %d일')
 
-    text = f"📊 <b>Mag7 일일 리포트</b>  —  {today_str}\n\n"
+    text = f"📊 <b>관심 종목 일일 리포트</b>  —  {today_str}\n\n"
     if summary_lines:
         for line in summary_lines:
             text += f"{line}\n"
@@ -125,7 +125,7 @@ def run_send(pdf_path=None, label="오늘"):
         return
 
     today_str = datetime.date.today().strftime('%Y년 %m월 %d일')
-    caption = (f"📊 <b>Mag7 기술적 분석 리포트</b>\n"
+    caption = (f"📊 <b>관심 종목 기술적 분석 리포트</b>\n"
                f"📅 {today_str}  |  NVDA / PLTR / TSLA / AAPL / MSFT / GOOGL / AMZN / META\n"
                f"⏰ {datetime.datetime.now().strftime('%H:%M')}")
 
@@ -146,7 +146,7 @@ def run_test():
         sys.exit(1)
     msg = ("🤖 <b>MStockMonitor Bot 연결 테스트</b>\n\n"
            "✅ 봇이 정상적으로 연결되었습니다!\n"
-           "매일 평일 오전 9:30에 Mag7 리포트가 자동 전송됩니다.\n\n"
+           "매일 평일 오전 9:30에 관심 종목 리포트가 자동 전송됩니다.\n\n"
            f"📁 리포트 폴더:\n<code>{REPORTS_DIR}</code>")
     ok = send_message(msg)
     print(f"[TEST] {'성공' if ok else '실패'}")

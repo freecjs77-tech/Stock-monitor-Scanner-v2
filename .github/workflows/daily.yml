@@ -1,4 +1,4 @@
-name: Mag7 Daily Report
+name: 관심 종목 Daily Report
 
 on:
   schedule:
@@ -80,7 +80,7 @@ jobs:
           except Exception as e:
               lines = [f"(종목 요약 생성 실패: {e})"]
 
-          text = f"📊 <b>Mag7 일일 리포트</b> — {today}\n\n"
+          text = f"📊 <b>관심 종목 일일 리포트</b> — {today}\n\n"
           text += "\n".join(lines)
           text += f"\n\n👉 <a href='{url}'>전체 리포트 보기</a>"
 
@@ -132,7 +132,7 @@ jobs:
 
           body = f"""
           <html><body style="font-family:sans-serif;background:#060D18;color:#EEF4FB;padding:20px;">
-          <h2>📊 Mag7 일일 리포트 — {today}</h2>
+          <h2>📊 관심 종목 일일 리포트 — {today}</h2>
           <table border="0" cellpadding="8" style="border-collapse:collapse;width:100%;max-width:400px;">
           <tr style="background:#0A1525;"><th>종목</th><th>판정</th><th>RSI</th></tr>
           {rows}
@@ -148,7 +148,7 @@ jobs:
           """
 
           msg = MIMEMultipart('alternative')
-          msg['Subject'] = f"[Mag7] 일일 리포트 — {today}"
+          msg['Subject'] = f"[관심 종목] 일일 리포트 — {today}"
           msg['From']    = user
           msg['To']      = to
           msg.attach(MIMEText(body, 'html', 'utf-8'))
@@ -182,7 +182,7 @@ jobs:
               requests.post(
                   f"https://api.telegram.org/bot{bot}/sendMessage",
                   data={'chat_id': chat,
-                        'text': f"⚠️ Mag7 리포트 생성 실패\n{today}\nGitHub Actions 로그를 확인하세요."},
+                        'text': f"⚠️ 관심 종목 리포트 생성 실패\n{today}\nGitHub Actions 로그를 확인하세요."},
                   timeout=10
               )
           EOF
