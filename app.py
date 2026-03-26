@@ -8,6 +8,7 @@ Stock Report Manager — Streamlit Web App
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 import json, os, base64, requests, time
+import yfinance as yf
 from datetime import datetime, timezone
 
 st.set_page_config(
@@ -531,6 +532,16 @@ def load_price_data():
     return {}, ""
 
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def validate_ticker(ticker: str) -> bool:
+    """yfinance로 티커 유효성 확인 (1시간 캐시) — 빈 데이터면 유효하지 않은 티커"""
+    try:
+        hist = yf.Ticker(ticker).history(period='5d', interval='1d')
+        return not hist.empty
+    except Exception:
+        return False
+
+
 @st.cache_data(ttl=10)
 def get_latest_run():
     """최근 워크플로우 실행 정보 반환"""
@@ -821,13 +832,18 @@ if add_btn:
     elif len(st.session_state.tickers) >= 20:
         st.warning("종목은 최대 20개까지 등록할 수 있습니다.")
     else:
-        st.session_state.tickers.append(new_t)
-        ok, msg = save_tickers(st.session_state.tickers, st.session_state.sha)
-        _, new_sha = load_tickers()
-        st.session_state.sha = new_sha
-        st.session_state.toast = ("success" if ok else "error",
-                                   f"**{new_t}** 추가 완료 — {msg}")
-        st.rerun()
+        with st.spinner(f"**{new_t}** 유효성 확인 중..."):
+            valid = validate_ticker(new_t)
+        if not valid:
+            st.error(f"❌ **{new_t}** — Yahoo Finance에서 데이터를 찾을 수 없는 티커입니다. 종목 코드를 확인해 주세요.")
+        else:
+            st.session_state.tickers.append(new_t)
+            ok, msg = save_tickers(st.session_state.tickers, st.session_state.sha)
+            _, new_sha = load_tickers()
+            st.session_state.sha = new_sha
+            st.session_state.toast = ("success" if ok else "error",
+                                       f"**{new_t}** 추가 완료 — {msg}")
+            st.rerun()
 
 if run_btn:
     ok, msg = trigger_workflow()
