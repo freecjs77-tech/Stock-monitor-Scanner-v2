@@ -266,26 +266,6 @@ tr:nth-child(even) td { background: #f8fafc; }
     <tbody>
       
       <tr>
-        <td class="bold">NVDA</td>
-        <td><span class="badge badge-sell">시장 관망</span></td>
-        <td><span class="badge badge-entry">1차 매수</span></td>
-        <td class="bold">$178.68</td>
-        <td class="c-green">+1.99%</td>
-        <td class="">46.4</td>
-        <td class="td-left c-sub">1차(3/6): ADX≤25 + MA20아래 + 하락멈춤</td>
-      </tr>
-      
-      <tr>
-        <td class="bold">TSLA</td>
-        <td><span class="badge badge-sell">시장 관망</span></td>
-        <td><span class="badge badge-watch">관망</span></td>
-        <td class="bold">$385.95</td>
-        <td class="c-green">+0.76%</td>
-        <td class="">43.3</td>
-        <td class="td-left c-sub">1차 2/6개 충족</td>
-      </tr>
-      
-      <tr>
         <td class="bold">GOOGL</td>
         <td><span class="badge badge-sell">시장 관망</span></td>
         <td><span class="badge badge-entry">1차 매수</span></td>
@@ -293,16 +273,6 @@ tr:nth-child(even) td { background: #f8fafc; }
         <td class="c-green">+0.17%</td>
         <td class="c-green">34.3</td>
         <td class="td-left c-sub">1차(4/6): RSI 34.3≤38 + BB하단 + MA20아래 + 하락멈춤</td>
-      </tr>
-      
-      <tr>
-        <td class="bold">PLTR</td>
-        <td><span class="badge badge-sell">시장 관망</span></td>
-        <td><span class="badge badge-watch">관망</span></td>
-        <td class="bold">$154.96</td>
-        <td class="c-green">+0.12%</td>
-        <td class="">54.0</td>
-        <td class="td-left c-sub">RSI 54.0 > 50 → 1차 금지</td>
       </tr>
       
       <tr>
@@ -333,6 +303,26 @@ tr:nth-child(even) td { background: #f8fafc; }
         <td class="c-green">+2.66%</td>
         <td class="">50.1</td>
         <td class="td-left c-sub">RSI 50.1 > 50 → 1차 금지</td>
+      </tr>
+      
+      <tr>
+        <td class="bold">BMNR</td>
+        <td><span class="badge badge-sell">시장 관망</span></td>
+        <td><span class="badge badge-entry">1차 매수</span></td>
+        <td class="bold">$21.24</td>
+        <td class="c-green">+2.12%</td>
+        <td class="">48.9</td>
+        <td class="td-left c-sub">1차(3/6): ADX≤25 + 하락멈춤 + +2.1%</td>
+      </tr>
+      
+      <tr>
+        <td class="bold">MSFT</td>
+        <td><span class="badge badge-sell">시장 관망</span></td>
+        <td><span class="badge badge-entry">1차 매수</span></td>
+        <td class="bold">$371.04</td>
+        <td class="c-red">-0.46%</td>
+        <td class="c-green">27.7</td>
+        <td class="td-left c-sub">1차(3/6): RSI 27.7≤38 + BB하단 + MA20아래</td>
       </tr>
       
     </tbody>
@@ -380,244 +370,6 @@ tr:nth-child(even) td { background: #f8fafc; }
 </div>
 
 <!-- ════════════ 종목별 페이지 ════════════ -->
-
-<div class="page stock-page">
-
-  <!-- 종목 헤더 -->
-  <div class="stock-header">
-    <div class="left">
-      <h2>NVDA &nbsp;<span style="font-size:14px; font-weight:400; color:var(--sub);">NVIDIA Corporation</span></h2>
-      <div class="meta">NASDAQ | AI / 반도체 | 2026년 03월 26일</div>
-    </div>
-    <div class="right" style="text-align:right;">
-      <div class="price">$178.68</div>
-      <div class="c-green" style="font-size:13px;">+1.99%</div>
-    </div>
-  </div>
-
-  <!-- 판정 박스 2개 나란히 -->
-  <div class="verdict-row">
-    <div class="verdict-box sell">
-      <div class="v-label">판정1 — 시장필터 포함 (QQQ MA200)</div>
-      <div class="v-badge"><span class="badge badge-sell">시장 관망</span></div>
-      <div class="v-desc">신호 대기 중</div>
-    </div>
-    <div class="verdict-box entry">
-      <div class="v-label">판정2 — 기술신호만 (종목 자체)</div>
-      <div class="v-badge"><span class="badge badge-entry">1차 매수</span></div>
-      <div class="v-desc">신호 대기 중</div>
-    </div>
-  </div>
-
-  <!-- 52주 범위 바 -->
-  <div class="range-wrap">
-    <div class="range-labels">
-      <span>52주 저점 $86.60</span>
-      <span>현재 위치 73%</span>
-      <span>52주 고점 $212.17</span>
-    </div>
-    <div class="range-bar">
-      <div class="filled" style="width:73.3%;"></div>
-      <div class="marker" style="left:73.3%;"></div>
-    </div>
-  </div>
-
-  <!-- 차트 -->
-  
-  <div class="chart-wrap">
-    <img src="charts/NVDA_chart.png" alt="NVDA 차트">
-  </div>
-  
-
-  <!-- 메트릭 카드 -->
-  <div class="metric-grid">
-    
-    <div class="metric-card">
-      <div class="label">RSI (14)</div>
-      <div class="value" style="color:#334155;">46.4</div>
-      <div class="dir">중립</div>
-    </div>
-    
-    <div class="metric-card">
-      <div class="label">MA20</div>
-      <div class="value" style="color:#dc2626;">$180.59</div>
-      <div class="dir">아래</div>
-    </div>
-    
-    <div class="metric-card">
-      <div class="label">MACD</div>
-      <div class="value" style="color:#dc2626;">-2.317</div>
-      <div class="dir">데드크로스</div>
-    </div>
-    
-    <div class="metric-card">
-      <div class="label">거래량 비율</div>
-      <div class="value" style="color:#475569;">0.8x</div>
-      <div class="dir">평균 이하</div>
-    </div>
-    
-    <div class="metric-card">
-      <div class="label">52주 고점 대비</div>
-      <div class="value" style="color:#dc2626;">-15.8%</div>
-      <div class="dir">고점권</div>
-    </div>
-    
-    <div class="metric-card">
-      <div class="label">손절 기준</div>
-      <div class="value" style="color:#334155;">$175.17</div>
-      <div class="dir">MA20 -3%</div>
-    </div>
-    
-  </div>
-
-  <!-- 액션 -->
-  <div class="action-box">
-    <div class="action-item">
-      <div class="action-icon">⏰</div>
-      <div class="action-content">
-        <div class="title">지금은 기다리는 게 맞아요</div>
-        <div class="desc">아직 진입 신호가 안 왔어요. 서두르지 않아도 됩니다</div>
-      </div>
-    </div>
-    <div class="action-item">
-      <div class="action-icon">📈</div>
-      <div class="action-content">
-        <div class="title">더 확신이 서려면</div>
-        <div class="desc">MACD가 위로 꺾이고 거래량까지 늘어날 때 진입하면 더 안전해요</div>
-      </div>
-    </div>
-    <div class="action-item">
-      <div class="action-icon">🚫</div>
-      <div class="action-content">
-        <div class="title">이미 갖고 있다면</div>
-        <div class="desc c-red">$175.17 아래로 내려가면 미련 없이 일부 정리하세요</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="report-footer">
-    본 보고서는 AI 기반 자동 기술적 분석으로, 투자 권유가 아닙니다. | Data: Yahoo Finance (yfinance)
-  </div>
-</div>
-
-<div class="page stock-page">
-
-  <!-- 종목 헤더 -->
-  <div class="stock-header">
-    <div class="left">
-      <h2>TSLA &nbsp;<span style="font-size:14px; font-weight:400; color:var(--sub);">Tesla Inc.</span></h2>
-      <div class="meta">NASDAQ | EV / 에너지 | 2026년 03월 26일</div>
-    </div>
-    <div class="right" style="text-align:right;">
-      <div class="price">$385.95</div>
-      <div class="c-green" style="font-size:13px;">+0.76%</div>
-    </div>
-  </div>
-
-  <!-- 판정 박스 2개 나란히 -->
-  <div class="verdict-row">
-    <div class="verdict-box sell">
-      <div class="v-label">판정1 — 시장필터 포함 (QQQ MA200)</div>
-      <div class="v-badge"><span class="badge badge-sell">시장 관망</span></div>
-      <div class="v-desc">신호 대기 중</div>
-    </div>
-    <div class="verdict-box watch">
-      <div class="v-label">판정2 — 기술신호만 (종목 자체)</div>
-      <div class="v-badge"><span class="badge badge-watch">관망</span></div>
-      <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
-    </div>
-  </div>
-
-  <!-- 52주 범위 바 -->
-  <div class="range-wrap">
-    <div class="range-labels">
-      <span>52주 저점 $214.25</span>
-      <span>현재 위치 60%</span>
-      <span>52주 고점 $498.83</span>
-    </div>
-    <div class="range-bar">
-      <div class="filled" style="width:60.3%;"></div>
-      <div class="marker" style="left:60.3%;"></div>
-    </div>
-  </div>
-
-  <!-- 차트 -->
-  
-  <div class="chart-wrap">
-    <img src="charts/TSLA_chart.png" alt="TSLA 차트">
-  </div>
-  
-
-  <!-- 메트릭 카드 -->
-  <div class="metric-grid">
-    
-    <div class="metric-card">
-      <div class="label">RSI (14)</div>
-      <div class="value" style="color:#334155;">43.3</div>
-      <div class="dir">중립</div>
-    </div>
-    
-    <div class="metric-card">
-      <div class="label">MA20</div>
-      <div class="value" style="color:#dc2626;">$394.64</div>
-      <div class="dir">아래</div>
-    </div>
-    
-    <div class="metric-card">
-      <div class="label">MACD</div>
-      <div class="value" style="color:#dc2626;">-8.864</div>
-      <div class="dir">데드크로스</div>
-    </div>
-    
-    <div class="metric-card">
-      <div class="label">거래량 비율</div>
-      <div class="value" style="color:#475569;">0.9x</div>
-      <div class="dir">평균 이하</div>
-    </div>
-    
-    <div class="metric-card">
-      <div class="label">52주 고점 대비</div>
-      <div class="value" style="color:#d97706;">-22.6%</div>
-      <div class="dir">중간권</div>
-    </div>
-    
-    <div class="metric-card">
-      <div class="label">손절 기준</div>
-      <div class="value" style="color:#334155;">$382.80</div>
-      <div class="dir">MA20 -3%</div>
-    </div>
-    
-  </div>
-
-  <!-- 액션 -->
-  <div class="action-box">
-    <div class="action-item">
-      <div class="action-icon">⏰</div>
-      <div class="action-content">
-        <div class="title">지금은 기다리는 게 맞아요</div>
-        <div class="desc">아직 진입 신호가 안 왔어요. 서두르지 않아도 됩니다</div>
-      </div>
-    </div>
-    <div class="action-item">
-      <div class="action-icon">📈</div>
-      <div class="action-content">
-        <div class="title">더 확신이 서려면</div>
-        <div class="desc">MACD가 위로 꺾이고 거래량까지 늘어날 때 진입하면 더 안전해요</div>
-      </div>
-    </div>
-    <div class="action-item">
-      <div class="action-icon">🚫</div>
-      <div class="action-content">
-        <div class="title">이미 갖고 있다면</div>
-        <div class="desc c-red">$382.80 아래로 내려가면 미련 없이 일부 정리하세요</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="report-footer">
-    본 보고서는 AI 기반 자동 기술적 분석으로, 투자 권유가 아닙니다. | Data: Yahoo Finance (yfinance)
-  </div>
-</div>
 
 <div class="page stock-page">
 
@@ -729,125 +481,6 @@ tr:nth-child(even) td { background: #f8fafc; }
       <div class="action-content">
         <div class="title">이미 갖고 있다면</div>
         <div class="desc c-red">$294.59 아래로 내려가면 미련 없이 일부 정리하세요</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="report-footer">
-    본 보고서는 AI 기반 자동 기술적 분석으로, 투자 권유가 아닙니다. | Data: Yahoo Finance (yfinance)
-  </div>
-</div>
-
-<div class="page stock-page">
-
-  <!-- 종목 헤더 -->
-  <div class="stock-header">
-    <div class="left">
-      <h2>PLTR &nbsp;<span style="font-size:14px; font-weight:400; color:var(--sub);">Palantir Technologies</span></h2>
-      <div class="meta">NASDAQ | AI / 방산 소프트웨어 | 2026년 03월 26일</div>
-    </div>
-    <div class="right" style="text-align:right;">
-      <div class="price">$154.96</div>
-      <div class="c-green" style="font-size:13px;">+0.12%</div>
-    </div>
-  </div>
-
-  <!-- 판정 박스 2개 나란히 -->
-  <div class="verdict-row">
-    <div class="verdict-box sell">
-      <div class="v-label">판정1 — 시장필터 포함 (QQQ MA200)</div>
-      <div class="v-badge"><span class="badge badge-sell">시장 관망</span></div>
-      <div class="v-desc">신호 대기 중</div>
-    </div>
-    <div class="verdict-box watch">
-      <div class="v-label">판정2 — 기술신호만 (종목 자체)</div>
-      <div class="v-badge"><span class="badge badge-watch">관망</span></div>
-      <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
-    </div>
-  </div>
-
-  <!-- 52주 범위 바 -->
-  <div class="range-wrap">
-    <div class="range-labels">
-      <span>52주 저점 $66.12</span>
-      <span>현재 위치 63%</span>
-      <span>52주 고점 $207.52</span>
-    </div>
-    <div class="range-bar">
-      <div class="filled" style="width:62.8%;"></div>
-      <div class="marker" style="left:62.8%;"></div>
-    </div>
-  </div>
-
-  <!-- 차트 -->
-  
-  <div class="chart-wrap">
-    <img src="charts/PLTR_chart.png" alt="PLTR 차트">
-  </div>
-  
-
-  <!-- 메트릭 카드 -->
-  <div class="metric-grid">
-    
-    <div class="metric-card">
-      <div class="label">RSI (14)</div>
-      <div class="value" style="color:#334155;">54.0</div>
-      <div class="dir">중립</div>
-    </div>
-    
-    <div class="metric-card">
-      <div class="label">MA20</div>
-      <div class="value" style="color:#059669;">$151.48</div>
-      <div class="dir">위</div>
-    </div>
-    
-    <div class="metric-card">
-      <div class="label">MACD</div>
-      <div class="value" style="color:#059669;">2.294</div>
-      <div class="dir">골든크로스</div>
-    </div>
-    
-    <div class="metric-card">
-      <div class="label">거래량 비율</div>
-      <div class="value" style="color:#475569;">0.8x</div>
-      <div class="dir">평균 이하</div>
-    </div>
-    
-    <div class="metric-card">
-      <div class="label">52주 고점 대비</div>
-      <div class="value" style="color:#d97706;">-25.3%</div>
-      <div class="dir">중간권</div>
-    </div>
-    
-    <div class="metric-card">
-      <div class="label">손절 기준</div>
-      <div class="value" style="color:#334155;">$146.94</div>
-      <div class="dir">MA20 -3%</div>
-    </div>
-    
-  </div>
-
-  <!-- 액션 -->
-  <div class="action-box">
-    <div class="action-item">
-      <div class="action-icon">⏰</div>
-      <div class="action-content">
-        <div class="title">지금은 기다리는 게 맞아요</div>
-        <div class="desc">아직 진입 신호가 안 왔어요. 서두르지 않아도 됩니다</div>
-      </div>
-    </div>
-    <div class="action-item">
-      <div class="action-icon">📈</div>
-      <div class="action-content">
-        <div class="title">더 확신이 서려면</div>
-        <div class="desc">MACD가 위로 꺾이고 거래량까지 늘어날 때 진입하면 더 안전해요</div>
-      </div>
-    </div>
-    <div class="action-item">
-      <div class="action-icon">🚫</div>
-      <div class="action-content">
-        <div class="title">이미 갖고 있다면</div>
-        <div class="desc c-red">$146.94 아래로 내려가면 미련 없이 일부 정리하세요</div>
       </div>
     </div>
   </div>
@@ -1205,6 +838,244 @@ tr:nth-child(even) td { background: #f8fafc; }
       <div class="action-content">
         <div class="title">이미 갖고 있다면</div>
         <div class="desc c-red">$108.09 아래로 내려가면 미련 없이 일부 정리하세요</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="report-footer">
+    본 보고서는 AI 기반 자동 기술적 분석으로, 투자 권유가 아닙니다. | Data: Yahoo Finance (yfinance)
+  </div>
+</div>
+
+<div class="page stock-page">
+
+  <!-- 종목 헤더 -->
+  <div class="stock-header">
+    <div class="left">
+      <h2>BMNR &nbsp;<span style="font-size:14px; font-weight:400; color:var(--sub);">BMNR</span></h2>
+      <div class="meta">NASDAQ | N/A | 2026년 03월 26일</div>
+    </div>
+    <div class="right" style="text-align:right;">
+      <div class="price">$21.24</div>
+      <div class="c-green" style="font-size:13px;">+2.12%</div>
+    </div>
+  </div>
+
+  <!-- 판정 박스 2개 나란히 -->
+  <div class="verdict-row">
+    <div class="verdict-box sell">
+      <div class="v-label">판정1 — 시장필터 포함 (QQQ MA200)</div>
+      <div class="v-badge"><span class="badge badge-sell">시장 관망</span></div>
+      <div class="v-desc">신호 대기 중</div>
+    </div>
+    <div class="verdict-box entry">
+      <div class="v-label">판정2 — 기술신호만 (종목 자체)</div>
+      <div class="v-badge"><span class="badge badge-entry">1차 매수</span></div>
+      <div class="v-desc">신호 대기 중</div>
+    </div>
+  </div>
+
+  <!-- 52주 범위 바 -->
+  <div class="range-wrap">
+    <div class="range-labels">
+      <span>52주 저점 $3.92</span>
+      <span>현재 위치 11%</span>
+      <span>52주 고점 $160.95</span>
+    </div>
+    <div class="range-bar">
+      <div class="filled" style="width:11.0%;"></div>
+      <div class="marker" style="left:11.0%;"></div>
+    </div>
+  </div>
+
+  <!-- 차트 -->
+  
+  <div class="chart-wrap">
+    <img src="charts/BMNR_chart.png" alt="BMNR 차트">
+  </div>
+  
+
+  <!-- 메트릭 카드 -->
+  <div class="metric-grid">
+    
+    <div class="metric-card">
+      <div class="label">RSI (14)</div>
+      <div class="value" style="color:#334155;">48.9</div>
+      <div class="dir">중립</div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="label">MA20</div>
+      <div class="value" style="color:#059669;">$20.84</div>
+      <div class="dir">위</div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="label">MACD</div>
+      <div class="value" style="color:#059669;">-0.259</div>
+      <div class="dir">골든크로스</div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="label">거래량 비율</div>
+      <div class="value" style="color:#475569;">0.8x</div>
+      <div class="dir">평균 이하</div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="label">52주 고점 대비</div>
+      <div class="value" style="color:#059669;">-86.8%</div>
+      <div class="dir">저점권</div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="label">손절 기준</div>
+      <div class="value" style="color:#334155;">$20.21</div>
+      <div class="dir">MA20 -3%</div>
+    </div>
+    
+  </div>
+
+  <!-- 액션 -->
+  <div class="action-box">
+    <div class="action-item">
+      <div class="action-icon">⏰</div>
+      <div class="action-content">
+        <div class="title">지금은 기다리는 게 맞아요</div>
+        <div class="desc">아직 진입 신호가 안 왔어요. 서두르지 않아도 됩니다</div>
+      </div>
+    </div>
+    <div class="action-item">
+      <div class="action-icon">📈</div>
+      <div class="action-content">
+        <div class="title">더 확신이 서려면</div>
+        <div class="desc">MACD가 위로 꺾이고 거래량까지 늘어날 때 진입하면 더 안전해요</div>
+      </div>
+    </div>
+    <div class="action-item">
+      <div class="action-icon">🚫</div>
+      <div class="action-content">
+        <div class="title">이미 갖고 있다면</div>
+        <div class="desc c-red">$20.21 아래로 내려가면 미련 없이 일부 정리하세요</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="report-footer">
+    본 보고서는 AI 기반 자동 기술적 분석으로, 투자 권유가 아닙니다. | Data: Yahoo Finance (yfinance)
+  </div>
+</div>
+
+<div class="page stock-page">
+
+  <!-- 종목 헤더 -->
+  <div class="stock-header">
+    <div class="left">
+      <h2>MSFT &nbsp;<span style="font-size:14px; font-weight:400; color:var(--sub);">Microsoft Corporation</span></h2>
+      <div class="meta">NASDAQ | 클라우드 / AI 플랫폼 | 2026년 03월 26일</div>
+    </div>
+    <div class="right" style="text-align:right;">
+      <div class="price">$371.04</div>
+      <div class="c-red" style="font-size:13px;">-0.46%</div>
+    </div>
+  </div>
+
+  <!-- 판정 박스 2개 나란히 -->
+  <div class="verdict-row">
+    <div class="verdict-box sell">
+      <div class="v-label">판정1 — 시장필터 포함 (QQQ MA200)</div>
+      <div class="v-badge"><span class="badge badge-sell">시장 관망</span></div>
+      <div class="v-desc">신호 대기 중</div>
+    </div>
+    <div class="verdict-box entry">
+      <div class="v-label">판정2 — 기술신호만 (종목 자체)</div>
+      <div class="v-badge"><span class="badge badge-entry">1차 매수</span></div>
+      <div class="v-desc">신호 대기 중</div>
+    </div>
+  </div>
+
+  <!-- 52주 범위 바 -->
+  <div class="range-wrap">
+    <div class="range-labels">
+      <span>52주 저점 $342.17</span>
+      <span>현재 위치 14%</span>
+      <span>52주 고점 $552.24</span>
+    </div>
+    <div class="range-bar">
+      <div class="filled" style="width:13.7%;"></div>
+      <div class="marker" style="left:13.7%;"></div>
+    </div>
+  </div>
+
+  <!-- 차트 -->
+  
+  <div class="chart-wrap">
+    <img src="charts/MSFT_chart.png" alt="MSFT 차트">
+  </div>
+  
+
+  <!-- 메트릭 카드 -->
+  <div class="metric-grid">
+    
+    <div class="metric-card">
+      <div class="label">RSI (14)</div>
+      <div class="value" style="color:#059669;">27.7</div>
+      <div class="dir">과매도</div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="label">MA20</div>
+      <div class="value" style="color:#dc2626;">$396.40</div>
+      <div class="dir">아래</div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="label">MACD</div>
+      <div class="value" style="color:#dc2626;">-9.900</div>
+      <div class="dir">데드크로스</div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="label">거래량 비율</div>
+      <div class="value" style="color:#475569;">0.9x</div>
+      <div class="dir">평균 이하</div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="label">52주 고점 대비</div>
+      <div class="value" style="color:#d97706;">-32.8%</div>
+      <div class="dir">중간권</div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="label">손절 기준</div>
+      <div class="value" style="color:#334155;">$384.51</div>
+      <div class="dir">MA20 -3%</div>
+    </div>
+    
+  </div>
+
+  <!-- 액션 -->
+  <div class="action-box">
+    <div class="action-item">
+      <div class="action-icon">⏰</div>
+      <div class="action-content">
+        <div class="title">지금은 기다리는 게 맞아요</div>
+        <div class="desc">아직 진입 신호가 안 왔어요. 서두르지 않아도 됩니다</div>
+      </div>
+    </div>
+    <div class="action-item">
+      <div class="action-icon">📈</div>
+      <div class="action-content">
+        <div class="title">더 확신이 서려면</div>
+        <div class="desc">MACD가 위로 꺾이고 거래량까지 늘어날 때 진입하면 더 안전해요</div>
+      </div>
+    </div>
+    <div class="action-item">
+      <div class="action-icon">🚫</div>
+      <div class="action-content">
+        <div class="title">이미 갖고 있다면</div>
+        <div class="desc c-red">$384.51 아래로 내려가면 미련 없이 일부 정리하세요</div>
       </div>
     </div>
   </div>
