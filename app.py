@@ -89,6 +89,9 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     position: relative;
     overflow: hidden;
     transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    min-height: 310px;
 }
 .ticker-card:hover {
     border-color: rgba(27,79,138,0.6);
@@ -208,6 +211,9 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     border: 1.5px dashed rgba(255,255,255,0.1);
     border-radius: 16px;
     padding: 18px 16px 14px 16px;
+    min-height: 310px;
+    display: flex;
+    flex-direction: column;
 }
 .ticker-symbol-empty {
     font-size: 20px; font-weight: 800;
@@ -285,6 +291,29 @@ div[data-testid="stButton"] button {
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+/* 신호 힌트 고정 영역 — 신호가 없어도 공간 확보 */
+.signal-hint-area {
+    min-height: 52px;
+    margin-top: auto;
+    padding-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: flex-start;
+    align-content: flex-start;
+}
+
+/* 같은 행 카드 높이 동기화 */
+div[data-testid="stHorizontalBlock"] {
+    align-items: stretch !important;
+}
+div[data-testid="stColumn"] > div[data-testid="stVerticalBlock"] {
+    height: 100%;
+}
+div[data-testid="stColumn"] > div[data-testid="stVerticalBlock"] > div {
+    height: 100%;
+}
 
 /* Streamlit 기본 요소 숨기기 */
 #MainMenu, footer, header { visibility: hidden; }
@@ -387,7 +416,7 @@ def stage_pill_cls(sk):
 
 
 def get_signal_hint(p):
-    """1차 조건 충족 신호 힌트 HTML 반환"""
+    """1차 조건 충족 신호 힌트 HTML — 항상 .signal-hint-area 래핑"""
     def sig(key): return bool(p.get(key, False))
     names = {
         'sig_rsi_le38':    'RSI≤38',
@@ -400,14 +429,14 @@ def get_signal_hint(p):
     met = [v for k, v in names.items() if sig(k)]
     cnt = len(met)
     if cnt == 0:
-        return ''
+        return '<div class="signal-hint-area"></div>'
     color = '#00E676' if cnt >= 3 else '#FFB300' if cnt >= 2 else 'rgba(255,255,255,0.3)'
     tags = ''.join(
         f'<span style="font-size:11px;color:{color};background:rgba(255,255,255,0.05);'
         f'border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:2px 6px">{m}</span>'
         for m in met
     )
-    return (f'<div style="margin-top:9px;display:flex;flex-wrap:wrap;gap:4px;align-items:center">'
+    return (f'<div class="signal-hint-area">'
             f'<span style="font-size:11px;color:rgba(255,255,255,0.3);margin-right:2px">'
             f'1차 {cnt}/6</span>{tags}</div>')
 
@@ -706,6 +735,7 @@ for row in rows:
                   </div>
                   {signal_hint}
                 </div>
+
                 """, unsafe_allow_html=True)
             else:
                 st.markdown(f"""
