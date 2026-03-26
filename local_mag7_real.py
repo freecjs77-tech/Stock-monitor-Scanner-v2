@@ -513,15 +513,12 @@ def run(tickers=None, send_telegram=False):
                 print(f"  [{ticker}] PDF 오류: {e}")
                 traceback.print_exc()
 
-        # JSON 저장 (price_series 제외 — 파일 크기 절약)
+        # JSON 저장 (price_series 포함 — 차트 실제 데이터 렌더링용)
         if stocks_data:
             data_out = {
                 'last_updated': today,
                 'source': 'yfinance',
-                'stocks': [
-                    {k: v for k, v in s.items() if k != 'price_series'}
-                    for s in stocks_data
-                ]
+                'stocks': stocks_data
             }
             with open(DATA_FILE, 'w', encoding='utf-8') as f:
                 json.dump(data_out, f, ensure_ascii=False, indent=2)
