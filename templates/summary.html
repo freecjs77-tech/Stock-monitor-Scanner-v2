@@ -15,27 +15,38 @@
     <span class="date">{{ today_str }}  |  기술적 분석</span>
   </div>
 
+  <!-- 판정 범례 -->
+  <div style="display:flex;gap:12px;margin-bottom:10px;font-size:11px;color:var(--sub);">
+    <span>판정1: <b style="color:var(--text);">시장필터 포함</b> (QQQ MA200 기준)</span>
+    <span style="color:var(--border);">|</span>
+    <span>판정2: <b style="color:var(--text);">기술신호만</b> (종목 자체 조건)</span>
+  </div>
+
   <!-- 판정 요약 테이블 -->
   <table>
     <thead>
       <tr>
         <th>티커</th>
-        <th>판정</th>
+        <th>판정1<br><span style="font-size:9px;font-weight:400;color:var(--sub);">시장필터 포함</span></th>
+        <th>판정2<br><span style="font-size:9px;font-weight:400;color:var(--sub);">기술신호만</span></th>
         <th>종가</th>
         <th>변동률</th>
         <th>RSI</th>
-        <th class="td-left">근거</th>
+        <th class="td-left">근거 (판정2)</th>
       </tr>
     </thead>
     <tbody>
       {% for s in stocks %}
       <tr>
-        <td class="bold">{{ s.ticker }}</td>
-        <td><span class="badge badge-{{ s.sk }}">{{ s.lbl }}</span></td>
+        <td class="bold">
+          <a href="{{ s.ticker }}.html" style="color:var(--text);text-decoration:none;">{{ s.ticker }}</a>
+        </td>
+        <td><span class="badge badge-{{ s.sk1 }}">{{ s.lbl1 }}</span></td>
+        <td><span class="badge badge-{{ s.sk2 }}">{{ s.lbl2 }}</span></td>
         <td class="bold">${{ "%.2f"|format(s.close) }}</td>
         <td class="{{ 'c-green bold' if s.chg >= 0 else 'c-red bold' }}">{{ "%+.2f"|format(s.chg) }}%</td>
         <td class="{{ 'c-green bold' if s.rsi <= 35 else 'c-red bold' if s.rsi >= 70 else '' }}">{{ "%.1f"|format(s.rsi) }}</td>
-        <td class="td-left c-mid">{{ s.reason }}</td>
+        <td class="td-left c-mid">{{ s.reason2 }}</td>
       </tr>
       {% endfor %}
     </tbody>

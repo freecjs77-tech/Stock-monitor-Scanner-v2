@@ -224,81 +224,110 @@ tr:nth-child(even) td { background: var(--row2); }
     <span class="date">2026년 03월 26일  |  기술적 분석</span>
   </div>
 
+  <!-- 판정 범례 -->
+  <div style="display:flex;gap:12px;margin-bottom:10px;font-size:11px;color:var(--sub);">
+    <span>판정1: <b style="color:var(--text);">시장필터 포함</b> (QQQ MA200 기준)</span>
+    <span style="color:var(--border);">|</span>
+    <span>판정2: <b style="color:var(--text);">기술신호만</b> (종목 자체 조건)</span>
+  </div>
+
   <!-- 판정 요약 테이블 -->
   <table>
     <thead>
       <tr>
         <th>티커</th>
-        <th>판정</th>
+        <th>판정1<br><span style="font-size:9px;font-weight:400;color:var(--sub);">시장필터 포함</span></th>
+        <th>판정2<br><span style="font-size:9px;font-weight:400;color:var(--sub);">기술신호만</span></th>
         <th>종가</th>
         <th>변동률</th>
         <th>RSI</th>
-        <th class="td-left">근거</th>
+        <th class="td-left">근거 (판정2)</th>
       </tr>
     </thead>
     <tbody>
       
       <tr>
-        <td class="bold">NVDA</td>
+        <td class="bold">
+          <a href="NVDA.html" style="color:var(--text);text-decoration:none;">NVDA</a>
+        </td>
         <td><span class="badge badge-sell">시장 관망</span></td>
+        <td><span class="badge badge-entry">1차 매수</span></td>
         <td class="bold">$178.68</td>
         <td class="c-green bold">+1.99%</td>
         <td class="">46.4</td>
-        <td class="td-left c-mid">QQQ MA200 아래 → 대세 하락장, 전종목 매수 금지</td>
+        <td class="td-left c-mid">1차(3/6): ADX≤25 + MA20아래 + 하락멈춤</td>
       </tr>
       
       <tr>
-        <td class="bold">TSLA</td>
+        <td class="bold">
+          <a href="TSLA.html" style="color:var(--text);text-decoration:none;">TSLA</a>
+        </td>
         <td><span class="badge badge-sell">시장 관망</span></td>
+        <td><span class="badge badge-watch">관망</span></td>
         <td class="bold">$385.95</td>
         <td class="c-green bold">+0.76%</td>
         <td class="">43.3</td>
-        <td class="td-left c-mid">QQQ MA200 아래 → 대세 하락장, 전종목 매수 금지</td>
+        <td class="td-left c-mid">1차 2/6개 충족</td>
       </tr>
       
       <tr>
-        <td class="bold">GOOGL</td>
+        <td class="bold">
+          <a href="GOOGL.html" style="color:var(--text);text-decoration:none;">GOOGL</a>
+        </td>
         <td><span class="badge badge-sell">시장 관망</span></td>
+        <td><span class="badge badge-entry">1차 매수</span></td>
         <td class="bold">$290.93</td>
         <td class="c-green bold">+0.17%</td>
         <td class="c-green bold">34.3</td>
-        <td class="td-left c-mid">QQQ MA200 아래 → 대세 하락장, 전종목 매수 금지</td>
+        <td class="td-left c-mid">1차(4/6): RSI 34.3≤38 + BB하단 + MA20아래 + 하락멈춤</td>
       </tr>
       
       <tr>
-        <td class="bold">PLTR</td>
+        <td class="bold">
+          <a href="PLTR.html" style="color:var(--text);text-decoration:none;">PLTR</a>
+        </td>
         <td><span class="badge badge-sell">시장 관망</span></td>
+        <td><span class="badge badge-watch">관망</span></td>
         <td class="bold">$154.96</td>
         <td class="c-green bold">+0.12%</td>
         <td class="">54.0</td>
-        <td class="td-left c-mid">QQQ MA200 아래 → 대세 하락장, 전종목 매수 금지</td>
+        <td class="td-left c-mid">RSI 54.0 > 50 → 1차 금지</td>
       </tr>
       
       <tr>
-        <td class="bold">SLV</td>
+        <td class="bold">
+          <a href="SLV.html" style="color:var(--text);text-decoration:none;">SLV</a>
+        </td>
         <td><span class="badge badge-sell">시장 관망</span></td>
+        <td><span class="badge badge-entry">1차 매수</span></td>
         <td class="bold">$65.21</td>
         <td class="c-green bold">+3.59%</td>
         <td class="">40.1</td>
-        <td class="td-left c-mid">QQQ MA200 아래 → 대세 하락장, 전종목 매수 금지</td>
+        <td class="td-left c-mid">1차(4/6): ADX≤25 + MA20아래 + 하락멈춤 + +3.6%</td>
       </tr>
       
       <tr>
-        <td class="bold">GLD</td>
+        <td class="bold">
+          <a href="GLD.html" style="color:var(--text);text-decoration:none;">GLD</a>
+        </td>
         <td><span class="badge badge-sell">시장 관망</span></td>
+        <td><span class="badge badge-entry">1차 매수</span></td>
         <td class="bold">$416.29</td>
         <td class="c-green bold">+3.01%</td>
         <td class="">35.2</td>
-        <td class="td-left c-mid">QQQ MA200 아래 → 대세 하락장, 전종목 매수 금지</td>
+        <td class="td-left c-mid">1차(4/6): RSI 35.2≤38 + MA20아래 + 하락멈춤 + +3.0%</td>
       </tr>
       
       <tr>
-        <td class="bold">CRCL</td>
+        <td class="bold">
+          <a href="CRCL.html" style="color:var(--text);text-decoration:none;">CRCL</a>
+        </td>
         <td><span class="badge badge-sell">시장 관망</span></td>
+        <td><span class="badge badge-watch">관망</span></td>
         <td class="bold">$103.86</td>
         <td class="c-green bold">+2.66%</td>
         <td class="">50.1</td>
-        <td class="td-left c-mid">QQQ MA200 아래 → 대세 하락장, 전종목 매수 금지</td>
+        <td class="td-left c-mid">RSI 50.1 > 50 → 1차 금지</td>
       </tr>
       
     </tbody>

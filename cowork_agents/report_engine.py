@@ -516,6 +516,88 @@ def trading_stage(d):
     return ('watch', '관망', MGRAY)
 
 
+def trading_stage2(d):
+    """
+    분할 매수 전략 v2.0 — 판정2 (QQQ 시장 필터 제외)
+    종목 자체 기술 신호만으로 판정 (시장 환경 무관)
+    """
+    def sig(key, default=False):
+        return bool(d.get(key, default))
+
+    # 3차 매수
+    block3 = sig('sig_block_rsi75') or sig('sig_block_bigdrop')
+    if not block3:
+        if all([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
+                sig('sig_macd_above_zero'), sig('sig_vol_1p3')]):
+            return ('entry3', '3차 매수', GREEN)
+
+    # 2차 매수
+    if all([
+        sig('sig_double_bottom'),
+        sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),
+        sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'),
+        sig('sig_vol_1p2'),
+    ]):
+        return ('entry2', '2차 매수', ORANGE)
+
+    # 1차 매수
+    block1 = sig('sig_block_rsi50') or sig('sig_block_bigdrop')
+    if not block1:
+        cond1_list = [
+            sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
+            sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct'),
+        ]
+        if sum(cond1_list) >= 3:
+            return ('entry1', '1차 매수', ORANGE)
+
+    return ('watch', '관망', MGRAY)
+
+
+def _stage_reason2(d, sk):
+    """판정2 근거 텍스트 (QQQ 필터 제외 버전)"""
+    rsi = d['rsi']
+    chg = d.get('change_pct', 0.0)
+
+    def sig(key, default=False):
+        return bool(d.get(key, default))
+
+    if sk == 'entry3':
+        parts = []
+        if sig('sig_above_ma20_2d'):   parts.append('MA20 2일↑')
+        if sig('sig_ma20_slope_pos'):  parts.append('MA20기울기+')
+        if sig('sig_macd_above_zero'): parts.append('MACD 0선↑')
+        if sig('sig_vol_1p3'):         parts.append('거래량 1.3배')
+        return '3차: ' + ' + '.join(parts)
+
+    if sk == 'entry2':
+        parts = []
+        if sig('sig_double_bottom'):     parts.append('이중바닥')
+        if sig('sig_rsi_3d_up'):         parts.append(f'RSI {rsi:.1f} 3일↑')
+        if sig('sig_macd_golden'):       parts.append('MACD골든')
+        elif sig('sig_macd_hist_3d_up'): parts.append('히스토3일↑')
+        if sig('sig_vol_1p2'):           parts.append('거래량 1.2배')
+        return '2차: ' + ' + '.join(parts)
+
+    if sk == 'entry1':
+        met = []
+        if sig('sig_rsi_le38'):    met.append(f'RSI {rsi:.1f}≤38')
+        if sig('sig_adx_le25'):    met.append('ADX≤25')
+        if sig('sig_near_bb_low'): met.append('BB하단')
+        if sig('sig_below_ma20'):  met.append('MA20아래')
+        if sig('sig_low_stopped'): met.append('하락멈춤')
+        if sig('sig_bounce2pct'):  met.append(f'+{chg:.1f}%')
+        return f'1차({len(met)}/6): ' + ' + '.join(met)
+
+    # 관망 — 이유
+    if sig('sig_block_rsi50'):
+        return f'RSI {rsi:.1f} > 50 → 1차 금지'
+    if sig('sig_block_bigdrop'):
+        return f'장대음봉 {chg:.1f}%'
+    cnt = sum([sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
+               sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')])
+    return f'1차 {cnt}/6개 충족'
+
+
 # ══════════════════════════════════════════════════════════════════
 #  Chart
 # ══════════════════════════════════════════════════════════════════

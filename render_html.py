@@ -24,7 +24,7 @@ TEMPLATE_DIR = os.path.join(ROOT, 'templates')
 OUTPUT_DIR   = os.path.join(ROOT, 'docs')   # GitHub Pages는 docs/ 사용
 
 sys.path.insert(0, os.path.join(ROOT, 'cowork_agents'))
-from report_engine import trading_stage, auto_score, _stage_reason, build_chart
+from report_engine import trading_stage, trading_stage2, auto_score, _stage_reason, _stage_reason2, build_chart
 
 # Jinja2 환경
 env = Environment(loader=FileSystemLoader(TEMPLATE_DIR), autoescape=False)
@@ -174,24 +174,23 @@ def render(target_tickers=None, open_browser=False):
     # 종목별 판정 계산
     summary_stocks = []
     for d in stocks_all:
-        sk, lbl, _ = trading_stage(d)
-        c    = d['close']
-        h52  = d.get('high_52w', c * 1.3)
-        near_high = c >= h52 * 0.82
-        h_down    = c <= h52 * 0.80
-        rsi_s3    = d.get('rsi_slope3', 0.0)
+        sk1, lbl1, _ = trading_stage(d)
+        sk2, lbl2, _ = trading_stage2(d)
         try:
-            reason = _stage_reason(d, sk)
+            reason1 = _stage_reason(d, sk1)
         except Exception:
-            reason = lbl
+            reason1 = lbl1
+        try:
+            reason2 = _stage_reason2(d, sk2)
+        except Exception:
+            reason2 = lbl2
         summary_stocks.append({
-            'ticker': d['ticker'],
-            'lbl':    lbl,
-            'sk':     get_badge_class(sk),
-            'close':  d['close'],
-            'chg':    d.get('change_pct', d.get('chg_pct', 0.0)),
-            'rsi':    d['rsi'],
-            'reason': reason,
+            'ticker':  d['ticker'],
+            'sk1':     get_badge_class(sk1), 'lbl1': lbl1, 'reason1': reason1,
+            'sk2':     get_badge_class(sk2), 'lbl2': lbl2, 'reason2': reason2,
+            'close':   d['close'],
+            'chg':     d.get('change_pct', d.get('chg_pct', 0.0)),
+            'rsi':     d['rsi'],
         })
 
     # 요약 페이지
@@ -205,34 +204,34 @@ def render(target_tickers=None, open_browser=False):
     # 종목별 페이지
     tmpl = env.get_template('stock.html')
     for d in stocks_all:
-        sk, lbl, _ = trading_stage(d)
+        sk1, lbl1, _ = trading_stage(d)
+        sk2, lbl2, _ = trading_stage2(d)
         c   = d['close']
         h52 = d.get('high_52w', c * 1.3)
         l52 = d.get('low_52w',  c * 0.7)
         rng = max(h52 - l52, 0.01)
         pos_pct = max(0.0, min(1.0, (c - l52) / rng))
-        sk_cls = get_badge_class(sk)
 
-        # 차트 경로 (docs/charts/ 디렉토리 기준)
         chart_fn   = f"{d['ticker']}_chart.png"
         chart_path = (f"charts/{chart_fn}"
                       if os.path.exists(os.path.join(charts_dst, chart_fn))
                       else None) if os.path.exists(charts_dst) else None
 
         try:
-            stage_desc = get_stage_desc(d, sk, lbl)
+            stage_desc1 = get_stage_desc(d, sk1, lbl1)
+            stage_desc2 = get_stage_desc(d, sk2, lbl2)
         except Exception:
-            stage_desc = lbl
+            stage_desc1 = lbl1
+            stage_desc2 = lbl2
 
         html = tmpl.render(
             d=d,
-            sk=sk_cls,
-            lbl=lbl,
+            sk1=get_badge_class(sk1), lbl1=lbl1, stage_desc1=stage_desc1,
+            sk2=get_badge_class(sk2), lbl2=lbl2, stage_desc2=stage_desc2,
             today_str=today_str,
-            stage_desc=stage_desc,
-            action=build_action(d, sk),
+            action=build_action(d, sk2),   # 액션은 판정2(기술신호) 기준
             chart_path=chart_path,
-            metrics=build_metrics(d, sk),
+            metrics=build_metrics(d, sk2),
             pos_pct=pos_pct,
             stocks=nav_stocks,
         )

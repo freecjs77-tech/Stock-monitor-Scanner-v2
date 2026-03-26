@@ -247,12 +247,24 @@ tr:nth-child(even) td { background: var(--row2); }
   </div>
 
   <!-- 요약 박스 -->
-  <div class="summary-box sell">
-    <div style="font-size:12px; color:var(--sub); margin-bottom:4px;">현재 판정</div>
-    <div style="font-size:16px; font-weight:700; margin-bottom:6px;">
-      <span class="badge badge-sell">시장 관망</span>
+  <div class="summary-box watch">
+    <div style="display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap;">
+      <div style="flex:1; min-width:160px;">
+        <div style="font-size:11px; color:var(--sub); margin-bottom:4px;">판정1 &nbsp;<span style="font-weight:400;">시장필터 포함 (QQQ MA200)</span></div>
+        <div style="font-size:15px; font-weight:700; margin-bottom:4px;">
+          <span class="badge badge-sell">시장 관망</span>
+        </div>
+        <div style="font-size:12px; color:var(--mid);">신호 대기 중</div>
+      </div>
+      <div style="width:1px; background:var(--border); align-self:stretch;"></div>
+      <div style="flex:1; min-width:160px;">
+        <div style="font-size:11px; color:var(--sub); margin-bottom:4px;">판정2 &nbsp;<span style="font-weight:400;">기술신호만 (종목 자체)</span></div>
+        <div style="font-size:15px; font-weight:700; margin-bottom:4px;">
+          <span class="badge badge-watch">관망</span>
+        </div>
+        <div style="font-size:12px; color:var(--mid);">아직 진입 신호 없음 — 현금 보유 대기</div>
+      </div>
     </div>
-    <div style="font-size:13px; color:var(--mid);">신호 대기 중</div>
   </div>
 
   <!-- 차트 -->
