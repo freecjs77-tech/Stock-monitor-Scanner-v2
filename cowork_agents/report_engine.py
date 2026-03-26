@@ -570,19 +570,20 @@ def build_chart(d, path):
         dt -= datetime.timedelta(1)
 
     # ── Dark theme palette ────────────────────────────────────────
-    BG      = '#EDF4FB'   # figure background — 연한 파란 배경
-    PANEL   = '#F4F9FD'   # axes background — 더 연한 파란
-    GRID_C  = '#C0D8EE'   # grid lines — 파란 그리드
-    TICK_C  = '#3C6080'   # tick label — 파란 진회색
-    UP_C    = '#1565C0'   # 상승 캔들 (파란)
-    DN_C    = '#C62828'   # 하락 캔들 (빨간)
-    MA20_C  = '#E65100'   # MA20 orange
-    MA50_C  = '#7B1FA2'   # MA50 purple
-    MA200_C = '#B71C1C'   # MA200 dark red
-    BB_C    = '#0277BD'   # Bollinger blue
-    MACD_C  = '#1565C0'   # MACD line
-    SIG_C   = '#E65100'   # Signal line
-    RSI_C   = '#7B1FA2'   # RSI line
+    BG      = '#060D18'   # figure background
+    PANEL   = '#0A1525'   # axes background
+    GRID_C  = '#1A3050'   # grid lines
+    TICK_C  = '#A8C4DE'   # tick label
+    UP_C    = '#34D399'   # 상승 캔들 (에메랄드 그린)
+    DN_C    = '#F87171'   # 하락 캔들 (코럴 레드)
+    MA20_C  = '#FBBF24'   # MA20 앰버
+    MA50_C  = '#A78BFA'   # MA50 바이올렛
+    MA200_C = '#FB923C'   # MA200 오렌지
+    BB_C    = '#60A5FA'   # Bollinger 스카이블루
+    MACD_C  = '#60A5FA'   # MACD line
+    SIG_C   = '#FBBF24'   # Signal line
+    RSI_C   = '#A78BFA'   # RSI line
+    TEXT_C  = '#EEF4FB'   # title/label text
 
     fig = plt.figure(figsize=(11.5, 9), facecolor=BG)
     gs  = gridspec.GridSpec(4, 1, figure=fig,
@@ -600,7 +601,7 @@ def build_chart(d, path):
         ax.spines['left'].set_color(GRID_C)
         ax.spines['bottom'].set_color(GRID_C)
         ax.tick_params(colors=TICK_C, labelsize=7.5)
-        ax.grid(True, color=GRID_C, linewidth=0.5, zorder=0)
+        ax.grid(True, color=GRID_C, linewidth=0.4, linestyle='--', zorder=0)
 
     # ── Panel 1: Candlestick + MA + BB ───────────────────────────
     # Bollinger Bands
@@ -634,10 +635,10 @@ def build_chart(d, path):
              label=f'MA200  ${ma200[-1]:.2f}', zorder=6)
 
     # 52W reference lines
-    ax1.axhline(d['high_52w'], color='#1B5E20', lw=0.8, ls=':', alpha=0.7)
-    ax1.axhline(d['low_52w'],  color=DN_C,      lw=0.8, ls=':', alpha=0.5)
+    ax1.axhline(d['high_52w'], color=UP_C, lw=0.8, ls=':', alpha=0.6)
+    ax1.axhline(d['low_52w'],  color=DN_C, lw=0.8, ls=':', alpha=0.6)
     ax1.text(2, d['high_52w'] * 1.005, f'52W H  ${d["high_52w"]:.2f}',
-             fontsize=7, color='#1B5E20', va='bottom', fontweight='bold')
+             fontsize=7, color=UP_C, va='bottom', fontweight='bold')
     ax1.text(2, d['low_52w']  * 0.993, f'52W L  ${d["low_52w"]:.2f}',
              fontsize=7, color=DN_C, va='top')
 
@@ -652,12 +653,12 @@ def build_chart(d, path):
                  arrowprops=dict(arrowstyle='->', color=ann_color, lw=1.0))
 
     ax1.set_ylabel('Price (USD)', fontsize=8, color=TICK_C)
-    ax1.legend(loc='upper left', fontsize=7, framealpha=0.5, ncol=2,
-               edgecolor=GRID_C, facecolor=PANEL, labelcolor='#3C6080')
+    ax1.legend(loc='upper left', fontsize=7, framealpha=0.7, ncol=2,
+               edgecolor=GRID_C, facecolor=PANEL, labelcolor=TICK_C)
     today_label = datetime.date.today().strftime('%b %d, %Y')
     ax1.set_title(
         f'{d["company"]} ({d["ticker"]})  ·  {d["exchange"]}  ·  Technical Analysis  ·  {today_label}',
-        fontsize=10.5, fontweight='bold', color='#0C1E35', pad=9)
+        fontsize=10.5, fontweight='bold', color=TEXT_C, pad=9)
 
     # ── Panel 2: Volume ───────────────────────────────────────────
     vcol = [UP_C if (cl[i] >= op[i]) else DN_C for i in range(SHOW)]
@@ -670,8 +671,8 @@ def build_chart(d, path):
         vol_ma[i] = vsl[i - 19:i + 1].mean()
     ax2.plot(x, vol_ma, lw=1.0, color=MA20_C, label=f'Vol MA(20)  {avg_v:.0f}M')
     ax2.set_ylabel('Vol (M)', fontsize=7.5, color=TICK_C)
-    ax2.legend(loc='upper left', fontsize=7, framealpha=0.5,
-               edgecolor=GRID_C, facecolor=PANEL, labelcolor='#3C6080')
+    ax2.legend(loc='upper left', fontsize=7, framealpha=0.7,
+               edgecolor=GRID_C, facecolor=PANEL, labelcolor=TICK_C)
     ax2.yaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f'{v:.0f}'))
 
     # ── Panel 3: RSI ──────────────────────────────────────────────
@@ -686,8 +687,8 @@ def build_chart(d, path):
     ax3.set_ylim(10, 90)
     ax3.set_yticks([30, 50, 70])
     ax3.set_ylabel('RSI', fontsize=7.5, color=TICK_C)
-    ax3.legend(loc='upper left', fontsize=7, framealpha=0.5,
-               edgecolor=GRID_C, facecolor=PANEL, labelcolor='#3C6080')
+    ax3.legend(loc='upper left', fontsize=7, framealpha=0.7,
+               edgecolor=GRID_C, facecolor=PANEL, labelcolor=TICK_C)
     ax3.annotate(f'  {d["rsi"]:.1f}', xy=(SHOW - 1, d['rsi']), xytext=(-34, 6),
                  textcoords='offset points', fontsize=7.5, color=RSI_C, fontweight='bold')
 
@@ -703,8 +704,8 @@ def build_chart(d, path):
              label=f'Signal ({d["macd_signal"]:.2f})')
     ax4.axhline(0, color=TICK_C, lw=0.5)
     ax4.set_ylabel('MACD', fontsize=7.5, color=TICK_C)
-    ax4.legend(loc='upper left', fontsize=7, framealpha=0.5, ncol=2,
-               edgecolor=GRID_C, facecolor=PANEL, labelcolor='#3C6080')
+    ax4.legend(loc='upper left', fontsize=7, framealpha=0.7, ncol=2,
+               edgecolor=GRID_C, facecolor=PANEL, labelcolor=TICK_C)
     ax4.yaxis.set_major_formatter(mticker.FormatStrFormatter('%.1f'))
 
     # ── X-axis date labels ────────────────────────────────────────
@@ -720,7 +721,7 @@ def build_chart(d, path):
     for ax in (ax1, ax2, ax3):
         plt.setp(ax.get_xticklabels(), visible=False)
 
-    plt.savefig(path, dpi=155, bbox_inches='tight', facecolor=BG)
+    plt.savefig(path, dpi=155, bbox_inches='tight', facecolor=BG, edgecolor='none')
     plt.close(fig)
 
 
