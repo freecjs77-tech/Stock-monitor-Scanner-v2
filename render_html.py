@@ -94,55 +94,63 @@ def build_metrics(d, sk):
     ]
 
 def build_action(d, sk):
+    """판정2 기준 v2.0 단계별 맞춤 액션 (buy1/buy2/buy3/watch/watch_market)"""
     c    = d['close']
-    m20  = d['ma20']
+    m20  = d.get('ma20', c)
+    m50  = d.get('ma50', c)
     rsi  = d['rsi']
-    h52  = d.get('high_52w', c*1.3)
-    stop = m20 * 0.97
-
-    watch_default = {
-        'wait_title':    '지금은 기다리는 게 맞아요',
-        'wait_cond':     '아직 진입 신호가 안 왔어요. 서두르지 않아도 됩니다',
-        'confirm_title': '더 확신이 서려면',
-        'confirm_cond':  'MACD가 위로 꺾이고 거래량까지 늘어날 때 진입하면 더 안전해요',
-        'stop_title':    '이미 갖고 있다면',
-        'stop_cond':     f'${stop:.2f} 아래로 내려가면 미련 없이 일부 정리하세요',
-    }
+    stop_1 = c * 0.95          # 1차: -5% 손절
+    stop_2 = m20 * 0.97        # 2·3차: MA20 -3% 손절
 
     actions = {
-        'buy': {
-            'wait_title':    '이럴 때 들어가세요',
-            'wait_cond':     f'${c:.2f} 위로 올라서거나, RSI가 30 이하로 떨어질 때',
-            'confirm_title': '더 확신이 서려면',
-            'confirm_cond':  'MACD가 위로 꺾이고 거래량까지 늘어날 때 진입하면 더 안전해요',
-            'stop_title':    '이미 갖고 있다면',
-            'stop_cond':     f'${stop:.2f} 아래로 내려가면 미련 없이 일부 정리하세요',
-        },
-        'entry': {
-            'wait_title':    '이럴 때 들어가세요',
-            'wait_cond':     f'RSI가 더 내려오거나, 하락이 멈추는 신호가 보일 때 소액 진입',
-            'confirm_title': '더 확신이 서려면',
-            'confirm_cond':  f'MA20(${m20:.2f}) 위로 종가가 올라서면 2단계 진입 고려',
-            'stop_title':    '이미 갖고 있다면',
-            'stop_cond':     f'${stop:.2f} 아래로 내려가면 미련 없이 일부 정리하세요',
-        },
-        'sell': {
+        # ── 관망: 조건 미충족 ──────────────────────────────────────
+        'watch': {
             'wait_title':    '지금은 기다리는 게 맞아요',
-            'wait_cond':     '이미 진입 신호가 아니에요. 서두르지 않아도 됩니다',
-            'confirm_title': '더 확신이 서려면',
-            'confirm_cond':  f'MA20(${m20:.2f}) 아래 유지 + RSI 하락세 지속 확인 후 추가 매도',
+            'wait_cond':     '아직 1차 매수 조건(6개 중 3개)이 채워지지 않았어요. 서두르지 않아도 됩니다',
+            'confirm_title': '이런 신호가 오면 주목하세요',
+            'confirm_cond':  f'RSI 38 이하 + 하락 멈춤 + MA20(${m20:.2f}) 아래 진입 시 1차 매수 검토',
             'stop_title':    '이미 갖고 있다면',
-            'stop_cond':     f'${stop:.2f} 아래로 내려가면 미련 없이 일부 정리하세요',
+            'stop_cond':     f'${stop_2:.2f} 아래로 내려가면 미련 없이 일부 정리하세요',
         },
-        'sell_div': {
-            'wait_title':    '매도를 우선 고려하세요',
-            'wait_cond':     '약세 다이버전스 발생 — 추가 상승보다 하락 위험이 높습니다',
-            'confirm_title': '더 확신이 서려면',
-            'confirm_cond':  f'MA20(${m20:.2f}) 아래로 종가 이탈 시 추가 매도 신호',
+        # ── 시장 관망: QQQ MA200 아래 ─────────────────────────────
+        'watch_market': {
+            'wait_title':    '시장 전체가 약세예요 (판정1 기준)',
+            'wait_cond':     'QQQ가 200일선 아래에 있어 매수 환경이 아닙니다. 현금 비중을 유지하세요',
+            'confirm_title': '판정2 기술 신호는 참고만 하세요',
+            'confirm_cond':  '시장 필터 제외 시 종목 자체 신호를 확인하려면 판정2를 참고하세요',
             'stop_title':    '이미 갖고 있다면',
-            'stop_cond':     f'${stop:.2f} 아래로 내려가면 미련 없이 일부 정리하세요',
+            'stop_cond':     f'${stop_2:.2f} 아래로 내려가면 미련 없이 일부 정리하세요',
+        },
+        # ── 1차 매수: 자금의 20% ──────────────────────────────────
+        'buy1': {
+            'wait_title':    '1차 매수 타이밍이에요 (자금의 20%)',
+            'wait_cond':     f'현재가 ${c:.2f} 근처에서 소액 분할 진입 — 추가 하락 여지를 남겨두세요',
+            'confirm_title': '2차 매수 신호를 기다리세요',
+            'confirm_cond':  f'이중 바닥 확인 + RSI 35 돌파 + 거래량 증가 시 2차(30%) 추가 진입',
+            'stop_title':    '손절 기준',
+            'stop_cond':     f'${stop_1:.2f} 아래로 내려가면 손절 — 진입가 대비 -5% 룰을 지키세요',
+        },
+        # ── 2차 매수: 자금의 30% ──────────────────────────────────
+        'buy2': {
+            'wait_title':    '2차 매수 타이밍이에요 (자금의 30%)',
+            'wait_cond':     f'이중 바닥 + RSI 반등 + MACD 개선 확인 — ${c:.2f} 근처에서 비중 확대',
+            'confirm_title': '3차 매수 신호를 준비하세요',
+            'confirm_cond':  f'종가가 MA20(${m20:.2f}) 위로 2일 연속 마감 + MACD 0선 돌파 시 3차(50%) 진입',
+            'stop_title':    '손절 기준',
+            'stop_cond':     f'${stop_2:.2f} 아래로 내려가면 전량 손절 — MA20 -3% 이탈 시 포지션 정리',
+        },
+        # ── 3차 매수: 자금의 50% ──────────────────────────────────
+        'buy3': {
+            'wait_title':    '3차 매수 타이밍이에요 (자금의 50%)',
+            'wait_cond':     f'추세 전환 확인 — MA20(${m20:.2f}) 위 안착 + MACD 0선 돌파로 본격 상승 진입',
+            'confirm_title': '목표가와 비중을 점검하세요',
+            'confirm_cond':  f'MA50(${m50:.2f}) 돌파 시 추가 상승 기대 — 분할 매도로 수익 실현 준비',
+            'stop_title':    '손절 기준',
+            'stop_cond':     f'${stop_2:.2f} 아래로 내려가면 전량 손절 — MA20 -3% 이탈 시 즉시 정리',
         },
     }
+
+    watch_default = actions['watch']
     return actions.get(sk, watch_default)
 
 def render(target_tickers=None, open_browser=False):
