@@ -445,99 +445,73 @@ def opinion_label(total):
 
 def trading_stage(d):
     """
-    4단계 타이밍 판정 (v2 — 논리 오류 수정)
-    우선순위: ① 매도주의 > ② 매수적기 > ③ 1차진입 > ④ 매도시작 > ⑤ 관망
+    분할 매수 전략 v2.0
+    우선순위: 0 시장필터 > 3차매수 > 2차매수 > 1차매수 > 관망
 
-    ① 매도 주의: 약세 다이버전스 + 고점권 한정 (바닥권 오신호 방지)
-    ② 매수 적기: MA20돌파/MACD골든크로스/거래량 중 2개 이상 + 양봉 + RSI<75
-    ③ 1차 진입: 과매도 탈출(A) / 낙폭과대 둔화(B) / 강한공포(C) + 안전장치
-    ④ 매도 시작: not heavily_down + RSI>=45 한정
-                 MA200하락접근(A) / BB상단+음봉(B) / MA20이탈(C)
-    ⑤ 관망: 위 조건 미충족
+    0️⃣ 시장 필터: QQQ MA200 아래 → 전종목 매수 금지
+    1️⃣ 1차 매수 (20%): 6조건 중 3개 이상 + 금지조건 없음
+    2️⃣ 2차 매수 (30%): 4조건 ALL + 금지조건 없음
+    3️⃣ 3차 매수 (50%): 4조건 ALL + 금지조건 없음
 
     Returns: (stage_key, label, color)
     """
-    c        = d['close'];  m20 = d['ma20'];  m200 = d['ma200']
-    bb_u     = d['bb_upper']
-    rsi      = d['rsi']
-    rsi_s3   = d.get('rsi_slope3', 0.0)
-    rsi_s5   = d.get('rsi_slope',  0.0)
-    macd_v   = d['macd'];  macd_s = d['macd_signal']
-    vol      = d.get('volume', 0)
-    avg_vol  = max(d.get('avg_volume', 1), 1)
-    div      = d.get('rsi_divergence', 'none')
-    high_52w = d.get('high_52w', c * 1.3)
-    chg      = d.get('change_pct', 0.0)
-    price_s  = d.get('price_series', [])
-
-    vol_ratio    = vol / avg_vol
-    macd_bull    = macd_v > macd_s
-    near_high    = c >= high_52w * 0.82   # 52주 고점 82% 이상 = 고점권
-    heavily_down = c <= high_52w * 0.80   # 52주 고점 대비 20% 이상 하락
-    near_bb_top  = c >= bb_u * 0.97       # BB 상단 3% 이내
-    is_bullish   = chg > 0                # 양봉 (전일 대비 상승 마감)
-    is_bearish   = chg < 0                # 음봉 (전일 대비 하락 마감)
+    # 사전 계산된 신호 플래그 읽기 (local_mag7_real이 저장)
+    def sig(key, default=False):
+        return bool(d.get(key, default))
 
     # ─────────────────────────────────────────────────────────
-    # ① 매도 주의 — 약세 다이버전스 + 고점권 한정
-    #   [수정] near_high 추가: 이미 많이 하락한 종목(바닥권)은 제외
-    #   이유: heavily_down 종목의 단기 반등 꺾임에 매도 주의 오발 방지
+    # 0️⃣ 시장 필터 — QQQ MA200 아래면 전종목 관망
     # ─────────────────────────────────────────────────────────
-    if div == 'bearish' and near_high:
-        return ('sell_div', '매도 주의', RED)
+    if not sig('qqq_above_ma200', True):
+        return ('watch_market', '시장 관망', MGRAY)
 
     # ─────────────────────────────────────────────────────────
-    # ② 매수 적기 — 3가지 중 2가지 이상 충족 + 양봉 마감 + RSI 상한
-    #   1. 현재가 > MA20 (20일선 돌파)
-    #   2. MACD > 시그널 (골든크로스)
-    #   3. 거래량 >= 평균 거래량 (거래량 동반)
-    #   [수정] RSI < 75 추가: 극단 과매수(RSI>=75) 구간 고점 추격 방지
+    # 3️⃣ 3차 매수 (50%) — 추세 전환 확인 후 본격 진입
+    #   조건 4가지 ALL + 금지: RSI>75 또는 장대음봉(-5%)
     # ─────────────────────────────────────────────────────────
-    buy_signals = sum([c > m20, macd_bull, vol_ratio >= 1.0])
-    if buy_signals >= 2 and is_bullish and rsi < 75:
-        return ('buy', '매수 적기', GREEN)
+    block3 = sig('sig_block_rsi75') or sig('sig_block_bigdrop')
+    if not block3:
+        cond3 = [
+            sig('sig_above_ma20_2d'),    # MA20 2일 연속 위
+            sig('sig_ma20_slope_pos'),   # MA20 기울기 양수
+            sig('sig_macd_above_zero'),  # MACD 0선 위
+            sig('sig_vol_1p3'),          # 거래량 평균 1.3배 이상
+        ]
+        if all(cond3):
+            return ('entry3', '3차 매수', GREEN)
 
     # ─────────────────────────────────────────────────────────
-    # ③ 1차 진입 — A/B/C 중 하나 + 안전장치
-    #   안전장치: 오늘 종가 >= 최근 3일 종가 최저값 (하락 멈춤 확인)
+    # 2️⃣ 2차 매수 (30%) — 바닥 확인 후 추가 진입
+    #   조건 4가지 ALL
     # ─────────────────────────────────────────────────────────
-    if len(price_s) >= 4:
-        low_stopped = float(price_s[-1]) >= min(float(p) for p in price_s[-4:-1])
-    else:
-        low_stopped = True   # 데이터 부족 시 안전장치 패스
-
-    # A. 과매도 탈출: RSI < 35 + 3일 기울기 플러스 전환 + 하락 멈춤
-    if rsi < 35 and rsi_s3 > 0 and low_stopped:
-        return ('entry', '1차 진입', ORANGE)
-    # B. 낙폭 과대 둔화: 고점 -20% 이상 + RSI < 40 + 하락 속도 감소 + 하락 멈춤
-    if rsi < 40 and heavily_down and rsi_s3 > rsi_s5 and low_stopped:
-        return ('entry', '1차 진입', ORANGE)
-    # C. 강한 공포: RSI < 30 + 급락 아님(rsi_s3 >= -2) + 하락 멈춤
-    #   [수정] rsi_s3 >= -2 추가: RSI 28이어도 급락 중이면 더 빠질 수 있음
-    if rsi < 30 and rsi_s3 >= -2 and low_stopped:
-        return ('entry', '1차 진입', ORANGE)
+    cond2 = [
+        sig('sig_double_bottom'),                            # 이중 바닥
+        sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),       # RSI>35 + 3일 연속 상승
+        sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'), # MACD 골든크로스 or 히스토그램 3일 증가
+        sig('sig_vol_1p2'),                                  # 거래량 평균 1.2배 이상
+    ]
+    if all(cond2):
+        return ('entry2', '2차 매수', ORANGE)
 
     # ─────────────────────────────────────────────────────────
-    # ④ 매도 시작 — 두 가지 전제 모두 충족 시에만 판단
-    #   전제1: not heavily_down (고점 대비 -20% 이내 종목만)
-    #   전제2: RSI >= 45 (과매도권 종목 제외 — RSI 낮은데 매도 오발 방지)
-    #   A. MA200 하락 접근: MA200 위에서 5% 이내 + RSI 하락 추세
-    #   B. BB 상단 과열: BB 상단 3% 이내 + 음봉 마감
-    #   C. 추세 붕괴: 고점권(82%)에서 MA20 이탈 + RSI 5일 기울기 급락
+    # 1️⃣ 1차 매수 (20%) — 초기 진입 정찰대
+    #   6조건 중 3개 이상 + 금지: RSI>50 또는 장대음봉(-5%)
     # ─────────────────────────────────────────────────────────
-    if not heavily_down and rsi >= 45:
-        # A. [수정] rsi_s5 < 0 추가: MA200 상승 돌파 중인 종목은 제외
-        #          하락하며 MA200에 접근하는 경우에만 저항 신호로 인정
-        near_ma200_resist = (c > m200 and c <= m200 * 1.05 and rsi_s5 < 0)
-        # B. BB 상단 근접 + 음봉: 과열 후 되돌림 시작
-        bb_top_bearish    = (near_bb_top and is_bearish)
-        # C. 고점권 추세 붕괴: 고점권에서 MA20 이탈 + RSI 5일 급락
-        ma20_break_high   = (near_high and c < m20 and rsi_s5 < -1.0)
-        if near_ma200_resist or bb_top_bearish or ma20_break_high:
-            return ('sell', '매도 시작', RED)
+    block1 = sig('sig_block_rsi50') or sig('sig_block_bigdrop')
+    if not block1:
+        cond1_list = [
+            sig('sig_rsi_le38'),      # RSI <= 38
+            sig('sig_adx_le25'),      # ADX <= 25
+            sig('sig_near_bb_low'),   # 종가 <= BB하단 x 1.02
+            sig('sig_below_ma20'),    # 종가 < MA20
+            sig('sig_low_stopped'),   # 하락 멈춤
+            sig('sig_bounce2pct'),    # 당일 +2% 이상 반등
+        ]
+        if sum(cond1_list) >= 3:
+            return ('entry1', '1차 매수', ORANGE)
 
     # ─────────────────────────────────────────────────────────
-    # ⑤ 관망 — 조건 미충족, 다음 신호 대기
+    # 관망 — 조건 미충족
     # ─────────────────────────────────────────────────────────
     return ('watch', '관망', MGRAY)
 
@@ -1516,65 +1490,55 @@ def build_index_page(output_path):
 
 
 def _stage_reason(d, sk):
-    """trading_stage 판정 근거 텍스트 생성"""
-    c        = d['close']
-    rsi      = d['rsi']
-    rsi_s3   = d.get('rsi_slope3', 0.0)
-    rsi_s5   = d.get('rsi_slope',  0.0)
-    macd_v   = d['macd'];  macd_s_v = d['macd_signal']
-    vol      = d.get('volume', 0)
-    avg_vol  = max(d.get('avg_volume', 1), 1)
-    m20      = d['ma20'];  m200 = d['ma200']
-    bb_u     = d['bb_upper']
-    div      = d.get('rsi_divergence', 'none')
-    high_52w = d.get('high_52w', c * 1.3)
-    chg      = d.get('change_pct', 0.0)
+    """v2.0 판정 근거 텍스트 생성"""
+    rsi  = d['rsi']
+    chg  = d.get('change_pct', 0.0)
 
-    near_high    = c >= high_52w * 0.82
-    heavily_down = c <= high_52w * 0.80
-    macd_bull    = macd_v > macd_s_v
-    vol_ratio    = vol / avg_vol
-    near_bb_top  = c >= bb_u * 0.97
-    is_bearish   = chg < 0
+    def sig(key, default=False):
+        return bool(d.get(key, default))
 
-    if sk == 'sell_div':
-        return f'bearish div + near_high=True -> 매도 주의'
-    if sk == 'buy':
-        sigs = []
-        if c > m20:      sigs.append('MA20 돌파')
-        if macd_bull:    sigs.append('MACD 골든크로스')
-        if vol_ratio >= 1.0: sigs.append('거래량 동반')
-        return ' + '.join(sigs)
-    if sk == 'entry':
-        price_s = d.get('price_series', [])
-        low_stopped = (float(price_s[-1]) >= min(float(p) for p in price_s[-4:-1])
-                       if len(price_s) >= 4 else True)
-        if rsi < 35 and rsi_s3 > 0 and low_stopped:
-            return f'A: RSI<35 + RSI기울기 플러스 + 하락멈춤'
-        if rsi < 40 and heavily_down and rsi_s3 > rsi_s5 and low_stopped:
-            return f'B: RSI<40 + 낙폭과대 + 하락둔화'
-        if rsi < 30 and rsi_s3 >= -2 and low_stopped:
-            return f'C: RSI<30 + 급락아님'
-        return '1차 진입 조건 충족'
-    if sk == 'sell':
-        if not heavily_down and rsi >= 45:
-            near_ma200 = (c > m200 and c <= m200 * 1.05 and rsi_s5 < 0)
-            bb_bear    = (near_bb_top and is_bearish)
-            ma20_break = (near_high and c < m20 and rsi_s5 < -1.0)
-            if near_ma200: return f'A: MA200 하락 접근 + RSI기울기 음수'
-            if bb_bear:    return f'B: BB 상단 근접 + 음봉'
-            if ma20_break: return f'C: 고점권 MA20 이탈 + RSI급락'
-        return '매도 시작 조건 충족'
-    # watch — 왜 관망인지
-    if div == 'bearish' and not near_high:
-        return f'bearish div이지만 near_high=False -> 바닥권 제외'
-    if not heavily_down and rsi >= 45:
-        near_ma200 = (c > m200 and c <= m200 * 1.05 and rsi_s5 < 0)
-        if not near_ma200:
-            return '조건 미충족'
-    if rsi < 45:
-        return f'RSI {rsi:.1f} < 45 -> 매도 시작 차단'
-    return '조건 미충족'
+    if sk == 'watch_market':
+        return 'QQQ MA200 아래 → 대세 하락장, 전종목 매수 금지'
+
+    if sk == 'entry3':
+        parts = []
+        if sig('sig_above_ma20_2d'):   parts.append('MA20 2일 연속 위')
+        if sig('sig_ma20_slope_pos'):  parts.append('MA20 기울기 양수')
+        if sig('sig_macd_above_zero'): parts.append('MACD 0선 위')
+        if sig('sig_vol_1p3'):         parts.append('거래량 1.3배↑')
+        return '3차: ' + ' + '.join(parts) if parts else '3차 매수 조건 충족'
+
+    if sk == 'entry2':
+        parts = []
+        if sig('sig_double_bottom'):   parts.append('이중바닥')
+        if sig('sig_rsi_3d_up'):       parts.append(f'RSI {rsi:.1f} 3일 상승')
+        if sig('sig_macd_golden'):     parts.append('MACD 골든크로스')
+        elif sig('sig_macd_hist_3d_up'): parts.append('히스토그램 3일↑')
+        if sig('sig_vol_1p2'):         parts.append('거래량 1.2배↑')
+        return '2차: ' + ' + '.join(parts) if parts else '2차 매수 조건 충족'
+
+    if sk == 'entry1':
+        met = []
+        if sig('sig_rsi_le38'):    met.append(f'RSI {rsi:.1f}≤38')
+        if sig('sig_adx_le25'):    met.append('ADX≤25')
+        if sig('sig_near_bb_low'): met.append('BB하단근접')
+        if sig('sig_below_ma20'):  met.append('MA20아래')
+        if sig('sig_low_stopped'): met.append('하락멈춤')
+        if sig('sig_bounce2pct'):  met.append(f'+{chg:.1f}%반등')
+        return f'1차({len(met)}/6): ' + ' + '.join(met)
+
+    # 관망 — 왜 안됐는지
+    if not sig('qqq_above_ma200', True):
+        return 'QQQ MA200 아래 → 매수 금지'
+    if sig('sig_block_rsi50'):
+        return f'RSI {rsi:.1f} > 50 → 1차 매수 금지'
+    if sig('sig_block_bigdrop'):
+        return f'장대음봉 {chg:.1f}% → 매수 금지'
+    cond1_count = sum([
+        sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
+        sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')
+    ])
+    return f'1차 조건 {cond1_count}/6개 충족 (3개 필요)'
 
 
 def generate_summary_page(stocks_list, output_path, ai_data=None):

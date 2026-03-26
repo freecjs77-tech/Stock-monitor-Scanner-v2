@@ -435,6 +435,50 @@ def fetch_stock_data(ticker, retry=2):
                 'news':             news,
                 # 실제 가격 시계열 → report_engine이 차트에 직접 사용
                 'price_series':  close.tolist(),
+                # ── v2 파생 신호 (bool) ─────────────────────────────
+                # 1차 매수용
+                'sig_rsi_le38':      bool(rsi_val <= 38),
+                'sig_adx_le25':      bool(safe(adx_arr, 99) <= 25),
+                'sig_near_bb_low':   bool(cur_close <= bb_l_val * 1.02),
+                'sig_below_ma20':    bool(cur_close < ma20_val),
+                'sig_low_stopped':   bool(len(close) >= 4 and
+                                         float(close[-1]) >= min(float(p) for p in close[-4:-1])),
+                'sig_bounce2pct':    bool(change_pct >= 2.0),
+                'sig_block_rsi50':   bool(rsi_val > 50),
+                'sig_block_bigdrop': bool(change_pct <= -5.0),
+                # 2차 매수용
+                'sig_double_bottom': bool(
+                    len(close) >= 10 and
+                    min(close[-5:]) >= min(close[-10:-5]) * 0.98
+                ),
+                'sig_rsi_gt35':      bool(rsi_val > 35),
+                'sig_rsi_3d_up':     bool(
+                    len(rsi_arr) >= 4 and
+                    not np.isnan(rsi_arr[-1]) and not np.isnan(rsi_arr[-2]) and not np.isnan(rsi_arr[-3]) and
+                    rsi_arr[-1] > rsi_arr[-2] > rsi_arr[-3]
+                ),
+                'sig_macd_golden':   bool(macd_val > macd_s_val),
+                'sig_macd_hist_3d_up': bool(
+                    len(hist_arr) >= 4 and
+                    not np.isnan(hist_arr[-1]) and not np.isnan(hist_arr[-2]) and not np.isnan(hist_arr[-3]) and
+                    hist_arr[-1] > hist_arr[-2] > hist_arr[-3]
+                ),
+                'sig_vol_1p2':       bool(cur_vol >= avg_vol * 1.2),
+                # 3차 매수용
+                'sig_above_ma20_2d': bool(
+                    len(close) >= 2 and len(ma20_arr) >= 2 and
+                    not np.isnan(ma20_arr[-1]) and not np.isnan(ma20_arr[-2]) and
+                    float(close[-1]) > float(ma20_arr[-1]) and
+                    float(close[-2]) > float(ma20_arr[-2])
+                ),
+                'sig_ma20_slope_pos': bool(
+                    len(ma20_arr) >= 4 and
+                    not np.isnan(ma20_arr[-1]) and not np.isnan(ma20_arr[-4]) and
+                    float(ma20_arr[-1]) > float(ma20_arr[-4])
+                ),
+                'sig_macd_above_zero': bool(macd_val > 0),
+                'sig_vol_1p3':        bool(cur_vol >= avg_vol * 1.3),
+                'sig_block_rsi75':    bool(rsi_val > 75),
             }
 
         except Exception as e:
@@ -479,6 +523,21 @@ def run(tickers=None, send_telegram=False):
         tmp_dir = os.path.join(REPORTS_DIR, '_tmp')
         os.makedirs(tmp_dir, exist_ok=True)
 
+        # ── QQQ 시장 필터 (MA200 체크) ──────────────────────────────
+        qqq_above_ma200 = True   # 기본값: 허용 (fetch 실패 시 보수적으로 허용)
+        try:
+            print("  [QQQ] 시장 필터 체크 중...")
+            qqq_hist = yf.Ticker('QQQ').history(period='1y', interval='1d', auto_adjust=True)
+            if not qqq_hist.empty and len(qqq_hist) >= 200:
+                qqq_close = qqq_hist['Close'].values.astype(float)
+                qqq_ma200 = float(np.mean(qqq_close[-200:]))
+                qqq_cur   = float(qqq_close[-1])
+                qqq_above_ma200 = qqq_cur > qqq_ma200
+                status = "위 (매수 허용)" if qqq_above_ma200 else "아래 (매수 금지 — 대세 하락장)"
+                print(f"  [QQQ] 종가=${qqq_cur:.2f}  MA200=${qqq_ma200:.2f}  → {status}")
+        except Exception as e:
+            print(f"  [QQQ] 필터 체크 실패 ({e}) → 기본값 허용 유지")
+
         stocks_data = []
         generated   = []
 
@@ -500,6 +559,9 @@ def run(tickers=None, send_telegram=False):
             if sd is None:
                 print(f"  [{ticker}] SKIP (데이터 없음)")
                 continue
+
+            # QQQ 시장 필터 주입
+            sd['qqq_above_ma200'] = qqq_above_ma200
 
             stocks_data.append(sd)
 

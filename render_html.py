@@ -30,7 +30,12 @@ from report_engine import trading_stage, auto_score, _stage_reason, build_chart
 env = Environment(loader=FileSystemLoader(TEMPLATE_DIR), autoescape=False)
 
 def get_badge_class(sk):
-    return {'buy': 'buy', 'entry': 'entry', 'sell': 'sell', 'sell_div': 'sell'}.get(sk, 'watch')
+    return {
+        'entry3': 'buy',
+        'entry2': 'entry',
+        'entry1': 'entry',
+        'watch_market': 'sell',
+    }.get(sk, 'watch')
 
 def get_stage_desc(d, sk, lbl):
     c    = d['close']
@@ -180,14 +185,13 @@ def render(target_tickers=None, open_browser=False):
         except Exception:
             reason = lbl
         summary_stocks.append({
-            'ticker':    d['ticker'],
-            'lbl':       lbl,
-            'sk':        get_badge_class(sk),
-            'rsi':       d['rsi'],
-            'rsi_s3':    rsi_s3,
-            'near_high': near_high,
-            'h_down':    h_down,
-            'reason':    reason,
+            'ticker': d['ticker'],
+            'lbl':    lbl,
+            'sk':     get_badge_class(sk),
+            'close':  d['close'],
+            'chg':    d.get('change_pct', d.get('chg_pct', 0.0)),
+            'rsi':    d['rsi'],
+            'reason': reason,
         })
 
     # 요약 페이지
