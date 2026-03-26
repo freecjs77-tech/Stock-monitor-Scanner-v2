@@ -668,17 +668,27 @@ for row in rows:
                 card_cls = "up" if chg >= 0 else "down"
                 chg_cls  = "up" if chg >= 0 else "down"
 
-                # MA 상태
-                above  = sum([close > p.get("ma20", close),
-                              close > p.get("ma50",  close),
-                              close > p.get("ma200", close)])
-                ma_desc = {
-                    3: "종가 &gt; MA20, MA50, MA200",
-                    2: "종가 &gt; MA20, MA50 &nbsp;<span style='opacity:.55'>(MA200 아래)</span>",
-                    1: "종가 &gt; MA200만 &nbsp;<span style='opacity:.55'>(MA20, MA50 아래)</span>",
-                    0: "종가 &lt; MA20, MA50, MA200 모두",
-                }[above]
-                ma_col = {3:"#00E676", 2:"#FFB300", 1:"#FF5252", 0:"#FF5252"}[above]
+                # MA 상태 — MA별 개별 체크로 정확한 설명·색상 결정
+                _ma20  = p.get("ma20")
+                _ma50  = p.get("ma50")
+                _ma200 = p.get("ma200")
+                above_ma20  = _ma20  is not None and close > _ma20
+                above_ma50  = _ma50  is not None and close > _ma50
+                above_ma200 = _ma200 is not None and close > _ma200
+                above = sum([above_ma20, above_ma50, above_ma200])
+                _above_list = [m for m, a in [("MA20", above_ma20), ("MA50", above_ma50), ("MA200", above_ma200)] if a]
+                _below_list = [m for m, a in [("MA20", above_ma20), ("MA50", above_ma50), ("MA200", above_ma200)] if not a]
+                if above == 3:
+                    ma_desc = "종가 &gt; MA20, MA50, MA200"
+                    ma_col  = "#00E676"
+                elif above == 0:
+                    ma_desc = "종가 &lt; MA20, MA50, MA200 모두"
+                    ma_col  = "#FF5252"
+                else:
+                    _as = ", ".join(_above_list)
+                    _bs = ", ".join(_below_list)
+                    ma_desc = f"종가 &gt; {_as} &nbsp;<span style='opacity:.55'>({_bs} 아래)</span>"
+                    ma_col  = "#FFB300" if above == 2 else "#FF5252"
 
                 rsi_col = "#FF5252" if rsi >= 70 else ("#00E676" if rsi <= 35 else "rgba(255,255,255,0.7)")
 
