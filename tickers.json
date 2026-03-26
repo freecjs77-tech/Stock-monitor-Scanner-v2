@@ -1,11 +1,11 @@
 {
   "tickers": [
-    "TSLA",
     "GOOGL",
-    "PLTR",
     "SLV",
     "GLD",
-    "CRCL"
+    "CRCL",
+    "BMNR",
+    "MSFT"
   ],
   "updated": "2026-03-26"
 }
