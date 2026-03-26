@@ -91,7 +91,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     display: flex;
     flex-direction: column;
-    height: 340px;
+    height: 370px;
     box-sizing: border-box;
 }
 .ticker-card:hover {
@@ -148,7 +148,8 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
 .ticker-stats {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
+    margin-top: 4px;
 }
 .ts-item { text-align: center; }
 .ts-val {
@@ -212,7 +213,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     border: 1.5px dashed rgba(255,255,255,0.1);
     border-radius: 16px;
     padding: 18px 16px 14px 16px;
-    height: 340px;
+    height: 370px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -671,7 +672,12 @@ for row in rows:
                 above  = sum([close > p.get("ma20", close),
                               close > p.get("ma50",  close),
                               close > p.get("ma200", close)])
-                ma_txt = {3:"정배열", 2:"MA200↓", 1:"MA50↓", 0:"역배열"}[above]
+                ma_desc = {
+                    3: "종가 &gt; MA20, MA50, MA200",
+                    2: "종가 &gt; MA20, MA50 &nbsp;<span style='opacity:.55'>(MA200 아래)</span>",
+                    1: "종가 &gt; MA200만 &nbsp;<span style='opacity:.55'>(MA20, MA50 아래)</span>",
+                    0: "종가 &lt; MA20, MA50, MA200 모두",
+                }[above]
                 ma_col = {3:"#00E676", 2:"#FFB300", 1:"#FF5252", 0:"#FF5252"}[above]
 
                 rsi_col = "#FF5252" if rsi >= 70 else ("#00E676" if rsi <= 35 else "rgba(255,255,255,0.7)")
@@ -719,13 +725,15 @@ for row in rows:
                       <div class="ts-lbl">RSI</div>
                     </div>
                     <div class="ts-item">
-                      <div class="ts-val" style="color:{ma_col}">{ma_txt}</div>
-                      <div class="ts-lbl">MA</div>
-                    </div>
-                    <div class="ts-item">
                       <div class="ts-val" style="color:{qqq_col}">{qqq_txt}</div>
-                      <div class="ts-lbl">QQQ</div>
+                      <div class="ts-lbl">QQQ MA200</div>
                     </div>
+                  </div>
+                  <div style="font-size:11px;color:{ma_col};margin-top:7px;
+                              padding:5px 8px;border-radius:5px;
+                              background:rgba(255,255,255,0.04);
+                              border-left:2px solid {ma_col};">
+                    {ma_desc}
                   </div>
                   {signal_hint}
                 </div>
