@@ -352,63 +352,69 @@ KNOWN = {
 }
 
 def trading_stage_v2(p):
-    """v2.0 판정1: QQQ MA200 필터 포함 — report_engine.trading_stage() 인라인"""
+    """v2.2 판정1: QQQ+SPY Dual MA200 필터 포함"""
     def sig(key, default=False): return bool(p.get(key, default))
+    qqq_above = sig('qqq_above_ma200', True)
+    spy_above = sig('spy_above_ma200', True)
+    market_state = p.get('market_state',
+        'normal' if (qqq_above and spy_above) else
+        'caution' if (qqq_above or spy_above) else 'bear')
 
-    if not sig('qqq_above_ma200', True):
+    if market_state == 'bear':
         return 'watch_market', '시장 관망', '#94A3B8'
 
-    # 3차: 4조건 ALL + RSI≤75 차단
-    if (not sig('sig_block_rsi75') and
-            all([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
-                 sig('sig_macd_above_zero'), sig('sig_vol_1p3')])):
-        return 'buy3', '3차 매수', '#00E676'
+    if market_state == 'normal':
+        # 3차: RSI75 차단 제거, 거래량 조건 완화
+        if all([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
+                sig('sig_macd_above_zero'),
+                sig('sig_vol_1p3') or sig('sig_vol_5d_2up')]):
+            return 'buy3', '3차 매수', '#00E676'
+        # 2차
+        if all([sig('sig_double_bottom'),
+                sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),
+                sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'),
+                sig('sig_vol_1p2')]):
+            return 'buy2', '2차 매수', '#69F0AE'
 
-    # 2차: 4조건 ALL
-    if all([sig('sig_double_bottom'),
-            sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),
-            sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'),
-            sig('sig_vol_1p2')]):
-        return 'buy2', '2차 매수', '#69F0AE'
-
-    # 1차: 6조건 중 3개 이상
-    if not (sig('sig_block_rsi50') or sig('sig_block_bigdrop')):
+    # 1차: [필수] MACD 히스토그램 2일 증가 + 6조건 중 3개 이상
+    if not (sig('sig_block_rsi50') or sig('sig_block_bigdrop')) and sig('sig_macd_hist_2d_up'):
         conds = [sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
                  sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')]
         if sum(conds) >= 3:
             return 'buy1', '1차 매수', '#FBBF24'
 
+    if market_state == 'caution':
+        return 'caution_market', '경계 관망', '#F59E0B'
     return 'watch', '관망', '#94A3B8'
 
 
 def trading_stage2_v2(p):
-    """v2.0 판정2: 기술신호만 (QQQ 필터 없음) — report_engine.trading_stage2() 인라인"""
+    """v2.2 판정2: 기술신호만 (시장 필터 없음)"""
     def sig(key, default=False): return bool(p.get(key, default))
-
-    if (not sig('sig_block_rsi75') and
-            all([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
-                 sig('sig_macd_above_zero'), sig('sig_vol_1p3')])):
+    # 3차: RSI75 차단 제거
+    if all([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
+            sig('sig_macd_above_zero'),
+            sig('sig_vol_1p3') or sig('sig_vol_5d_2up')]):
         return 'buy3', '3차 매수', '#00E676'
-
+    # 2차
     if all([sig('sig_double_bottom'),
             sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),
             sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'),
             sig('sig_vol_1p2')]):
         return 'buy2', '2차 매수', '#69F0AE'
-
-    if not (sig('sig_block_rsi50') or sig('sig_block_bigdrop')):
+    # 1차: [필수] MACD 히스토그램 2일 증가
+    if not (sig('sig_block_rsi50') or sig('sig_block_bigdrop')) and sig('sig_macd_hist_2d_up'):
         conds = [sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
                  sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')]
         if sum(conds) >= 3:
             return 'buy1', '1차 매수', '#FBBF24'
-
     return 'watch', '관망', '#94A3B8'
 
 
 def stage_pill_cls(sk):
-    return {'buy3': 'tp-bull', 'buy2': 'tp-bull',
-            'buy1': 'tp-neut', 'watch': 'tp-gray',
-            'watch_market': 'tp-gray'}.get(sk, 'tp-gray')
+    return {'buy3': 'tp-bull', 'buy2': 'tp-bull', 'buy1': 'tp-neut',
+            'watch': 'tp-gray', 'watch_market': 'tp-gray',
+            'caution_market': 'tp-neut'}.get(sk, 'tp-gray')
 
 
 def get_signal_hint(p):
@@ -603,7 +609,7 @@ n          = len(st.session_state.tickers)
 buy_count  = sum(1 for t in st.session_state.tickers
                  if price_map.get(t) and trading_stage_v2(price_map[t])[0] in ('buy1','buy2','buy3'))
 sell_count = sum(1 for t in st.session_state.tickers
-                 if price_map.get(t) and trading_stage_v2(price_map[t])[0] == 'watch_market')
+                 if price_map.get(t) and trading_stage_v2(price_map[t])[0] in ('watch_market', 'caution_market'))
 
 st.markdown(f"""
 <div class="header-wrap">

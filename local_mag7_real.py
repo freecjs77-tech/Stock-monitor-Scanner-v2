@@ -444,7 +444,10 @@ def fetch_stock_data(ticker, retry=2):
                 'sig_below_ma20':    bool(cur_close < ma20_val),
                 'sig_low_stopped':   bool(len(close) >= 4 and
                                          float(close[-1]) >= min(float(p) for p in close[-4:-1])),
-                'sig_bounce2pct':    bool(change_pct >= 2.0),
+                'sig_bounce2pct':    bool(
+                    change_pct >= 2.0 and
+                    (float(high[-1]) - cur_close) / cur_close * 100 <= 2.0
+                ),
                 'sig_block_rsi50':   bool(rsi_val > 50),
                 'sig_block_bigdrop': bool(change_pct <= -5.0),
                 # 2차 매수용
@@ -459,7 +462,12 @@ def fetch_stock_data(ticker, retry=2):
                     rsi_arr[-1] > rsi_arr[-2] > rsi_arr[-3]
                 ),
                 'sig_macd_golden':   bool(macd_val > macd_s_val),
-                'sig_macd_hist_3d_up': bool(
+                'sig_macd_hist_2d_up': bool(           # 1차 필수: 히스토그램 2일 연속 증가
+                    len(hist_arr) >= 3 and
+                    not np.isnan(hist_arr[-1]) and not np.isnan(hist_arr[-2]) and not np.isnan(hist_arr[-3]) and
+                    hist_arr[-1] > hist_arr[-2] > hist_arr[-3]
+                ),
+                'sig_macd_hist_3d_up': bool(           # 2차용 (하위호환 유지)
                     len(hist_arr) >= 4 and
                     not np.isnan(hist_arr[-1]) and not np.isnan(hist_arr[-2]) and not np.isnan(hist_arr[-3]) and
                     hist_arr[-1] > hist_arr[-2] > hist_arr[-3]
@@ -479,6 +487,10 @@ def fetch_stock_data(ticker, retry=2):
                 ),
                 'sig_macd_above_zero': bool(macd_val > 0),
                 'sig_vol_1p3':        bool(cur_vol >= avg_vol * 1.3),
+                'sig_vol_5d_2up':     bool(             # 3차 대안: 최근 5일 중 2일 이상 거래량 증가
+                    len(vol) >= 6 and
+                    sum(float(vol[-i]) > float(vol[-i-1]) for i in range(1, 6)) >= 2
+                ),
                 'sig_block_rsi75':    bool(rsi_val > 75),
             }
 
@@ -524,20 +536,40 @@ def run(tickers=None, send_telegram=False):
         tmp_dir = os.path.join(REPORTS_DIR, '_tmp')
         os.makedirs(tmp_dir, exist_ok=True)
 
-        # ── QQQ 시장 필터 (MA200 체크) ──────────────────────────────
-        qqq_above_ma200 = False  # 기본값: 시장관망 (fetch 실패 시 보수적으로 차단)
+        # ── 시장 필터 (QQQ + SPY MA200 Dual Filter + VIX 보조) ─────────
+        qqq_above_ma200 = False  # 기본값: 보수적으로 차단
+        spy_above_ma200 = False
+        vix_above_25    = False
         try:
-            print("  [QQQ] 시장 필터 체크 중...")
-            qqq_hist = yf.Ticker('QQQ').history(period='1y', interval='1d', auto_adjust=True)
-            if not qqq_hist.empty and len(qqq_hist) >= 200:
-                qqq_close = qqq_hist['Close'].values.astype(float)
-                qqq_ma200 = float(np.mean(qqq_close[-200:]))
-                qqq_cur   = float(qqq_close[-1])
-                qqq_above_ma200 = qqq_cur > qqq_ma200
-                status = "위 (매수 허용)" if qqq_above_ma200 else "아래 (매수 금지 — 대세 하락장)"
-                print(f"  [QQQ] 종가=${qqq_cur:.2f}  MA200=${qqq_ma200:.2f}  → {status}")
+            print("  [시장필터] QQQ / SPY / VIX 체크 중...")
+            for sym in ['QQQ', 'SPY']:
+                h = yf.Ticker(sym).history(period='1y', interval='1d', auto_adjust=True)
+                if not h.empty and len(h) >= 200:
+                    c     = h['Close'].values.astype(float)
+                    ma200 = float(np.mean(c[-200:]))
+                    cur   = float(c[-1])
+                    above = cur > ma200
+                    if sym == 'QQQ': qqq_above_ma200 = above
+                    else:            spy_above_ma200 = above
+                    status = "위" if above else "아래"
+                    print(f"  [{sym}] 종가=${cur:.2f}  MA200=${ma200:.2f}  → MA200 {status}")
+            vix_h = yf.Ticker('^VIX').history(period='5d', interval='1d', auto_adjust=True)
+            if not vix_h.empty:
+                vix_cur      = float(vix_h['Close'].values[-1])
+                vix_above_25 = vix_cur > 25
+                print(f"  [VIX] 현재={vix_cur:.1f}  {'> 25 ⚠️ 변동성 확대' if vix_above_25 else '≤ 25 정상'}")
         except Exception as e:
-            print(f"  [QQQ] 필터 체크 실패 ({e}) → 기본값 시장관망 유지")
+            print(f"  [시장필터] 체크 실패 ({e}) → 기본값 유지")
+
+        # 시장 상태 판정 (3단계)
+        if qqq_above_ma200 and spy_above_ma200:
+            market_state = 'normal'   # 정상장: 1·2·3차 모두 허용
+        elif qqq_above_ma200 or spy_above_ma200:
+            market_state = 'caution'  # 경계장: 1차(20%)만 허용
+        else:
+            market_state = 'bear'     # 하락장: 신규 매수 금지
+        state_label = {'normal': '정상장 ✅', 'caution': '경계장 ⚠️', 'bear': '하락장 🚫'}[market_state]
+        print(f"  [시장필터] {state_label}  QQQ={'위' if qqq_above_ma200 else '아래'}  SPY={'위' if spy_above_ma200 else '아래'}")
 
         stocks_data = []
         generated   = []
@@ -561,8 +593,11 @@ def run(tickers=None, send_telegram=False):
                 print(f"  [{ticker}] SKIP (데이터 없음)")
                 continue
 
-            # QQQ 시장 필터 주입
+            # 시장 필터 주입
             sd['qqq_above_ma200'] = qqq_above_ma200
+            sd['spy_above_ma200'] = spy_above_ma200
+            sd['market_state']    = market_state
+            sd['vix_above_25']    = vix_above_25
 
             # AI 판정 근거 설명 생성 (GROQ_API_KEY 있을 때만)
             if generate_condition_explanation:

@@ -45,6 +45,7 @@ def get_badge_class(sk):
         'entry2': 'entry',
         'entry1': 'entry',
         'watch_market': 'sell',
+        'caution_market': 'caution',
     }.get(sk, 'watch')
 
 def get_stage_desc(d, sk, lbl):

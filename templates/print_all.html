@@ -246,7 +246,7 @@ tr:nth-child(even) td { background: #f8fafc; }
 
   <!-- 판정 범례 -->
   <div style="display:flex; gap:16px; margin-bottom:10px; font-size:11px; color:var(--sub);">
-    <span>판정1: <b style="color:var(--text);">시장필터 포함</b> (QQQ MA200 기준)</span>
+    <span>판정1: <b style="color:var(--text);">시장필터 포함</b> (QQQ+SPY Dual MA200 기준)</span>
     <span>|</span>
     <span>판정2: <b style="color:var(--text);">기술신호만</b> (종목 자체 조건)</span>
   </div>
@@ -338,7 +338,7 @@ tr:nth-child(even) td { background: #f8fafc; }
   <!-- 판정 박스 2개 나란히 -->
   <div class="verdict-row">
     <div class="verdict-box {{ s.sk1 }}">
-      <div class="v-label">판정1 — 시장필터 포함 (QQQ MA200)</div>
+      <div class="v-label">판정1 — 시장필터 포함 (QQQ+SPY Dual MA200)</div>
       <div class="v-badge"><span class="badge badge-{{ s.sk1 }}">{{ s.lbl1 }}</span></div>
       <div class="v-desc">{{ s.stage_desc1 }}</div>
     </div>

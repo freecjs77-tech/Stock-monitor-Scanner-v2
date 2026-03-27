@@ -455,9 +455,14 @@ def get_condition_breakdown(d):
     ma20  = d.get('ma20', close)
     bb_l  = d.get('bb_lower', 0)
 
-    # ── 1차 매수 조건 (6개 중 3개 이상) ─────────────────────────
+    # ── 1차 매수 조건 ([필수] MACD히스토2일증가 + 6개 중 3개 이상) ──
     block1 = sig('sig_block_rsi50') or sig('sig_block_bigdrop')
+    macd_hist_2d = sig('sig_macd_hist_2d_up')
     cond1 = [
+        {'name': '[필수] MACD 히스토그램 2일 연속 증가',
+         'pass': macd_hist_2d,
+         'ok':   '하락 에너지가 이틀 연속 줄어들고 있어요',
+         'fail': '하락 에너지가 아직 줄어들지 않았어요 (필수 미충족)'},
         {'name': 'RSI(14) ≤ 38',
          'pass': sig('sig_rsi_le38'),
          'ok':   f'RSI {rsi:.1f} — 충분히 과매도 상태예요',
@@ -478,12 +483,13 @@ def get_condition_breakdown(d):
          'pass': sig('sig_near_bb_low'),
          'ok':   f'볼린저 밴드 하단 지지구간에 있어요',
          'fail': f'밴드 하단에서 아직 멀리 있어요'},
-        {'name': '당일 +2% 이상 반등',
+        {'name': '당일 +2% 이상 몸통 양봉 (윗꼬리≤2%)',
          'pass': sig('sig_bounce2pct'),
-         'ok':   f'오늘 {chg:+.1f}% — 반등 신호가 나왔어요',
-         'fail': f'오늘 {chg:+.1f}% — 아직 반등 신호가 없어요'},
+         'ok':   f'오늘 {chg:+.1f}% — 꽉 찬 양봉 반등 신호가 나왔어요',
+         'fail': f'오늘 {chg:+.1f}% — 반등 or 몸통 기준 미충족'},
     ]
-    met1 = sum(1 for c in cond1 if c['pass'])
+    # 필수 제외한 선택 조건 충족 수
+    met1 = sum(1 for c in cond1[1:] if c['pass'])
 
     # ── 2차 매수 조건 (4개 ALL) ──────────────────────────────────
     cond2 = [
@@ -506,8 +512,7 @@ def get_condition_breakdown(d):
     ]
     met2 = sum(1 for c in cond2 if c['pass'])
 
-    # ── 3차 매수 조건 (4개 ALL) ──────────────────────────────────
-    block3 = sig('sig_block_rsi75') or sig('sig_block_bigdrop')
+    # ── 3차 매수 조건 (4개 ALL, RSI75 차단 제거) ─────────────────
     cond3 = [
         {'name': 'MA20 위에서 2일 연속',
          'pass': sig('sig_above_ma20_2d'),
@@ -521,12 +526,13 @@ def get_condition_breakdown(d):
          'pass': sig('sig_macd_above_zero'),
          'ok':   '상승 모멘텀이 확실히 살아났어요',
          'fail': '모멘텀이 아직 음수 영역이에요'},
-        {'name': '거래량 평균 1.3배 이상',
-         'pass': sig('sig_vol_1p3'),
-         'ok':   '강한 거래량이 동반됐어요 — 추세 신뢰도 높아요',
+        {'name': '거래량 1.3배 이상 or 최근 5일 중 2일 증가',
+         'pass': sig('sig_vol_1p3') or sig('sig_vol_5d_2up'),
+         'ok':   '거래량 조건 충족 — 추세 신뢰도 높아요',
          'fail': '거래량이 충분하지 않아요'},
     ]
     met3 = sum(1 for c in cond3 if c['pass'])
+    block3 = False  # v2.2: RSI75 차단 제거
 
     # 현재 판정
     sk, lbl, _ = trading_stage2(d)
@@ -536,13 +542,15 @@ def get_condition_breakdown(d):
         'label': lbl,
         'ai_explanation': d.get('condition_explanation', ''),
         'entry1': {
-            'title': '🟡 1차 매수 조건 (6개 중 3개 이상)',
+            'title': '🟡 1차 매수 조건 ([필수] MACD히스토2일증가 + 6개 중 3개 이상)',
             'conditions': cond1,
             'met': met1, 'required': 3, 'total': 6,
+            'mandatory_ok': macd_hist_2d,
             'blocked': block1,
             'block_reason': ('RSI > 50 — 아직 과열 구간이에요' if sig('sig_block_rsi50')
                              else '장대음봉 발생 (-5% 이상) — 추세가 강하게 꺾였어요' if sig('sig_block_bigdrop')
-                             else None),
+                             else None if macd_hist_2d
+                             else 'MACD 히스토그램 2일 연속 증가 미충족 (필수조건)'),
         },
         'entry2': {
             'title': '🟢 2차 매수 조건 (4개 모두 충족)',
@@ -555,9 +563,7 @@ def get_condition_breakdown(d):
             'conditions': cond3,
             'met': met3, 'required': 4, 'total': 4,
             'blocked': block3,
-            'block_reason': ('RSI > 75 — 과매수 구간이에요' if sig('sig_block_rsi75')
-                             else '장대음봉 발생 (-5% 이상)' if sig('sig_block_bigdrop')
-                             else None),
+            'block_reason': None,
         },
     }
 
@@ -568,91 +574,94 @@ def get_condition_breakdown(d):
 
 def trading_stage(d):
     """
-    분할 매수 전략 v2.0
+    분할 매수 전략 v2.2
     우선순위: 0 시장필터 > 3차매수 > 2차매수 > 1차매수 > 관망
 
-    0️⃣ 시장 필터: QQQ MA200 아래 → 전종목 매수 금지
-    1️⃣ 1차 매수 (20%): 6조건 중 3개 이상 + 금지조건 없음
-    2️⃣ 2차 매수 (30%): 4조건 ALL + 금지조건 없음
-    3️⃣ 3차 매수 (50%): 4조건 ALL + 금지조건 없음
+    0️⃣ 시장 필터 (Dual): QQQ+SPY 둘 다 MA200 아래 → 하락장 매수 금지
+                          둘 중 하나만 위 → 경계장 (1차만 허용)
+                          둘 다 위 → 정상장 (전 단계 허용)
+    1️⃣ 1차 매수 (20%): [필수] MACD히스토2일증가 + 6조건 중 3개 이상
+    2️⃣ 2차 매수 (30%): 4조건 ALL (정상장만)
+    3️⃣ 3차 매수 (50%): 4조건 ALL (정상장만, RSI75 차단 제거)
 
     Returns: (stage_key, label, color)
     """
-    # 사전 계산된 신호 플래그 읽기 (local_mag7_real이 저장)
     def sig(key, default=False):
         return bool(d.get(key, default))
 
     # ─────────────────────────────────────────────────────────
-    # 0️⃣ 시장 필터 — QQQ MA200 아래면 전종목 관망
+    # 0️⃣ 시장 필터 — QQQ + SPY Dual MA200
     # ─────────────────────────────────────────────────────────
-    if not sig('qqq_above_ma200', True):
+    qqq_above = sig('qqq_above_ma200', True)
+    spy_above = sig('spy_above_ma200', True)
+    market_state = d.get('market_state',
+        'normal' if (qqq_above and spy_above) else
+        'caution' if (qqq_above or spy_above) else 'bear')
+
+    if market_state == 'bear':
         return ('watch_market', '시장 관망', MGRAY)
 
     # ─────────────────────────────────────────────────────────
-    # 3️⃣ 3차 매수 (50%) — 추세 전환 확인 후 본격 진입
-    #   조건 4가지 ALL + 금지: RSI>75 또는 장대음봉(-5%)
+    # 정상장에서만 2차·3차 허용
     # ─────────────────────────────────────────────────────────
-    block3 = sig('sig_block_rsi75') or sig('sig_block_bigdrop')
-    if not block3:
+    if market_state == 'normal':
+        # 3️⃣ 3차 매수 (50%) — RSI75 차단 제거
         cond3 = [
             sig('sig_above_ma20_2d'),    # MA20 2일 연속 위
             sig('sig_ma20_slope_pos'),   # MA20 기울기 양수
             sig('sig_macd_above_zero'),  # MACD 0선 위
-            sig('sig_vol_1p3'),          # 거래량 평균 1.3배 이상
+            sig('sig_vol_1p3') or sig('sig_vol_5d_2up'),  # 거래량 1.3배 or 5일 중 2일 증가
         ]
         if all(cond3):
             return ('entry3', '3차 매수', GREEN)
 
-    # ─────────────────────────────────────────────────────────
-    # 2️⃣ 2차 매수 (30%) — 바닥 확인 후 추가 진입
-    #   조건 4가지 ALL
-    # ─────────────────────────────────────────────────────────
-    cond2 = [
-        sig('sig_double_bottom'),                            # 이중 바닥
-        sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),       # RSI>35 + 3일 연속 상승
-        sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'), # MACD 골든크로스 or 히스토그램 3일 증가
-        sig('sig_vol_1p2'),                                  # 거래량 평균 1.2배 이상
-    ]
-    if all(cond2):
-        return ('entry2', '2차 매수', ORANGE)
+        # 2️⃣ 2차 매수 (30%)
+        cond2 = [
+            sig('sig_double_bottom'),
+            sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),
+            sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'),
+            sig('sig_vol_1p2'),
+        ]
+        if all(cond2):
+            return ('entry2', '2차 매수', ORANGE)
 
     # ─────────────────────────────────────────────────────────
-    # 1️⃣ 1차 매수 (20%) — 초기 진입 정찰대
-    #   6조건 중 3개 이상 + 금지: RSI>50 또는 장대음봉(-5%)
+    # 1️⃣ 1차 매수 (20%) — 정상장·경계장 모두 허용
+    #   [필수] MACD 히스토그램 2일 연속 증가 + 6조건 중 3개 이상
     # ─────────────────────────────────────────────────────────
     block1 = sig('sig_block_rsi50') or sig('sig_block_bigdrop')
-    if not block1:
+    if not block1 and sig('sig_macd_hist_2d_up'):
         cond1_list = [
-            sig('sig_rsi_le38'),      # RSI <= 38
-            sig('sig_adx_le25'),      # ADX <= 25
-            sig('sig_near_bb_low'),   # 종가 <= BB하단 x 1.02
-            sig('sig_below_ma20'),    # 종가 < MA20
-            sig('sig_low_stopped'),   # 하락 멈춤
-            sig('sig_bounce2pct'),    # 당일 +2% 이상 반등
+            sig('sig_rsi_le38'),
+            sig('sig_adx_le25'),
+            sig('sig_near_bb_low'),
+            sig('sig_below_ma20'),
+            sig('sig_low_stopped'),
+            sig('sig_bounce2pct'),
         ]
         if sum(cond1_list) >= 3:
             return ('entry1', '1차 매수', ORANGE)
 
-    # ─────────────────────────────────────────────────────────
-    # 관망 — 조건 미충족
-    # ─────────────────────────────────────────────────────────
+    # 경계장이고 1차 미충족
+    if market_state == 'caution':
+        return ('caution_market', '경계 관망', ORANGE)
+
     return ('watch', '관망', MGRAY)
 
 
 def trading_stage2(d):
     """
-    분할 매수 전략 v2.0 — 판정2 (QQQ 시장 필터 제외)
+    분할 매수 전략 v2.2 — 판정2 (시장 필터 제외, 기술 신호만)
     종목 자체 기술 신호만으로 판정 (시장 환경 무관)
     """
     def sig(key, default=False):
         return bool(d.get(key, default))
 
-    # 3차 매수
-    block3 = sig('sig_block_rsi75') or sig('sig_block_bigdrop')
-    if not block3:
-        if all([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
-                sig('sig_macd_above_zero'), sig('sig_vol_1p3')]):
-            return ('entry3', '3차 매수', GREEN)
+    # 3차 매수 — RSI75 차단 제거
+    if all([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
+            sig('sig_macd_above_zero'),
+            sig('sig_vol_1p3') or sig('sig_vol_5d_2up')]):
+        return ('entry3', '3차 매수', GREEN)
 
     # 2차 매수
     if all([
@@ -663,9 +672,9 @@ def trading_stage2(d):
     ]):
         return ('entry2', '2차 매수', ORANGE)
 
-    # 1차 매수
+    # 1차 매수 — [필수] MACD 히스토그램 2일 연속 증가
     block1 = sig('sig_block_rsi50') or sig('sig_block_bigdrop')
-    if not block1:
+    if not block1 and sig('sig_macd_hist_2d_up'):
         cond1_list = [
             sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
             sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct'),
@@ -702,20 +711,23 @@ def _stage_reason2(d, sk):
         return '2차: ' + ' + '.join(parts)
 
     if sk == 'entry1':
+        macd_ok = '✓' if sig('sig_macd_hist_2d_up') else '✗'
         met = []
         if sig('sig_rsi_le38'):    met.append(f'RSI {rsi:.1f}≤38')
         if sig('sig_adx_le25'):    met.append('ADX≤25')
         if sig('sig_near_bb_low'): met.append('BB하단')
         if sig('sig_below_ma20'):  met.append('MA20아래')
         if sig('sig_low_stopped'): met.append('하락멈춤')
-        if sig('sig_bounce2pct'):  met.append(f'+{chg:.1f}%')
-        return f'1차({len(met)}/6): ' + ' + '.join(met)
+        if sig('sig_bounce2pct'):  met.append(f'+{chg:.1f}%몸통양봉')
+        return f'1차({len(met)}/6, MACD히스토{macd_ok}): ' + ' + '.join(met)
 
     # 관망 — 이유
     if sig('sig_block_rsi50'):
         return f'RSI {rsi:.1f} > 50 → 1차 금지'
     if sig('sig_block_bigdrop'):
         return f'장대음봉 {chg:.1f}%'
+    if not sig('sig_macd_hist_2d_up'):
+        return 'MACD 히스토그램 2일 증가 미충족 (1차 필수조건)'
     cnt = sum([sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
                sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')])
     return f'1차 {cnt}/6개 충족'
@@ -1703,7 +1715,10 @@ def _stage_reason(d, sk):
         return bool(d.get(key, default))
 
     if sk == 'watch_market':
-        return 'QQQ MA200 아래 → 대세 하락장, 전종목 매수 금지'
+        return 'QQQ·SPY 모두 MA200 아래 → 하락장, 신규 매수 금지'
+
+    if sk == 'caution_market':
+        return 'QQQ·SPY 중 하나만 MA200 위 → 경계장, 1차(20%)만 허용'
 
     if sk == 'entry3':
         parts = []
@@ -1723,22 +1738,27 @@ def _stage_reason(d, sk):
         return '2차: ' + ' + '.join(parts) if parts else '2차 매수 조건 충족'
 
     if sk == 'entry1':
+        macd_ok = '✓' if sig('sig_macd_hist_2d_up') else '✗'
         met = []
         if sig('sig_rsi_le38'):    met.append(f'RSI {rsi:.1f}≤38')
         if sig('sig_adx_le25'):    met.append('ADX≤25')
         if sig('sig_near_bb_low'): met.append('BB하단근접')
         if sig('sig_below_ma20'):  met.append('MA20아래')
         if sig('sig_low_stopped'): met.append('하락멈춤')
-        if sig('sig_bounce2pct'):  met.append(f'+{chg:.1f}%반등')
-        return f'1차({len(met)}/6): ' + ' + '.join(met)
+        if sig('sig_bounce2pct'):  met.append(f'+{chg:.1f}%몸통양봉')
+        return f'1차({len(met)}/6, MACD히스토{macd_ok}): ' + ' + '.join(met)
 
     # 관망 — 왜 안됐는지
-    if not sig('qqq_above_ma200', True):
-        return 'QQQ MA200 아래 → 매수 금지'
+    qqq_above = sig('qqq_above_ma200', True)
+    spy_above = sig('spy_above_ma200', True)
+    if not qqq_above and not spy_above:
+        return 'QQQ·SPY 모두 MA200 아래 → 하락장 매수 금지'
     if sig('sig_block_rsi50'):
         return f'RSI {rsi:.1f} > 50 → 1차 매수 금지'
     if sig('sig_block_bigdrop'):
         return f'장대음봉 {chg:.1f}% → 매수 금지'
+    if not sig('sig_macd_hist_2d_up'):
+        return 'MACD 히스토그램 2일 증가 미충족 (1차 필수조건)'
     cond1_count = sum([
         sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
         sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')
