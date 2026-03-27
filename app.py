@@ -370,20 +370,20 @@ def trading_stage_v2(p):
         if all([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
                 sig('sig_macd_above_zero'),
                 sig('sig_vol_1p3') or sig('sig_vol_5d_2up')]):
-            return 'buy3', '본격 매수', '#00E676'
+            return 'entry3', '본격 매수', '#00E676'
         # 2차
         if all([sig('sig_double_bottom'),
                 sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),
                 sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'),
                 sig('sig_vol_1p2')]):
-            return 'buy2', '바닥 확인', '#26C6DA'
+            return 'entry2', '바닥 확인', '#26C6DA'
 
     # 1차: [필수] MACD 히스토그램 2일 증가 + 6조건 중 3개 이상
     if not (sig('sig_block_rsi50') or sig('sig_block_bigdrop')) and sig('sig_macd_hist_2d_up'):
         conds = [sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
                  sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')]
         if sum(conds) >= 3:
-            return 'buy1', '관심 진입', '#FFEE58'
+            return 'entry1', '관심 진입', '#FFEE58'
 
     if market_state == 'caution':
         return 'caution_market', '경계장', '#FFA726'
@@ -397,24 +397,24 @@ def trading_stage2_v2(p):
     if all([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
             sig('sig_macd_above_zero'),
             sig('sig_vol_1p3') or sig('sig_vol_5d_2up')]):
-        return 'buy3', '본격 매수', '#00E676'
+        return 'entry3', '본격 매수', '#00E676'
     # 2차
     if all([sig('sig_double_bottom'),
             sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),
             sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'),
             sig('sig_vol_1p2')]):
-        return 'buy2', '바닥 확인', '#26C6DA'
+        return 'entry2', '바닥 확인', '#26C6DA'
     # 1차: [필수] MACD 히스토그램 2일 증가
     if not (sig('sig_block_rsi50') or sig('sig_block_bigdrop')) and sig('sig_macd_hist_2d_up'):
         conds = [sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
                  sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')]
         if sum(conds) >= 3:
-            return 'buy1', '관심 진입', '#FFEE58'
+            return 'entry1', '관심 진입', '#FFEE58'
     return 'watch', '대기', '#FFFFFF'
 
 
 def stage_pill_cls(sk):
-    return {'buy3': 'tp-entry3', 'buy2': 'tp-entry2', 'buy1': 'tp-entry1',
+    return {'entry3': 'tp-entry3', 'entry2': 'tp-entry2', 'entry1': 'tp-entry1',
             'watch_market': 'tp-sell', 'caution_market': 'tp-caution',
             'watch': 'tp-watch'}.get(sk, 'tp-watch')
 
@@ -609,7 +609,7 @@ missing = [t for t in st.session_state.tickers if t not in price_map]
 # ══════════════════════════════════════════════════════════════════
 n          = len(st.session_state.tickers)
 buy_count  = sum(1 for t in st.session_state.tickers
-                 if price_map.get(t) and trading_stage_v2(price_map[t])[0] in ('buy1','buy2','buy3'))
+                 if price_map.get(t) and trading_stage_v2(price_map[t])[0] in ('entry1','entry2','entry3'))
 sell_count = sum(1 for t in st.session_state.tickers
                  if price_map.get(t) and trading_stage_v2(price_map[t])[0] in ('watch_market', 'caution_market'))
 
