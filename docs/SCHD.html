@@ -76,10 +76,12 @@ tr:nth-child(even) td { background: var(--row2); }
   font-size: 11px;
   font-weight: 700;
 }
-.badge-buy    { color: var(--green);  background: var(--green-bg); }
-.badge-entry  { color: var(--orange); background: var(--orange-bg); }
-.badge-sell   { color: var(--red);    background: var(--red-bg); }
-.badge-watch  { color: var(--gray);   background: var(--row2); }
+.badge-entry3  { color: #00E676; background: rgba(0,230,118,0.12); }
+.badge-entry2  { color: #26C6DA; background: rgba(38,198,218,0.12); }
+.badge-entry1  { color: #FFEE58; background: rgba(255,238,88,0.12); }
+.badge-caution { color: #FFA726; background: rgba(255,167,38,0.12); }
+.badge-sell    { color: #EF5350; background: rgba(239,83,80,0.12); }
+.badge-watch   { color: #FFFFFF; background: rgba(255,255,255,0.06); }
 
 /* 색상 유틸 */
 .c-green  { color: var(--green); }
@@ -252,7 +254,7 @@ tr:nth-child(even) td { background: var(--row2); }
       <div style="flex:1; min-width:160px;">
         <div style="font-size:11px; color:#94b8d4; margin-bottom:4px;">판정1 &nbsp;<span style="font-weight:400;">시장필터 포함 (QQQ+SPY Dual MA200)</span></div>
         <div style="font-size:15px; font-weight:700; margin-bottom:4px;">
-          <span class="badge badge-sell">시장 관망</span>
+          <span class="badge badge-sell">하락장</span>
         </div>
         <div style="font-size:12px; color:#ffffff;">신호 대기 중</div>
       </div>
@@ -260,7 +262,7 @@ tr:nth-child(even) td { background: var(--row2); }
       <div style="flex:1; min-width:160px;">
         <div style="font-size:11px; color:#94b8d4; margin-bottom:4px;">판정2 &nbsp;<span style="font-weight:400;">기술신호만 (종목 자체)</span></div>
         <div style="font-size:15px; font-weight:700; margin-bottom:4px;">
-          <span class="badge badge-watch">관망</span>
+          <span class="badge badge-watch">대기</span>
         </div>
         <div style="font-size:12px; color:#ffffff;">아직 진입 신호 없음 — 현금 보유 대기</div>
       </div>
@@ -279,13 +281,13 @@ tr:nth-child(even) td { background: var(--row2); }
     
     <div class="metric-card">
       <div class="label">RSI (14)</div>
-      <div class="value" style="color:#EEF4FB;">45.2</div>
+      <div class="value" style="color:#EEF4FB;">51.5</div>
       <div class="direction">중립</div>
     </div>
     
     <div class="metric-card">
       <div class="label">MA20</div>
-      <div class="value" style="color:#F87171;">$30.97</div>
+      <div class="value" style="color:#F87171;">$30.74</div>
       <div class="direction">아래</div>
     </div>
     
@@ -309,7 +311,7 @@ tr:nth-child(even) td { background: var(--row2); }
     
     <div class="metric-card">
       <div class="label">손절 기준</div>
-      <div class="value" style="color:#EEF4FB;">$30.04</div>
+      <div class="value" style="color:#EEF4FB;">$29.82</div>
       <div class="direction">MA20 -3%</div>
     </div>
     
@@ -328,14 +330,14 @@ tr:nth-child(even) td { background: var(--row2); }
       <div class="action-icon">&#128200;</div>
       <div class="action-content">
         <div class="title">이런 신호가 오면 주목하세요</div>
-        <div class="desc">RSI 38 이하 + 하락 멈춤 + MA20($30.97) 아래 진입 시 1차 매수 검토</div>
+        <div class="desc">RSI 38 이하 + 하락 멈춤 + MA20($30.74) 아래 진입 시 1차 매수 검토</div>
       </div>
     </div>
     <div class="action-item" style="border-bottom:none;">
       <div class="action-icon">&#128683;</div>
       <div class="action-content">
         <div class="title">이미 갖고 있다면</div>
-        <div class="desc c-red">$30.04 아래로 내려가면 미련 없이 일부 정리하세요</div>
+        <div class="desc c-red">$29.82 아래로 내려가면 미련 없이 일부 정리하세요</div>
       </div>
     </div>
   </div>
@@ -352,9 +354,13 @@ tr:nth-child(even) td { background: var(--row2); }
     <div style="margin-bottom:12px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <div style="font-size:12px; font-weight:600; color:var(--fg);">🟡 1차 매수 조건 ([필수] MACD히스토2일증가 + 6개 중 3개 이상)</div>
-        <div style="font-size:11px; color:#34D399; font-weight:600;">
-          3/6 충족
+        <div style="font-size:11px; color:#FBBF24; font-weight:600;">
+          2/6 충족
         </div>
+      </div>
+      
+      <div style="font-size:11px; color:#F87171; background:rgba(248,113,113,0.1); border-radius:4px; padding:4px 8px; margin-bottom:6px;">
+        ⛔ RSI > 50 — 아직 과열 구간이에요
       </div>
       
       <div style="border:1px solid var(--border); border-radius:4px; overflow:hidden;">
@@ -371,7 +377,7 @@ tr:nth-child(even) td { background: var(--row2); }
           <span style="font-size:13px; flex-shrink:0; margin-top:1px;">❌</span>
           <div style="flex:1; min-width:0;">
             <div style="font-size:11px; font-weight:600; color:var(--fg);">RSI(14) ≤ 38</div>
-            <div style="font-size:11px; color:#ffffff; margin-top:2px;">RSI 45.2 — 기준(38)보다 아직 높아요</div>
+            <div style="font-size:11px; color:#ffffff; margin-top:2px;">RSI 51.5 — 기준(38)보다 아직 높아요</div>
           </div>
         </div>
         
@@ -379,7 +385,7 @@ tr:nth-child(even) td { background: var(--row2); }
           <span style="font-size:13px; flex-shrink:0; margin-top:1px;">❌</span>
           <div style="flex:1; min-width:0;">
             <div style="font-size:11px; font-weight:600; color:var(--fg);">ADX(14) ≤ 25</div>
-            <div style="font-size:11px; color:#ffffff; margin-top:2px;">ADX 27.7 — 아직 추세가 강하게 지속 중이에요</div>
+            <div style="font-size:11px; color:#ffffff; margin-top:2px;">ADX 27.6 — 아직 추세가 강하게 지속 중이에요</div>
           </div>
         </div>
         
@@ -387,7 +393,7 @@ tr:nth-child(even) td { background: var(--row2); }
           <span style="font-size:13px; flex-shrink:0; margin-top:1px;">✅</span>
           <div style="flex:1; min-width:0;">
             <div style="font-size:11px; font-weight:600; color:var(--fg);">종가 < MA20</div>
-            <div style="font-size:11px; color:#ffffff; margin-top:2px;">$30.62 < $30.97 — 단기 이평선 아래에 있어요</div>
+            <div style="font-size:11px; color:#ffffff; margin-top:2px;">$30.62 < $30.74 — 단기 이평선 아래에 있어요</div>
           </div>
         </div>
         
@@ -399,11 +405,11 @@ tr:nth-child(even) td { background: var(--row2); }
           </div>
         </div>
         
-        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(52,211,153,0.05);">
-          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">✅</span>
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(248,113,113,0.04);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">❌</span>
           <div style="flex:1; min-width:0;">
             <div style="font-size:11px; font-weight:600; color:var(--fg);">BB 하단 근처</div>
-            <div style="font-size:11px; color:#ffffff; margin-top:2px;">볼린저 밴드 하단 지지구간에 있어요</div>
+            <div style="font-size:11px; color:#ffffff; margin-top:2px;">밴드 하단에서 아직 멀리 있어요</div>
           </div>
         </div>
         
@@ -423,7 +429,7 @@ tr:nth-child(even) td { background: var(--row2); }
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <div style="font-size:12px; font-weight:600; color:var(--fg);">🟢 2차 매수 조건 (4개 모두 충족)</div>
         <div style="font-size:11px; color:#FBBF24; font-weight:600;">
-          1/4 충족
+          2/4 충족
         </div>
       </div>
       
@@ -437,11 +443,11 @@ tr:nth-child(even) td { background: var(--row2); }
           </div>
         </div>
         
-        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(248,113,113,0.04);">
-          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">❌</span>
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(52,211,153,0.05);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">✅</span>
           <div style="flex:1; min-width:0;">
             <div style="font-size:11px; font-weight:600; color:var(--fg);">RSI > 35 + 3일 연속 상승</div>
-            <div style="font-size:11px; color:#ffffff; margin-top:2px;">RSI 45.2 — 반등이 아직 확인되지 않았어요</div>
+            <div style="font-size:11px; color:#ffffff; margin-top:2px;">RSI 51.5 — 반등 흐름이 이어지고 있어요</div>
           </div>
         </div>
         

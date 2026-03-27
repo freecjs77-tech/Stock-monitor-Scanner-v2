@@ -76,10 +76,12 @@ tr:nth-child(even) td { background: var(--row2); }
   font-size: 11px;
   font-weight: 700;
 }
-.badge-buy    { color: var(--green);  background: var(--green-bg); }
-.badge-entry  { color: var(--orange); background: var(--orange-bg); }
-.badge-sell   { color: var(--red);    background: var(--red-bg); }
-.badge-watch  { color: var(--gray);   background: var(--row2); }
+.badge-entry3  { color: #00E676; background: rgba(0,230,118,0.12); }
+.badge-entry2  { color: #26C6DA; background: rgba(38,198,218,0.12); }
+.badge-entry1  { color: #FFEE58; background: rgba(255,238,88,0.12); }
+.badge-caution { color: #FFA726; background: rgba(255,167,38,0.12); }
+.badge-sell    { color: #EF5350; background: rgba(239,83,80,0.12); }
+.badge-watch   { color: #FFFFFF; background: rgba(255,255,255,0.06); }
 
 /* 색상 유틸 */
 .c-green  { color: var(--green); }
@@ -252,7 +254,7 @@ tr:nth-child(even) td { background: var(--row2); }
       <div style="flex:1; min-width:160px;">
         <div style="font-size:11px; color:#94b8d4; margin-bottom:4px;">판정1 &nbsp;<span style="font-weight:400;">시장필터 포함 (QQQ+SPY Dual MA200)</span></div>
         <div style="font-size:15px; font-weight:700; margin-bottom:4px;">
-          <span class="badge badge-sell">시장 관망</span>
+          <span class="badge badge-sell">하락장</span>
         </div>
         <div style="font-size:12px; color:#ffffff;">신호 대기 중</div>
       </div>
@@ -260,7 +262,7 @@ tr:nth-child(even) td { background: var(--row2); }
       <div style="flex:1; min-width:160px;">
         <div style="font-size:11px; color:#94b8d4; margin-bottom:4px;">판정2 &nbsp;<span style="font-weight:400;">기술신호만 (종목 자체)</span></div>
         <div style="font-size:15px; font-weight:700; margin-bottom:4px;">
-          <span class="badge badge-watch">관망</span>
+          <span class="badge badge-watch">대기</span>
         </div>
         <div style="font-size:12px; color:#ffffff;">아직 진입 신호 없음 — 현금 보유 대기</div>
       </div>
