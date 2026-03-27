@@ -3,8 +3,8 @@ name: 관심 종목 Daily Report
 on:
   schedule:
     # 미국 장 마감(16:00 EST) 후 데이터 확정 시점
-    # 22:30 UTC = 07:30 KST (화~토 아침, 월~금 미국장 마감 다음날)
-    - cron: '30 22 * * 1-5'
+    # 22:00 UTC = 07:00 KST (화~토 아침, 월~금 미국장 마감 다음날)
+    - cron: '0 22 * * 1-5'
   workflow_dispatch:
 
 jobs:
