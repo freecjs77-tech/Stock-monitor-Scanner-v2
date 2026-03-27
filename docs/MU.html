@@ -250,7 +250,7 @@ tr:nth-child(even) td { background: var(--row2); }
   <div class="summary-box watch">
     <div style="display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap;">
       <div style="flex:1; min-width:160px;">
-        <div style="font-size:11px; color:#94b8d4; margin-bottom:4px;">판정1 &nbsp;<span style="font-weight:400;">시장필터 포함 (QQQ MA200)</span></div>
+        <div style="font-size:11px; color:#94b8d4; margin-bottom:4px;">판정1 &nbsp;<span style="font-weight:400;">시장필터 포함 (QQQ+SPY Dual MA200)</span></div>
         <div style="font-size:15px; font-weight:700; margin-bottom:4px;">
           <span class="badge badge-sell">시장 관망</span>
         </div>
@@ -351,7 +351,7 @@ tr:nth-child(even) td { background: var(--row2); }
     
     <div style="margin-bottom:12px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <div style="font-size:12px; font-weight:600; color:var(--fg);">🟡 1차 매수 조건 (6개 중 3개 이상)</div>
+        <div style="font-size:12px; font-weight:600; color:var(--fg);">🟡 1차 매수 조건 ([필수] MACD히스토2일증가 + 6개 중 3개 이상)</div>
         <div style="font-size:11px; color:#34D399; font-weight:600;">
           4/6 충족
         </div>
@@ -362,6 +362,14 @@ tr:nth-child(even) td { background: var(--row2); }
       </div>
       
       <div style="border:1px solid var(--border); border-radius:4px; overflow:hidden;">
+        
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(248,113,113,0.04);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">❌</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:11px; font-weight:600; color:var(--fg);">[필수] MACD 히스토그램 2일 연속 증가</div>
+            <div style="font-size:11px; color:#ffffff; margin-top:2px;">하락 에너지가 아직 줄어들지 않았어요 (필수 미충족)</div>
+          </div>
+        </div>
         
         <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(52,211,153,0.05);">
           <span style="font-size:13px; flex-shrink:0; margin-top:1px;">✅</span>
@@ -406,8 +414,8 @@ tr:nth-child(even) td { background: var(--row2); }
         <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:none; background:rgba(248,113,113,0.04);">
           <span style="font-size:13px; flex-shrink:0; margin-top:1px;">❌</span>
           <div style="flex:1; min-width:0;">
-            <div style="font-size:11px; font-weight:600; color:var(--fg);">당일 +2% 이상 반등</div>
-            <div style="font-size:11px; color:#ffffff; margin-top:2px;">오늘 -7.0% — 아직 반등 신호가 없어요</div>
+            <div style="font-size:11px; font-weight:600; color:var(--fg);">당일 +2% 이상 몸통 양봉 (윗꼬리≤2%)</div>
+            <div style="font-size:11px; color:#ffffff; margin-top:2px;">오늘 -7.0% — 반등 or 몸통 기준 미충족</div>
           </div>
         </div>
         
@@ -469,10 +477,6 @@ tr:nth-child(even) td { background: var(--row2); }
         </div>
       </div>
       
-      <div style="font-size:11px; color:#F87171; background:rgba(248,113,113,0.1); border-radius:4px; padding:4px 8px; margin-bottom:6px;">
-        ⛔ 장대음봉 발생 (-5% 이상)
-      </div>
-      
       <div style="border:1px solid var(--border); border-radius:4px; overflow:hidden;">
         
         <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(248,113,113,0.04);">
@@ -502,7 +506,7 @@ tr:nth-child(even) td { background: var(--row2); }
         <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:none; background:rgba(248,113,113,0.04);">
           <span style="font-size:13px; flex-shrink:0; margin-top:1px;">❌</span>
           <div style="flex:1; min-width:0;">
-            <div style="font-size:11px; font-weight:600; color:var(--fg);">거래량 평균 1.3배 이상</div>
+            <div style="font-size:11px; font-weight:600; color:var(--fg);">거래량 1.3배 이상 or 최근 5일 중 2일 증가</div>
             <div style="font-size:11px; color:#ffffff; margin-top:2px;">거래량이 충분하지 않아요</div>
           </div>
         </div>

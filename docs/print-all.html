@@ -246,7 +246,7 @@ tr:nth-child(even) td { background: #f8fafc; }
 
   <!-- 판정 범례 -->
   <div style="display:flex; gap:16px; margin-bottom:10px; font-size:11px; color:var(--sub);">
-    <span>판정1: <b style="color:var(--text);">시장필터 포함</b> (QQQ MA200 기준)</span>
+    <span>판정1: <b style="color:var(--text);">시장필터 포함</b> (QQQ+SPY Dual MA200 기준)</span>
     <span>|</span>
     <span>판정2: <b style="color:var(--text);">기술신호만</b> (종목 자체 조건)</span>
   </div>
@@ -278,21 +278,21 @@ tr:nth-child(even) td { background: #f8fafc; }
       <tr>
         <td class="bold">MSFT</td>
         <td><span class="badge badge-sell">시장 관망</span></td>
-        <td><span class="badge badge-entry">1차 매수</span></td>
+        <td><span class="badge badge-watch">관망</span></td>
         <td class="bold">$365.97</td>
         <td class="c-red">-1.37%</td>
         <td class="c-green">25.6</td>
-        <td class="td-left c-sub">1차(3/6): RSI 25.6≤38 + BB하단 + MA20아래</td>
+        <td class="td-left c-sub">MACD 히스토그램 2일 증가 미충족 (1차 필수조건)</td>
       </tr>
       
       <tr>
         <td class="bold">SCHD</td>
         <td><span class="badge badge-sell">시장 관망</span></td>
-        <td><span class="badge badge-entry">1차 매수</span></td>
+        <td><span class="badge badge-watch">관망</span></td>
         <td class="bold">$30.62</td>
         <td class="c-green">+0.26%</td>
         <td class="">45.2</td>
-        <td class="td-left c-sub">1차(3/6): BB하단 + MA20아래 + 하락멈춤</td>
+        <td class="td-left c-sub">MACD 히스토그램 2일 증가 미충족 (1차 필수조건)</td>
       </tr>
       
       <tr>
@@ -308,11 +308,11 @@ tr:nth-child(even) td { background: #f8fafc; }
       <tr>
         <td class="bold">GOOGL</td>
         <td><span class="badge badge-sell">시장 관망</span></td>
-        <td><span class="badge badge-entry">1차 매수</span></td>
+        <td><span class="badge badge-watch">관망</span></td>
         <td class="bold">$280.92</td>
         <td class="c-red">-3.44%</td>
         <td class="c-green">28.3</td>
-        <td class="td-left c-sub">1차(3/6): RSI 28.3≤38 + BB하단 + MA20아래</td>
+        <td class="td-left c-sub">MACD 히스토그램 2일 증가 미충족 (1차 필수조건)</td>
       </tr>
       
       <tr>
@@ -322,27 +322,27 @@ tr:nth-child(even) td { background: #f8fafc; }
         <td class="bold">$147.56</td>
         <td class="c-red">-4.78%</td>
         <td class="">46.7</td>
-        <td class="td-left c-sub">1차 2/6개 충족</td>
+        <td class="td-left c-sub">MACD 히스토그램 2일 증가 미충족 (1차 필수조건)</td>
       </tr>
       
       <tr>
         <td class="bold">AMZN</td>
         <td><span class="badge badge-sell">시장 관망</span></td>
-        <td><span class="badge badge-entry">1차 매수</span></td>
+        <td><span class="badge badge-watch">관망</span></td>
         <td class="bold">$207.54</td>
         <td class="c-red">-1.97%</td>
         <td class="">45.0</td>
-        <td class="td-left c-sub">1차(4/6): ADX≤25 + BB하단 + MA20아래 + 하락멈춤</td>
+        <td class="td-left c-sub">MACD 히스토그램 2일 증가 미충족 (1차 필수조건)</td>
       </tr>
       
       <tr>
         <td class="bold">UNH</td>
         <td><span class="badge badge-sell">시장 관망</span></td>
-        <td><span class="badge badge-entry">1차 매수</span></td>
+        <td><span class="badge badge-watch">관망</span></td>
         <td class="bold">$268.05</td>
         <td class="c-red">-0.92%</td>
         <td class="">36.7</td>
-        <td class="td-left c-sub">1차(3/6): RSI 36.7≤38 + BB하단 + MA20아래</td>
+        <td class="td-left c-sub">MACD 히스토그램 2일 증가 미충족 (1차 필수조건)</td>
       </tr>
       
     </tbody>
@@ -408,7 +408,7 @@ tr:nth-child(even) td { background: #f8fafc; }
   <!-- 판정 박스 2개 나란히 -->
   <div class="verdict-row">
     <div class="verdict-box sell">
-      <div class="v-label">판정1 — 시장필터 포함 (QQQ MA200)</div>
+      <div class="v-label">판정1 — 시장필터 포함 (QQQ+SPY Dual MA200)</div>
       <div class="v-badge"><span class="badge badge-sell">시장 관망</span></div>
       <div class="v-desc">신호 대기 중</div>
     </div>
@@ -527,14 +527,14 @@ tr:nth-child(even) td { background: #f8fafc; }
   <!-- 판정 박스 2개 나란히 -->
   <div class="verdict-row">
     <div class="verdict-box sell">
-      <div class="v-label">판정1 — 시장필터 포함 (QQQ MA200)</div>
+      <div class="v-label">판정1 — 시장필터 포함 (QQQ+SPY Dual MA200)</div>
       <div class="v-badge"><span class="badge badge-sell">시장 관망</span></div>
       <div class="v-desc">신호 대기 중</div>
     </div>
-    <div class="verdict-box entry">
+    <div class="verdict-box watch">
       <div class="v-label">판정2 — 기술신호만 (종목 자체)</div>
-      <div class="v-badge"><span class="badge badge-entry">1차 매수</span></div>
-      <div class="v-desc">신호 대기 중</div>
+      <div class="v-badge"><span class="badge badge-watch">관망</span></div>
+      <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
     </div>
   </div>
 
@@ -604,22 +604,22 @@ tr:nth-child(even) td { background: #f8fafc; }
     <div class="action-item">
       <div class="action-icon">⏰</div>
       <div class="action-content">
-        <div class="title">1차 매수 타이밍이에요 (자금의 20%)</div>
-        <div class="desc">현재가 $365.97 근처에서 소액 분할 진입 — 추가 하락 여지를 남겨두세요</div>
+        <div class="title">지금은 기다리는 게 맞아요</div>
+        <div class="desc">아직 1차 매수 조건(6개 중 3개)이 채워지지 않았어요. 서두르지 않아도 됩니다</div>
       </div>
     </div>
     <div class="action-item">
       <div class="action-icon">📈</div>
       <div class="action-content">
-        <div class="title">2차 매수 신호를 기다리세요</div>
-        <div class="desc">이중 바닥 확인 + RSI 35 돌파 + 거래량 증가 시 2차(30%) 추가 진입</div>
+        <div class="title">이런 신호가 오면 주목하세요</div>
+        <div class="desc">RSI 38 이하 + 하락 멈춤 + MA20($394.62) 아래 진입 시 1차 매수 검토</div>
       </div>
     </div>
     <div class="action-item">
       <div class="action-icon">🚫</div>
       <div class="action-content">
-        <div class="title">손절 기준</div>
-        <div class="desc c-red">$347.67 아래로 내려가면 손절 — 진입가 대비 -5% 룰을 지키세요</div>
+        <div class="title">이미 갖고 있다면</div>
+        <div class="desc c-red">$382.78 아래로 내려가면 미련 없이 일부 정리하세요</div>
       </div>
     </div>
   </div>
@@ -646,14 +646,14 @@ tr:nth-child(even) td { background: #f8fafc; }
   <!-- 판정 박스 2개 나란히 -->
   <div class="verdict-row">
     <div class="verdict-box sell">
-      <div class="v-label">판정1 — 시장필터 포함 (QQQ MA200)</div>
+      <div class="v-label">판정1 — 시장필터 포함 (QQQ+SPY Dual MA200)</div>
       <div class="v-badge"><span class="badge badge-sell">시장 관망</span></div>
       <div class="v-desc">신호 대기 중</div>
     </div>
-    <div class="verdict-box entry">
+    <div class="verdict-box watch">
       <div class="v-label">판정2 — 기술신호만 (종목 자체)</div>
-      <div class="v-badge"><span class="badge badge-entry">1차 매수</span></div>
-      <div class="v-desc">신호 대기 중</div>
+      <div class="v-badge"><span class="badge badge-watch">관망</span></div>
+      <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
     </div>
   </div>
 
@@ -723,22 +723,22 @@ tr:nth-child(even) td { background: #f8fafc; }
     <div class="action-item">
       <div class="action-icon">⏰</div>
       <div class="action-content">
-        <div class="title">1차 매수 타이밍이에요 (자금의 20%)</div>
-        <div class="desc">현재가 $30.62 근처에서 소액 분할 진입 — 추가 하락 여지를 남겨두세요</div>
+        <div class="title">지금은 기다리는 게 맞아요</div>
+        <div class="desc">아직 1차 매수 조건(6개 중 3개)이 채워지지 않았어요. 서두르지 않아도 됩니다</div>
       </div>
     </div>
     <div class="action-item">
       <div class="action-icon">📈</div>
       <div class="action-content">
-        <div class="title">2차 매수 신호를 기다리세요</div>
-        <div class="desc">이중 바닥 확인 + RSI 35 돌파 + 거래량 증가 시 2차(30%) 추가 진입</div>
+        <div class="title">이런 신호가 오면 주목하세요</div>
+        <div class="desc">RSI 38 이하 + 하락 멈춤 + MA20($30.97) 아래 진입 시 1차 매수 검토</div>
       </div>
     </div>
     <div class="action-item">
       <div class="action-icon">🚫</div>
       <div class="action-content">
-        <div class="title">손절 기준</div>
-        <div class="desc c-red">$29.09 아래로 내려가면 손절 — 진입가 대비 -5% 룰을 지키세요</div>
+        <div class="title">이미 갖고 있다면</div>
+        <div class="desc c-red">$30.04 아래로 내려가면 미련 없이 일부 정리하세요</div>
       </div>
     </div>
   </div>
@@ -765,7 +765,7 @@ tr:nth-child(even) td { background: #f8fafc; }
   <!-- 판정 박스 2개 나란히 -->
   <div class="verdict-row">
     <div class="verdict-box sell">
-      <div class="v-label">판정1 — 시장필터 포함 (QQQ MA200)</div>
+      <div class="v-label">판정1 — 시장필터 포함 (QQQ+SPY Dual MA200)</div>
       <div class="v-badge"><span class="badge badge-sell">시장 관망</span></div>
       <div class="v-desc">신호 대기 중</div>
     </div>
@@ -884,14 +884,14 @@ tr:nth-child(even) td { background: #f8fafc; }
   <!-- 판정 박스 2개 나란히 -->
   <div class="verdict-row">
     <div class="verdict-box sell">
-      <div class="v-label">판정1 — 시장필터 포함 (QQQ MA200)</div>
+      <div class="v-label">판정1 — 시장필터 포함 (QQQ+SPY Dual MA200)</div>
       <div class="v-badge"><span class="badge badge-sell">시장 관망</span></div>
       <div class="v-desc">신호 대기 중</div>
     </div>
-    <div class="verdict-box entry">
+    <div class="verdict-box watch">
       <div class="v-label">판정2 — 기술신호만 (종목 자체)</div>
-      <div class="v-badge"><span class="badge badge-entry">1차 매수</span></div>
-      <div class="v-desc">신호 대기 중</div>
+      <div class="v-badge"><span class="badge badge-watch">관망</span></div>
+      <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
     </div>
   </div>
 
@@ -961,22 +961,22 @@ tr:nth-child(even) td { background: #f8fafc; }
     <div class="action-item">
       <div class="action-icon">⏰</div>
       <div class="action-content">
-        <div class="title">1차 매수 타이밍이에요 (자금의 20%)</div>
-        <div class="desc">현재가 $280.92 근처에서 소액 분할 진입 — 추가 하락 여지를 남겨두세요</div>
+        <div class="title">지금은 기다리는 게 맞아요</div>
+        <div class="desc">아직 1차 매수 조건(6개 중 3개)이 채워지지 않았어요. 서두르지 않아도 됩니다</div>
       </div>
     </div>
     <div class="action-item">
       <div class="action-icon">📈</div>
       <div class="action-content">
-        <div class="title">2차 매수 신호를 기다리세요</div>
-        <div class="desc">이중 바닥 확인 + RSI 35 돌파 + 거래량 증가 시 2차(30%) 추가 진입</div>
+        <div class="title">이런 신호가 오면 주목하세요</div>
+        <div class="desc">RSI 38 이하 + 하락 멈춤 + MA20($302.38) 아래 진입 시 1차 매수 검토</div>
       </div>
     </div>
     <div class="action-item">
       <div class="action-icon">🚫</div>
       <div class="action-content">
-        <div class="title">손절 기준</div>
-        <div class="desc c-red">$266.87 아래로 내려가면 손절 — 진입가 대비 -5% 룰을 지키세요</div>
+        <div class="title">이미 갖고 있다면</div>
+        <div class="desc c-red">$293.31 아래로 내려가면 미련 없이 일부 정리하세요</div>
       </div>
     </div>
   </div>
@@ -1003,7 +1003,7 @@ tr:nth-child(even) td { background: #f8fafc; }
   <!-- 판정 박스 2개 나란히 -->
   <div class="verdict-row">
     <div class="verdict-box sell">
-      <div class="v-label">판정1 — 시장필터 포함 (QQQ MA200)</div>
+      <div class="v-label">판정1 — 시장필터 포함 (QQQ+SPY Dual MA200)</div>
       <div class="v-badge"><span class="badge badge-sell">시장 관망</span></div>
       <div class="v-desc">신호 대기 중</div>
     </div>
@@ -1122,14 +1122,14 @@ tr:nth-child(even) td { background: #f8fafc; }
   <!-- 판정 박스 2개 나란히 -->
   <div class="verdict-row">
     <div class="verdict-box sell">
-      <div class="v-label">판정1 — 시장필터 포함 (QQQ MA200)</div>
+      <div class="v-label">판정1 — 시장필터 포함 (QQQ+SPY Dual MA200)</div>
       <div class="v-badge"><span class="badge badge-sell">시장 관망</span></div>
       <div class="v-desc">신호 대기 중</div>
     </div>
-    <div class="verdict-box entry">
+    <div class="verdict-box watch">
       <div class="v-label">판정2 — 기술신호만 (종목 자체)</div>
-      <div class="v-badge"><span class="badge badge-entry">1차 매수</span></div>
-      <div class="v-desc">신호 대기 중</div>
+      <div class="v-badge"><span class="badge badge-watch">관망</span></div>
+      <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
     </div>
   </div>
 
@@ -1199,22 +1199,22 @@ tr:nth-child(even) td { background: #f8fafc; }
     <div class="action-item">
       <div class="action-icon">⏰</div>
       <div class="action-content">
-        <div class="title">1차 매수 타이밍이에요 (자금의 20%)</div>
-        <div class="desc">현재가 $207.54 근처에서 소액 분할 진입 — 추가 하락 여지를 남겨두세요</div>
+        <div class="title">지금은 기다리는 게 맞아요</div>
+        <div class="desc">아직 1차 매수 조건(6개 중 3개)이 채워지지 않았어요. 서두르지 않아도 됩니다</div>
       </div>
     </div>
     <div class="action-item">
       <div class="action-icon">📈</div>
       <div class="action-content">
-        <div class="title">2차 매수 신호를 기다리세요</div>
-        <div class="desc">이중 바닥 확인 + RSI 35 돌파 + 거래량 증가 시 2차(30%) 추가 진입</div>
+        <div class="title">이런 신호가 오면 주목하세요</div>
+        <div class="desc">RSI 38 이하 + 하락 멈춤 + MA20($211.07) 아래 진입 시 1차 매수 검토</div>
       </div>
     </div>
     <div class="action-item">
       <div class="action-icon">🚫</div>
       <div class="action-content">
-        <div class="title">손절 기준</div>
-        <div class="desc c-red">$197.16 아래로 내려가면 손절 — 진입가 대비 -5% 룰을 지키세요</div>
+        <div class="title">이미 갖고 있다면</div>
+        <div class="desc c-red">$204.74 아래로 내려가면 미련 없이 일부 정리하세요</div>
       </div>
     </div>
   </div>
@@ -1241,14 +1241,14 @@ tr:nth-child(even) td { background: #f8fafc; }
   <!-- 판정 박스 2개 나란히 -->
   <div class="verdict-row">
     <div class="verdict-box sell">
-      <div class="v-label">판정1 — 시장필터 포함 (QQQ MA200)</div>
+      <div class="v-label">판정1 — 시장필터 포함 (QQQ+SPY Dual MA200)</div>
       <div class="v-badge"><span class="badge badge-sell">시장 관망</span></div>
       <div class="v-desc">신호 대기 중</div>
     </div>
-    <div class="verdict-box entry">
+    <div class="verdict-box watch">
       <div class="v-label">판정2 — 기술신호만 (종목 자체)</div>
-      <div class="v-badge"><span class="badge badge-entry">1차 매수</span></div>
-      <div class="v-desc">신호 대기 중</div>
+      <div class="v-badge"><span class="badge badge-watch">관망</span></div>
+      <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
     </div>
   </div>
 
@@ -1318,22 +1318,22 @@ tr:nth-child(even) td { background: #f8fafc; }
     <div class="action-item">
       <div class="action-icon">⏰</div>
       <div class="action-content">
-        <div class="title">1차 매수 타이밍이에요 (자금의 20%)</div>
-        <div class="desc">현재가 $268.05 근처에서 소액 분할 진입 — 추가 하락 여지를 남겨두세요</div>
+        <div class="title">지금은 기다리는 게 맞아요</div>
+        <div class="desc">아직 1차 매수 조건(6개 중 3개)이 채워지지 않았어요. 서두르지 않아도 됩니다</div>
       </div>
     </div>
     <div class="action-item">
       <div class="action-icon">📈</div>
       <div class="action-content">
-        <div class="title">2차 매수 신호를 기다리세요</div>
-        <div class="desc">이중 바닥 확인 + RSI 35 돌파 + 거래량 증가 시 2차(30%) 추가 진입</div>
+        <div class="title">이런 신호가 오면 주목하세요</div>
+        <div class="desc">RSI 38 이하 + 하락 멈춤 + MA20($281.85) 아래 진입 시 1차 매수 검토</div>
       </div>
     </div>
     <div class="action-item">
       <div class="action-icon">🚫</div>
       <div class="action-content">
-        <div class="title">손절 기준</div>
-        <div class="desc c-red">$254.65 아래로 내려가면 손절 — 진입가 대비 -5% 룰을 지키세요</div>
+        <div class="title">이미 갖고 있다면</div>
+        <div class="desc c-red">$273.39 아래로 내려가면 미련 없이 일부 정리하세요</div>
       </div>
     </div>
   </div>
