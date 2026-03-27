@@ -51,7 +51,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     line-height: 1.1;
 }
 .header-sub {
-    font-size: 13px; color: rgba(255,255,255,0.55);
+    font-size: 13px; color: rgba(255,255,255,0.80);
     margin-top: 4px; font-weight: 400;
 }
 .header-stats { display: flex; gap: 24px; }
@@ -67,7 +67,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     line-height: 1.1;
 }
 .stat-lbl {
-    font-size: 11px; color: rgba(255,255,255,0.45);
+    font-size: 11px; color: rgba(255,255,255,0.70);
     font-weight: 500; margin-top: 2px;
     text-transform: uppercase; letter-spacing: 0.5px;
 }
@@ -75,7 +75,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 /* 섹션 레이블 */
 .section-label {
     font-size: 11px; font-weight: 700;
-    color: rgba(255,255,255,0.35);
+    color: rgba(255,255,255,0.65);
     text-transform: uppercase;
     letter-spacing: 1.2px;
     margin-bottom: 14px;
@@ -123,7 +123,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     color: #FFFFFF; letter-spacing: 1px;
 }
 .ticker-exchange {
-    font-size: 13px; color: rgba(255,255,255,0.3);
+    font-size: 13px; color: rgba(255,255,255,0.65);
     font-weight: 500; margin-top: 2px;
 }
 .price-badge {
@@ -159,7 +159,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     color: rgba(255,255,255,0.8);
 }
 .ts-lbl {
-    font-size: 11px; color: rgba(255,255,255,0.3);
+    font-size: 11px; color: rgba(255,255,255,0.65);
     text-transform: uppercase; letter-spacing: 0.4px;
     margin-top: 1px;
 }
@@ -206,7 +206,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .tp-gray { background: rgba(100,116,139,0.12); color: #94A3B8; border-color: rgba(100,116,139,0.25); }
 .score-txt {
     font-size: 11px; font-weight: 700;
-    color: rgba(255,255,255,0.35);
+    color: rgba(255,255,255,0.65);
 }
 
 /* 빈 카드 (데이터 없음) */
@@ -222,10 +222,10 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 }
 .ticker-symbol-empty {
     font-size: 20px; font-weight: 800;
-    color: rgba(255,255,255,0.5); letter-spacing: 1px;
+    color: rgba(255,255,255,0.75); letter-spacing: 1px;
 }
 .no-data-label {
-    font-size: 10px; color: rgba(255,255,255,0.2);
+    font-size: 10px; color: rgba(255,255,255,0.55);
     margin-top: 4px;
 }
 
@@ -250,7 +250,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 }
 .run-icon { font-size: 26px; }
 .run-info-title { font-size: 13px; font-weight: 700; color: #fff; }
-.run-info-sub   { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+.run-info-sub   { font-size: 12px; color: rgba(255,255,255,0.65); margin-top: 2px; }
 .run-status-ok   { color: #00E676; }
 .run-status-fail { color: #FF5252; }
 .run-status-prog { color: #FFB300; }
@@ -262,7 +262,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     border-radius: 10px;
     padding: 8px 16px;
     font-size: 12px;
-    color: rgba(255,255,255,0.5);
+    color: rgba(255,255,255,0.75);
     margin-bottom: 16px;
 }
 
@@ -426,7 +426,7 @@ def get_signal_hint(p):
     cnt = len(met)
     if cnt == 0:
         return '<div class="signal-hint-area"></div>'
-    color = '#00E676' if cnt >= 3 else '#FFB300' if cnt >= 2 else 'rgba(255,255,255,0.3)'
+    color = '#00E676' if cnt >= 3 else '#FFB300' if cnt >= 2 else 'rgba(255,255,255,0.6)'
     visible = met[:5]   # 최대 5개 표시 (1행 내 수용 가능)
     tags = ''.join(
         f'<span style="font-size:11px;color:{color};background:rgba(255,255,255,0.05);'
@@ -434,7 +434,7 @@ def get_signal_hint(p):
         for m in visible
     )
     return (f'<div class="signal-hint-area">'
-            f'<span style="font-size:11px;color:rgba(255,255,255,0.3);margin-right:2px">'
+            f'<span style="font-size:11px;color:rgba(255,255,255,0.65);margin-right:2px">'
             f'1차 {cnt}/6</span>{tags}</div>')
 
 # ══════════════════════════════════════════════════════════════════
@@ -944,7 +944,7 @@ else:
     status_placeholder.markdown("""
     <div class="run-card">
       <div class="run-icon">⚪</div>
-      <div><div class="run-info-title" style="color:rgba(255,255,255,0.3)">실행 기록 없음</div></div>
+      <div><div class="run-info-title" style="color:rgba(255,255,255,0.55)">실행 기록 없음</div></div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -954,7 +954,7 @@ if st.session_state.polling:
 
 st.write("")
 st.markdown(
-    '<div style="font-size:11px;color:rgba(255,255,255,0.2);text-align:center;padding-bottom:16px">'
+    '<div style="font-size:11px;color:rgba(255,255,255,0.50);text-align:center;padding-bottom:16px">'
     '종목 변경 후 내일 오전 9시에 자동 반영 · 즉시 적용하려면 ▶ 지금 실행 클릭'
     '</div>',
     unsafe_allow_html=True,
