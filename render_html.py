@@ -41,11 +41,11 @@ def color_for_print(dark_hex):
 
 def get_badge_class(sk):
     return {
-        'entry3': 'buy',
-        'entry2': 'entry',
-        'entry1': 'entry',
-        'watch_market': 'sell',
-        'caution_market': 'caution',
+        'entry3':        'entry3',
+        'entry2':        'entry2',
+        'entry1':        'entry1',
+        'caution_market':'caution',
+        'watch_market':  'sell',
     }.get(sk, 'watch')
 
 def get_stage_desc(d, sk, lbl):

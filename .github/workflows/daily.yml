@@ -72,7 +72,7 @@ jobs:
               sys.path.insert(0, 'cowork_agents')
               from report_engine import trading_stage, trading_stage2
               lines = []
-              badge = {'entry1':'🟡','entry2':'🟢','entry3':'🟢','watch':'⚪','watch_market':'🔴','caution_market':'🟠'}
+              badge = {'entry3':'🟢','entry2':'🔵','entry1':'🟡','caution_market':'🟠','watch_market':'🔴','watch':'⚪'}
               for d in cache.get('stocks', []):
                   sk1, lbl1, _ = trading_stage(d)
                   sk2, lbl2, _ = trading_stage2(d)
@@ -129,7 +129,7 @@ jobs:
               sys.path.insert(0, 'cowork_agents')
               from report_engine import trading_stage, trading_stage2
               rows = ""
-              badge = {'entry1':'🟡','entry2':'🟢','entry3':'🟢','watch':'⚪','watch_market':'🔴','caution_market':'🟠'}
+              badge = {'entry3':'🟢','entry2':'🔵','entry1':'🟡','caution_market':'🟠','watch_market':'🔴','watch':'⚪'}
               for d in cache.get('stocks', []):
                   sk1, lbl1, _ = trading_stage(d)
                   sk2, lbl2, _ = trading_stage2(d)

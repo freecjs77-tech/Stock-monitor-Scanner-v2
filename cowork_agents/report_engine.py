@@ -47,6 +47,13 @@ BLUE2   = colors.HexColor("#2471A3")   # 중간 파란 — 보더·서브헤더
 GREEN   = colors.HexColor("#1A8C5A")   # 매수 시그널 (청록-그린)
 RED     = colors.HexColor("#C0392B")   # 매도 시그널
 ORANGE  = colors.HexColor("#CC7A2A")   # 중립
+# v2.2 단계별 색상
+C_ENTRY3 = colors.HexColor("#00E676")  # 본격 매수
+C_ENTRY2 = colors.HexColor("#26C6DA")  # 바닥 확인
+C_ENTRY1 = colors.HexColor("#FFEE58")  # 관심 진입
+C_CAUTION= colors.HexColor("#FFA726")  # 경계장
+C_BEAR   = colors.HexColor("#EF5350")  # 하락장
+C_WAIT   = colors.HexColor("#FFFFFF")  # 대기
 LGRAY   = colors.HexColor("#D4E6F1")   # 연한 파란 배경 (교대행·섹션)
 MGRAY   = colors.HexColor("#7BAED6")   # 파란 그레이 — 테두리·구분선
 DGRAY   = colors.HexColor("#3C6080")   # 파란 진회색 — 보조 텍스트
@@ -599,7 +606,7 @@ def trading_stage(d):
         'caution' if (qqq_above or spy_above) else 'bear')
 
     if market_state == 'bear':
-        return ('watch_market', '시장 관망', MGRAY)
+        return ('watch_market', '하락장', C_BEAR)
 
     # ─────────────────────────────────────────────────────────
     # 정상장에서만 2차·3차 허용
@@ -613,7 +620,7 @@ def trading_stage(d):
             sig('sig_vol_1p3') or sig('sig_vol_5d_2up'),  # 거래량 1.3배 or 5일 중 2일 증가
         ]
         if all(cond3):
-            return ('entry3', '3차 매수', GREEN)
+            return ('entry3', '본격 매수', C_ENTRY3)
 
         # 2️⃣ 2차 매수 (30%)
         cond2 = [
@@ -623,7 +630,7 @@ def trading_stage(d):
             sig('sig_vol_1p2'),
         ]
         if all(cond2):
-            return ('entry2', '2차 매수', ORANGE)
+            return ('entry2', '바닥 확인', C_ENTRY2)
 
     # ─────────────────────────────────────────────────────────
     # 1️⃣ 1차 매수 (20%) — 정상장·경계장 모두 허용
@@ -640,13 +647,13 @@ def trading_stage(d):
             sig('sig_bounce2pct'),
         ]
         if sum(cond1_list) >= 3:
-            return ('entry1', '1차 매수', ORANGE)
+            return ('entry1', '관심 진입', C_ENTRY1)
 
     # 경계장이고 1차 미충족
     if market_state == 'caution':
-        return ('caution_market', '경계 관망', ORANGE)
+        return ('caution_market', '경계장', C_CAUTION)
 
-    return ('watch', '관망', MGRAY)
+    return ('watch', '대기', C_WAIT)
 
 
 def trading_stage2(d):
@@ -661,7 +668,7 @@ def trading_stage2(d):
     if all([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
             sig('sig_macd_above_zero'),
             sig('sig_vol_1p3') or sig('sig_vol_5d_2up')]):
-        return ('entry3', '3차 매수', GREEN)
+        return ('entry3', '본격 매수', C_ENTRY3)
 
     # 2차 매수
     if all([
@@ -670,7 +677,7 @@ def trading_stage2(d):
         sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'),
         sig('sig_vol_1p2'),
     ]):
-        return ('entry2', '2차 매수', ORANGE)
+        return ('entry2', '바닥 확인', C_ENTRY2)
 
     # 1차 매수 — [필수] MACD 히스토그램 2일 연속 증가
     block1 = sig('sig_block_rsi50') or sig('sig_block_bigdrop')
@@ -680,9 +687,9 @@ def trading_stage2(d):
             sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct'),
         ]
         if sum(cond1_list) >= 3:
-            return ('entry1', '1차 매수', ORANGE)
+            return ('entry1', '관심 진입', C_ENTRY1)
 
-    return ('watch', '관망', MGRAY)
+    return ('watch', '대기', C_WAIT)
 
 
 def _stage_reason2(d, sk):
@@ -1807,19 +1814,29 @@ def generate_summary_page(stocks_list, output_path, ai_data=None):
         canvas.restoreState()
 
     def _badge_stage(sk, lbl):
-        """판정 배지 — v2.2 stage key 기반"""
-        clr = (S_GREEN  if sk in ('entry3', 'entry2')
-               else S_ORANGE if sk in ('entry1', 'caution_market')
-               else S_RED    if sk == 'watch_market'
-               else S_GRAY)
+        """판정 배지 — v2.2 stage key 기반 (단계별 고유 색상)"""
+        clr_map = {
+            'entry3':        colors.HexColor('#00E676'),  # 본격 매수
+            'entry2':        colors.HexColor('#26C6DA'),  # 바닥 확인
+            'entry1':        colors.HexColor('#FFEE58'),  # 관심 진입
+            'caution_market':colors.HexColor('#FFA726'),  # 경계장
+            'watch_market':  colors.HexColor('#EF5350'),  # 하락장
+            'watch':         colors.HexColor('#FFFFFF'),  # 대기
+        }
+        clr = clr_map.get(sk, colors.HexColor('#FFFFFF'))
         return Paragraph(f'<b>{lbl}</b>',
                          s(f'badge_{sk}', 8, clr, TA_CENTER, bold=True))
 
     def _badge_bg(sk):
-        return (BADGE_G if sk in ('entry3', 'entry2')
-                else BADGE_O if sk in ('entry1', 'caution_market')
-                else BADGE_R if sk == 'watch_market'
-                else BADGE_S)
+        bg_map = {
+            'entry3':        colors.HexColor('#0A2E1A'),
+            'entry2':        colors.HexColor('#0A2830'),
+            'entry1':        colors.HexColor('#2A2600'),
+            'caution_market':colors.HexColor('#2A1800'),
+            'watch_market':  colors.HexColor('#2A0A0A'),
+            'watch':         colors.HexColor('#0D1B2C'),
+        }
+        return bg_map.get(sk, colors.HexColor('#0D1B2C'))
 
     today_str = datetime.date.today().strftime('%Y년 %m월 %d일')
 
@@ -1960,28 +1977,44 @@ def generate_summary_page(stocks_list, output_path, ai_data=None):
     story.append(Spacer(1, 3 * mm))
 
     # 조건 정의: (라벨, 텍스트색, 배지배경, 조건 설명)  [v2.2 Split-Buy 전략]
+    C_E3 = colors.HexColor('#00E676')
+    C_E2 = colors.HexColor('#26C6DA')
+    C_E1 = colors.HexColor('#FFEE58')
+    C_CM = colors.HexColor('#FFA726')
+    C_WM = colors.HexColor('#EF5350')
+    C_W  = colors.HexColor('#FFFFFF')
+    BG_E3 = colors.HexColor('#0A2E1A')
+    BG_E2 = colors.HexColor('#0A2830')
+    BG_E1 = colors.HexColor('#2A2600')
+    BG_CM = colors.HexColor('#2A1800')
+    BG_WM = colors.HexColor('#2A0A0A')
+    BG_W  = colors.HexColor('#0D1B2C')
     stage_defs = [
-        ('시장 필터', S_GRAY,   BADGE_S,
-         '정상장: QQQ > MA200 AND SPY > MA200  →  1·2·3차 전 단계 허용\n'
-         '경계장: 둘 중 하나만 MA200 위  →  1차(20%)만 허용\n'
+        ('시장 필터', S_GRAY,  BADGE_S,
+         '정상장: QQQ > MA200 AND SPY > MA200  →  본격·바닥·관심 전 단계 허용\n'
+         '경계장: 둘 중 하나만 MA200 위  →  관심 진입(20%)만 허용\n'
          '하락장: QQQ·SPY 모두 MA200 아래  →  신규 매수 금지 (현금 보존)'),
-        ('3차 매수 50%', S_GREEN,  BADGE_G,
+        ('본격 매수 50%', C_E3, BG_E3,
          '[정상장만]  조건 4가지 ALL 충족\n'
          '① 종가 2일 연속 MA20 위 (안착)  ② MA20 기울기 상향 (3일 전 대비)\n'
          '③ MACD 라인 0선 위  ④ 거래량 ≥ 평균 1.3배  또는  최근 5일 중 2일 연속 증가'),
-        ('2차 매수 30%', S_GREEN,  BADGE_G,
+        ('바닥 확인 30%', C_E2, BG_E2,
          '[정상장만]  조건 4가지 ALL 충족\n'
          '① 이중 바닥: 최근 5일 저점 ≥ 이전 5일 저점 × 0.98\n'
          '② RSI > 35  +  3일 연속 상승  ③ MACD 골든크로스 또는 히스토그램 3일 연속 증가\n'
          '④ 거래량 ≥ 평균 1.2배'),
-        ('1차 매수 20%', S_ORANGE, BADGE_O,
+        ('관심 진입 20%', C_E1, BG_E1,
          '[정상장·경계장]  [필수] MACD 히스토그램 2일 연속 증가  +  아래 6개 중 3개 이상\n'
          '① RSI ≤ 38  ② ADX ≤ 25  ③ 종가 ≤ BB하단 × 1.02  ④ 종가 < MA20\n'
          '⑤ 하락 멈춤 (최근 3일 최저 이상)  ⑥ 당일 +2% 이상 양봉 (윗꼬리 ≤ 2%)\n'
          '✗ 금지: RSI > 50  또는  당일 -5% 이상 장대음봉'),
-        ('관망',     S_GRAY,   BADGE_S,
-         '시장·단계 조건 미충족  —  신호 대기 구간, 현금 보유 권장\n'
-         '경계 관망: 경계장에서 1차 조건 미충족'),
+        ('경계장', C_CM, BG_CM,
+         '경계장 (QQQ·SPY 중 하나만 MA200 위)에서 관심 진입 조건 미충족\n'
+         '→  관망 유지, 1차 신호 재확인 대기'),
+        ('하락장', C_WM, BG_WM,
+         'QQQ·SPY 모두 MA200 아래 — 모든 신규 매수 금지, 현금 보존'),
+        ('대기',   C_W,  BG_W,
+         '정상장이나 단계 조건 미충족  —  신호 대기, 현금 보유 권장'),
     ]
 
     LBL_W = CW * 0.13

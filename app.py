@@ -200,10 +200,12 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     border-radius: 20px; padding: 4px 12px;
     border: 1px solid;
 }
-.tp-bull { background: rgba(0,200,83,0.12);  color: #00E676; border-color: rgba(0,200,83,0.25); }
-.tp-bear { background: rgba(211,47,47,0.12); color: #FF5252; border-color: rgba(211,47,47,0.25); }
-.tp-neut { background: rgba(245,124,0,0.12); color: #FFB300; border-color: rgba(245,124,0,0.25); }
-.tp-gray { background: rgba(100,116,139,0.12); color: #94A3B8; border-color: rgba(100,116,139,0.25); }
+.tp-entry3  { background: rgba(0,230,118,0.12);   color: #00E676; border-color: rgba(0,230,118,0.25); }
+.tp-entry2  { background: rgba(38,198,218,0.12);  color: #26C6DA; border-color: rgba(38,198,218,0.25); }
+.tp-entry1  { background: rgba(255,238,88,0.12);  color: #FFEE58; border-color: rgba(255,238,88,0.25); }
+.tp-caution { background: rgba(255,167,38,0.12);  color: #FFA726; border-color: rgba(255,167,38,0.25); }
+.tp-sell    { background: rgba(239,83,80,0.12);   color: #EF5350; border-color: rgba(239,83,80,0.25); }
+.tp-watch   { background: rgba(255,255,255,0.06); color: #FFFFFF; border-color: rgba(255,255,255,0.15); }
 .score-txt {
     font-size: 11px; font-weight: 700;
     color: rgba(255,255,255,0.65);
@@ -361,31 +363,31 @@ def trading_stage_v2(p):
         'caution' if (qqq_above or spy_above) else 'bear')
 
     if market_state == 'bear':
-        return 'watch_market', '시장 관망', '#94A3B8'
+        return 'watch_market', '하락장', '#EF5350'
 
     if market_state == 'normal':
         # 3차: RSI75 차단 제거, 거래량 조건 완화
         if all([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
                 sig('sig_macd_above_zero'),
                 sig('sig_vol_1p3') or sig('sig_vol_5d_2up')]):
-            return 'buy3', '3차 매수', '#00E676'
+            return 'buy3', '본격 매수', '#00E676'
         # 2차
         if all([sig('sig_double_bottom'),
                 sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),
                 sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'),
                 sig('sig_vol_1p2')]):
-            return 'buy2', '2차 매수', '#69F0AE'
+            return 'buy2', '바닥 확인', '#26C6DA'
 
     # 1차: [필수] MACD 히스토그램 2일 증가 + 6조건 중 3개 이상
     if not (sig('sig_block_rsi50') or sig('sig_block_bigdrop')) and sig('sig_macd_hist_2d_up'):
         conds = [sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
                  sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')]
         if sum(conds) >= 3:
-            return 'buy1', '1차 매수', '#FBBF24'
+            return 'buy1', '관심 진입', '#FFEE58'
 
     if market_state == 'caution':
-        return 'caution_market', '경계 관망', '#F59E0B'
-    return 'watch', '관망', '#94A3B8'
+        return 'caution_market', '경계장', '#FFA726'
+    return 'watch', '대기', '#FFFFFF'
 
 
 def trading_stage2_v2(p):
@@ -395,26 +397,26 @@ def trading_stage2_v2(p):
     if all([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
             sig('sig_macd_above_zero'),
             sig('sig_vol_1p3') or sig('sig_vol_5d_2up')]):
-        return 'buy3', '3차 매수', '#00E676'
+        return 'buy3', '본격 매수', '#00E676'
     # 2차
     if all([sig('sig_double_bottom'),
             sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),
             sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'),
             sig('sig_vol_1p2')]):
-        return 'buy2', '2차 매수', '#69F0AE'
+        return 'buy2', '바닥 확인', '#26C6DA'
     # 1차: [필수] MACD 히스토그램 2일 증가
     if not (sig('sig_block_rsi50') or sig('sig_block_bigdrop')) and sig('sig_macd_hist_2d_up'):
         conds = [sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
                  sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')]
         if sum(conds) >= 3:
-            return 'buy1', '1차 매수', '#FBBF24'
-    return 'watch', '관망', '#94A3B8'
+            return 'buy1', '관심 진입', '#FFEE58'
+    return 'watch', '대기', '#FFFFFF'
 
 
 def stage_pill_cls(sk):
-    return {'buy3': 'tp-bull', 'buy2': 'tp-bull', 'buy1': 'tp-neut',
-            'watch': 'tp-gray', 'watch_market': 'tp-gray',
-            'caution_market': 'tp-neut'}.get(sk, 'tp-gray')
+    return {'buy3': 'tp-entry3', 'buy2': 'tp-entry2', 'buy1': 'tp-entry1',
+            'watch_market': 'tp-sell', 'caution_market': 'tp-caution',
+            'watch': 'tp-watch'}.get(sk, 'tp-watch')
 
 
 def get_signal_hint(p):
