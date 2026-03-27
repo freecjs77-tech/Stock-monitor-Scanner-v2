@@ -298,8 +298,8 @@ def fetch_stock_data(ticker, retry=2):
             tk   = yf.Ticker(ticker)
             hist = tk.history(period='1y', interval='1d', auto_adjust=True)
 
-            if hist.empty or len(hist) < 50:
-                print(f"  [{ticker}] 경고: 데이터 부족 ({len(hist)}일)")
+            if hist.empty or len(hist) < 30:
+                print(f"  [{ticker}] 경고: 데이터 부족 ({len(hist)}일, 최소 30일 필요)")
                 if attempt < retry:
                     time.sleep(2)
                     continue
@@ -526,6 +526,18 @@ def run(tickers=None, send_telegram=False):
         today_str = datetime.date.today().strftime('%Y%m%d')
         tickers   = tickers or ALL_TICKERS
 
+        # ── 기존 mag7_data.json 로드 (실패 종목 fallback용) ───────────────
+        existing_data = {}
+        if os.path.exists(DATA_FILE):
+            try:
+                with open(DATA_FILE, encoding='utf-8') as f:
+                    old = json.load(f)
+                for s in old.get('stocks', []):
+                    existing_data[s['ticker']] = s
+                print(f"  [DATA] 기존 데이터 로드 완료: {', '.join(existing_data.keys())}")
+            except Exception as e:
+                print(f"  [DATA] 기존 데이터 로드 실패 ({e}), 새로 생성합니다")
+
         print(f"\n{'='*60}")
         print(f"  Mag7 Real-Data Report  |  {today}")
         print(f"  데이터 소스: yfinance (Yahoo Finance)")
@@ -590,7 +602,11 @@ def run(tickers=None, send_telegram=False):
         for ticker in tickers:
             sd = results_map.get(ticker)
             if sd is None:
-                print(f"  [{ticker}] SKIP (데이터 없음)")
+                if ticker in existing_data:
+                    print(f"  [{ticker}] 수집 실패 → 이전 데이터 유지 (날짜: {existing_data[ticker].get('date','?')})")
+                    stocks_data.append(existing_data[ticker])
+                else:
+                    print(f"  [{ticker}] SKIP (수집 실패 + 이전 데이터 없음)")
                 continue
 
             # 시장 필터 주입

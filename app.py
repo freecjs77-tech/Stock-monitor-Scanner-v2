@@ -619,7 +619,7 @@ st.markdown(f"""
     <div class="header-icon">📈</div>
     <div>
       <div class="header-title">Stock Report Manager</div>
-      <div class="header-sub">매일 오전 9시 KST · Yahoo Finance 실시간 데이터</div>
+      <div class="header-sub">월~토 오전 7시 KST 자동 실행 · Yahoo Finance 실시간 데이터</div>
     </div>
   </div>
   <div class="header-stats">
@@ -963,7 +963,7 @@ if st.session_state.polling:
 st.write("")
 st.markdown(
     '<div style="font-size:11px;color:rgba(255,255,255,0.50);text-align:center;padding-bottom:16px">'
-    '종목 변경 후 내일 오전 9시에 자동 반영 · 즉시 적용하려면 ▶ 지금 실행 클릭'
+    '종목 변경 후 다음 날 오전 7시(KST)에 자동 반영 · 즉시 적용하려면 ▶ 지금 실행 클릭'
     '</div>',
     unsafe_allow_html=True,
 )
