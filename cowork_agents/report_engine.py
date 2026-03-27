@@ -1807,18 +1807,18 @@ def generate_summary_page(stocks_list, output_path, ai_data=None):
         canvas.restoreState()
 
     def _badge_stage(sk, lbl):
-        """판정 배지 — 색상 박스 안에 텍스트"""
-        clr = (S_GREEN if sk == 'buy'
-               else S_ORANGE if sk == 'entry'
-               else S_RED    if sk in ('sell', 'sell_div')
+        """판정 배지 — v2.2 stage key 기반"""
+        clr = (S_GREEN  if sk in ('entry3', 'entry2')
+               else S_ORANGE if sk in ('entry1', 'caution_market')
+               else S_RED    if sk == 'watch_market'
                else S_GRAY)
         return Paragraph(f'<b>{lbl}</b>',
                          s(f'badge_{sk}', 8, clr, TA_CENTER, bold=True))
 
     def _badge_bg(sk):
-        return (BADGE_G if sk == 'buy'
-                else BADGE_O if sk == 'entry'
-                else BADGE_R if sk in ('sell', 'sell_div')
+        return (BADGE_G if sk in ('entry3', 'entry2')
+                else BADGE_O if sk in ('entry1', 'caution_market')
+                else BADGE_R if sk == 'watch_market'
                 else BADGE_S)
 
     today_str = datetime.date.today().strftime('%Y년 %m월 %d일')
@@ -1959,24 +1959,29 @@ def generate_summary_page(stocks_list, output_path, ai_data=None):
     story.append(cond_label)
     story.append(Spacer(1, 3 * mm))
 
-    # 조건 정의: (라벨, 텍스트색, 배지배경, 조건 설명)
+    # 조건 정의: (라벨, 텍스트색, 배지배경, 조건 설명)  [v2.2 Split-Buy 전략]
     stage_defs = [
-        ('매수 적기', S_GREEN,  BADGE_G,
-         '다음 중 2가지 이상 충족  +  양봉 마감  +  RSI < 75\n'
-         '① MA20 돌파    ② MACD 골든크로스    ③ 거래량 평균 이상'),
-        ('1차 진입',  S_ORANGE, BADGE_O,
-         'A.  RSI < 35  +  RSI 3일 기울기 양전환  +  하락 멈춤\n'
-         'B.  RSI < 40  +  52주 고점 -20% 이상  +  하락 둔화  +  하락 멈춤\n'
-         'C.  RSI < 30  +  급락 아님 (rsi_s3 >= -2)  +  하락 멈춤'),
-        ('매도 시작', S_RED,    BADGE_R,
-         '전제:  고점 대비 -20% 이내  +  RSI >= 45 (과매도 제외)\n'
-         'A.  MA200 위 5% 이내  +  RSI 기울기 음수\n'
-         'B.  BB 상단 3% 이내  +  음봉 마감\n'
-         'C.  고점권(82%)에서 MA20 이탈  +  RSI 5일 급락'),
-        ('매도 주의', S_RED,    BADGE_R,
-         '약세 다이버전스 (RSI 하락 + 주가 상승)  +  52주 고점 82% 이상 (near_high = True)'),
+        ('시장 필터', S_GRAY,   BADGE_S,
+         '정상장: QQQ > MA200 AND SPY > MA200  →  1·2·3차 전 단계 허용\n'
+         '경계장: 둘 중 하나만 MA200 위  →  1차(20%)만 허용\n'
+         '하락장: QQQ·SPY 모두 MA200 아래  →  신규 매수 금지 (현금 보존)'),
+        ('3차 매수 50%', S_GREEN,  BADGE_G,
+         '[정상장만]  조건 4가지 ALL 충족\n'
+         '① 종가 2일 연속 MA20 위 (안착)  ② MA20 기울기 상향 (3일 전 대비)\n'
+         '③ MACD 라인 0선 위  ④ 거래량 ≥ 평균 1.3배  또는  최근 5일 중 2일 연속 증가'),
+        ('2차 매수 30%', S_GREEN,  BADGE_G,
+         '[정상장만]  조건 4가지 ALL 충족\n'
+         '① 이중 바닥: 최근 5일 저점 ≥ 이전 5일 저점 × 0.98\n'
+         '② RSI > 35  +  3일 연속 상승  ③ MACD 골든크로스 또는 히스토그램 3일 연속 증가\n'
+         '④ 거래량 ≥ 평균 1.2배'),
+        ('1차 매수 20%', S_ORANGE, BADGE_O,
+         '[정상장·경계장]  [필수] MACD 히스토그램 2일 연속 증가  +  아래 6개 중 3개 이상\n'
+         '① RSI ≤ 38  ② ADX ≤ 25  ③ 종가 ≤ BB하단 × 1.02  ④ 종가 < MA20\n'
+         '⑤ 하락 멈춤 (최근 3일 최저 이상)  ⑥ 당일 +2% 이상 양봉 (윗꼬리 ≤ 2%)\n'
+         '✗ 금지: RSI > 50  또는  당일 -5% 이상 장대음봉'),
         ('관망',     S_GRAY,   BADGE_S,
-         '위 조건 미충족  —  신호 대기 구간.  현금 보유가 최선인 구간'),
+         '시장·단계 조건 미충족  —  신호 대기 구간, 현금 보유 권장\n'
+         '경계 관망: 경계장에서 1차 조건 미충족'),
     ]
 
     LBL_W = CW * 0.13
