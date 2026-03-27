@@ -6,24 +6,22 @@
 <title>관심 종목 전체 리포트 — {{ today_str }}</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
-/* ─── 기본 (화면 + 인쇄 공통) ─── */
+/* ─── 다크 테마 변수 ─── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg:     #ffffff;
-  --panel:  #f5f7fa;
-  --border: #d1dbe8;
-  --accent: #1d4ed8;
-  --text:   #0f172a;
-  --mid:    #334155;
-  --sub:    #64748b;
-  --green:  #059669;
-  --orange: #d97706;
-  --red:    #dc2626;
-  --gray:   #64748b;
-  --green-bg:  #ecfdf5;
-  --orange-bg: #fffbeb;
-  --red-bg:    #fef2f2;
+  --bg:        #060D18;
+  --panel:     #0A1525;
+  --row1:      #0D1B2C;
+  --row2:      #111F30;
+  --border:    #1A3050;
+  --accent:    #2563EB;
+  --text:      #EEF4FB;
+  --mid:       #A8C4DE;
+  --sub:       #4E6E8E;
 }
+/* 인쇄 시에도 배경/색상 강제 출력 */
+* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -32,128 +30,111 @@ body {
   line-height: 1.6;
 }
 
-/* ─── 인쇄 버튼 (인쇄 시 숨김) ─── */
+/* ─── 인쇄 버튼 바 (인쇄 시 숨김) ─── */
 .print-bar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 999;
   background: #1d4ed8; color: white;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 24px;
-  font-size: 13px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  padding: 10px 24px; font-size: 13px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 .print-bar .hint { font-size: 11px; opacity: 0.8; }
 .btn-pdf {
   background: white; color: #1d4ed8;
   border: none; border-radius: 4px;
-  padding: 7px 18px; font-size: 13px; font-weight: 700;
-  cursor: pointer;
+  padding: 7px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
 }
 .btn-pdf:hover { background: #e0eaff; }
-body { padding-top: 44px; } /* 고정바 높이 보정 */
+body { padding-top: 44px; }
 
 /* ─── 페이지 래퍼 ─── */
 .page {
-  max-width: 900px;
-  margin: 0 auto;
+  max-width: 900px; margin: 0 auto;
   padding: 32px 28px 40px;
-  border-bottom: 2px dashed #d1dbe8;
+  border-bottom: 1px dashed var(--border);
 }
 .page:last-child { border-bottom: none; }
 
 /* ─── 표지 헤더 ─── */
 .cover-header {
   border-bottom: 3px solid var(--accent);
-  padding-bottom: 14px;
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
+  padding-bottom: 14px; margin-bottom: 20px;
+  display: flex; justify-content: space-between; align-items: flex-end;
 }
-.cover-header h1 { font-size: 22px; font-weight: 700; color: var(--accent); }
+.cover-header h1 { font-size: 22px; font-weight: 700; color: #EEF4FB; }
 .cover-header .date { font-size: 12px; color: var(--sub); text-align: right; }
 
 /* ─── 요약 테이블 ─── */
 table { width: 100%; border-collapse: collapse; margin-top: 8px; }
 th {
-  background: #e8eef7;
-  color: var(--mid);
-  font-size: 11px; font-weight: 700;
-  padding: 9px 8px;
-  text-align: center;
-  border-bottom: 2px solid var(--accent);
+  background: #081220; color: var(--mid);
+  font-size: 11px; font-weight: 700; padding: 9px 8px;
+  text-align: center; border-bottom: 2px solid var(--accent);
 }
 td {
-  padding: 9px 8px;
-  text-align: center;
-  border-bottom: 1px solid var(--border);
-  font-size: 12px;
+  padding: 9px 8px; text-align: center;
+  border-bottom: 1px solid var(--border); font-size: 12px;
 }
-tr:nth-child(even) td { background: #f8fafc; }
+tr:nth-child(odd)  td { background: var(--row1); }
+tr:nth-child(even) td { background: var(--row2); }
 .td-left { text-align: left; padding-left: 10px; }
 
-/* ─── 배지 ─── */
+/* ─── 배지 (단계별 고유 색상) ─── */
 .badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 11px; font-weight: 700;
+  display: inline-block; padding: 2px 8px;
+  border-radius: 4px; font-size: 11px; font-weight: 700;
 }
-.badge-buy   { color: var(--green);  background: var(--green-bg);  border: 1px solid #a7f3d0; }
-.badge-entry { color: var(--orange); background: var(--orange-bg); border: 1px solid #fde68a; }
-.badge-sell  { color: var(--red);    background: var(--red-bg);    border: 1px solid #fecaca; }
-.badge-watch { color: var(--gray);   background: #f1f5f9;          border: 1px solid #cbd5e1; }
+.badge-entry3 { color: #00E676; background: rgba(0,230,118,0.15);  border: 1px solid rgba(0,230,118,0.35); }
+.badge-entry2 { color: #26C6DA; background: rgba(38,198,218,0.15); border: 1px solid rgba(38,198,218,0.35); }
+.badge-entry1 { color: #FFEE58; background: rgba(255,238,88,0.15); border: 1px solid rgba(255,238,88,0.35); }
+.badge-caution{ color: #FFA726; background: rgba(255,167,38,0.15); border: 1px solid rgba(255,167,38,0.35); }
+.badge-sell   { color: #EF5350; background: rgba(239,83,80,0.15);  border: 1px solid rgba(239,83,80,0.35); }
+.badge-watch  { color: #FFFFFF; background: rgba(255,255,255,0.07);border: 1px solid rgba(255,255,255,0.18); }
 
 /* ─── 색상 유틸 ─── */
-.c-green  { color: var(--green); font-weight: 700; }
-.c-orange { color: var(--orange); }
-.c-red    { color: var(--red); font-weight: 700; }
-.c-gray   { color: var(--gray); }
+.c-green  { color: #00E676; font-weight: 700; }
+.c-red    { color: #EF5350; font-weight: 700; }
 .c-sub    { color: var(--sub); }
 .bold     { font-weight: 700; }
 
 /* ─── 종목 섹션 헤더 ─── */
 .stock-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 2.5px solid var(--accent);
-  padding-bottom: 10px;
-  margin-bottom: 14px;
+  background: var(--panel); border-bottom: 2.5px solid var(--accent);
+  padding: 16px 20px; margin-bottom: 14px; border-radius: 6px 6px 0 0;
+  display: flex; justify-content: space-between; align-items: center;
 }
-.stock-header .left h2 { font-size: 20px; font-weight: 700; color: var(--accent); }
-.stock-header .left .meta { font-size: 11px; color: var(--sub); margin-top: 2px; }
-.stock-header .right .price { font-size: 22px; font-weight: 700; }
+.stock-header .left h2 { font-size: 18px; font-weight: 700; color: #EEF4FB; }
+.stock-header .left .meta { font-size: 11px; color: #EEF4FB; margin-top: 2px; }
+.stock-header .right .price { font-size: 22px; font-weight: 700; color: #EEF4FB; }
 
 /* ─── 판정 박스 ─── */
-.verdict-row {
-  display: flex; gap: 14px; margin-bottom: 12px;
-}
+.verdict-row { display: flex; gap: 14px; margin-bottom: 12px; }
 .verdict-box {
-  flex: 1;
-  border-radius: 6px;
-  padding: 10px 14px;
-  border-left: 4px solid;
+  flex: 1; border-radius: 6px; padding: 10px 14px;
+  border-left: 4px solid; background: var(--panel);
 }
-.verdict-box.buy    { background: var(--green-bg);  border-color: var(--green); }
-.verdict-box.entry  { background: var(--orange-bg); border-color: var(--orange); }
-.verdict-box.sell   { background: var(--red-bg);    border-color: var(--red); }
-.verdict-box.watch  { background: #f1f5f9;          border-color: var(--gray); }
-.verdict-box .v-label { font-size: 10px; color: var(--sub); margin-bottom: 3px; }
+.verdict-box.entry3 { border-color: #00E676; background: rgba(0,230,118,0.07); }
+.verdict-box.entry2 { border-color: #26C6DA; background: rgba(38,198,218,0.07); }
+.verdict-box.entry1 { border-color: #FFEE58; background: rgba(255,238,88,0.07); }
+.verdict-box.caution{ border-color: #FFA726; background: rgba(255,167,38,0.07); }
+.verdict-box.sell   { border-color: #EF5350; background: rgba(239,83,80,0.07); }
+.verdict-box.watch  { border-color: var(--sub); background: var(--panel); }
+.verdict-box .v-label { font-size: 10px; color: #94b8d4; margin-bottom: 3px; }
 .verdict-box .v-badge { margin-bottom: 4px; }
-.verdict-box .v-desc  { font-size: 11px; color: var(--mid); }
+.verdict-box .v-desc  { font-size: 11px; color: #EEF4FB; }
 
 /* ─── 52주 바 ─── */
 .range-wrap {
-  background: #f5f7fa; border: 1px solid var(--border);
+  background: var(--panel); border: 1px solid var(--border);
   border-radius: 6px; padding: 12px 14px; margin-bottom: 12px;
 }
-.range-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--sub); margin-bottom: 6px; }
-.range-bar { height: 7px; background: #d1dbe8; border-radius: 4px; position: relative; }
+.range-labels { display: flex; justify-content: space-between; font-size: 11px; color: #EEF4FB; margin-bottom: 6px; }
+.range-bar { height: 7px; background: var(--border); border-radius: 4px; position: relative; }
 .range-bar .filled { height: 100%; background: var(--accent); border-radius: 4px; }
 .range-bar .marker {
   position: absolute; top: -5px;
   width: 14px; height: 14px;
-  background: white; border: 2px solid var(--accent);
+  background: var(--accent); border: 2px solid #EEF4FB;
   border-radius: 50%; transform: translateX(-50%);
 }
 
@@ -162,14 +143,9 @@ tr:nth-child(even) td { background: #f8fafc; }
 .chart-wrap img { max-width: 100%; border-radius: 6px; border: 1px solid var(--border); }
 
 /* ─── 메트릭 카드 ─── */
-.metric-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
-}
+.metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
 .metric-card {
-  background: #f8fafc; border: 1px solid var(--border);
+  background: var(--panel); border: 1px solid var(--border);
   border-radius: 6px; padding: 12px;
 }
 .metric-card .label { font-size: 10px; color: var(--sub); margin-bottom: 3px; }
@@ -178,48 +154,85 @@ tr:nth-child(even) td { background: #f8fafc; }
 
 /* ─── 액션 ─── */
 .action-box {
-  background: #f5f7fa; border: 1px solid var(--border);
-  border-radius: 6px; padding: 12px 16px;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 6px; padding: 12px 16px; margin-bottom: 12px;
 }
-.action-item {
-  display: flex; gap: 10px; align-items: flex-start;
-  padding: 7px 0; border-bottom: 1px solid var(--border);
-}
+.action-item { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; border-bottom: 1px solid var(--border); }
 .action-item:last-child { border-bottom: none; }
 .action-icon { font-size: 16px; flex-shrink: 0; }
 .action-content .title { font-size: 11px; font-weight: 700; color: var(--mid); margin-bottom: 1px; }
-.action-content .desc  { font-size: 12px; }
+.action-content .desc  { font-size: 12px; color: #EEF4FB; }
+
+/* ─── 판정 근거 상세 ─── */
+.breakdown-box {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 6px; padding: 14px 16px; margin-bottom: 12px;
+}
+.breakdown-title { font-size: 13px; font-weight: 700; color: #EEF4FB; margin-bottom: 12px; }
+.stage-block { margin-bottom: 12px; }
+.stage-block-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;
+}
+.stage-block-header .stage-name { font-size: 12px; font-weight: 700; color: #EEF4FB; }
+.stage-met-ok  { font-size: 11px; font-weight: 700; color: #34D399; }
+.stage-met-ng  { font-size: 11px; font-weight: 700; color: #FBBF24; }
+.block-reason {
+  font-size: 11px; color: #F87171; background: rgba(248,113,113,0.1);
+  border-radius: 4px; padding: 4px 8px; margin-bottom: 6px;
+}
+.cond-list { border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+.cond-row {
+  display: flex; align-items: flex-start; gap: 8px; padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.cond-row:last-child { border-bottom: none; }
+.cond-row.pass { background: rgba(52,211,153,0.05); }
+.cond-row.fail { background: rgba(248,113,113,0.04); }
+.cond-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+.cond-name { font-size: 11px; font-weight: 700; color: #EEF4FB; }
+.cond-desc { font-size: 11px; color: #EEF4FB; margin-top: 2px; }
 
 /* ─── 조건 표 ─── */
 .cond-section { margin-top: 20px; }
-.cond-section h3 { font-size: 13px; font-weight: 700; color: var(--accent); border-bottom: 1.5px solid var(--accent); padding-bottom: 5px; margin-bottom: 10px; }
-.cond-table td { font-size: 11px; text-align: left; padding: 7px 10px; }
-.cond-table td:first-child { white-space: nowrap; font-weight: 700; color: var(--mid); width: 80px; }
+.cond-section h3 {
+  font-size: 13px; font-weight: 700; color: #EEF4FB;
+  border-bottom: 1.5px solid var(--accent); padding-bottom: 5px; margin-bottom: 10px;
+}
+.cond-table td { font-size: 11px; text-align: left; padding: 8px 10px; }
+.cond-table td:first-child { white-space: nowrap; font-weight: 700; width: 90px; }
+.cond-table tr:nth-child(odd)  td { background: var(--row1); }
+.cond-table tr:nth-child(even) td { background: var(--row2); }
+
+/* ─── AI 설명 ─── */
+.ai-box {
+  background: var(--bg); border-left: 3px solid var(--accent);
+  border-radius: 0 4px 4px 0; padding: 10px 14px;
+  margin-bottom: 14px; font-size: 12px; color: #EEF4FB; line-height: 1.7;
+}
 
 /* ─── 푸터 ─── */
 .report-footer {
   text-align: center; font-size: 10px; color: var(--sub);
-  margin-top: 20px; padding-top: 10px;
-  border-top: 1px solid var(--border);
+  margin-top: 20px; padding-top: 10px; border-top: 1px solid var(--border);
 }
 
 /* ═══════════════════════════════════
-   인쇄 전용 스타일
+   인쇄 전용
    ═══════════════════════════════════ */
 @media print {
-  @page { size: A4; margin: 15mm 12mm; }
-  body { padding-top: 0 !important; font-size: 11px; }
+  @page { size: A4; margin: 12mm 10mm; }
+  body  { padding-top: 0 !important; font-size: 11px; background: #060D18 !important; }
   .print-bar { display: none !important; }
   .page { border-bottom: none; padding: 0; max-width: 100%; }
   .stock-page { page-break-before: always; }
-  .chart-wrap img { max-height: 320px; }
+  .chart-wrap img { max-height: 300px; }
   .metric-grid { grid-template-columns: repeat(3, 1fr); }
 }
 </style>
 </head>
 <body>
 
-<!-- 인쇄 버튼 바 (화면에서만 표시) -->
+<!-- 인쇄 버튼 바 -->
 <div class="print-bar">
   <div>
     <strong>관심 종목 전체 리포트</strong>
@@ -336,12 +349,12 @@ tr:nth-child(even) td { background: #f8fafc; }
   <!-- 종목 헤더 -->
   <div class="stock-header">
     <div class="left">
-      <h2>{{ s.ticker }} &nbsp;<span style="font-size:14px; font-weight:400; color:var(--sub);">{{ s.company }}</span></h2>
+      <h2>{{ s.ticker }} &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">{{ s.company }}</span></h2>
       <div class="meta">{{ s.exchange }} | {{ s.sector }} | {{ today_str }}</div>
     </div>
     <div class="right" style="text-align:right;">
       <div class="price">${{ "%.2f"|format(s.close) }}</div>
-      <div class="{{ 'c-green' if s.chg >= 0 else 'c-red' }}" style="font-size:13px;">{{ "%+.2f"|format(s.chg) }}%</div>
+      <div class="{{ 'c-green' if s.chg >= 0 else 'c-red' }}" style="font-size:13px; font-weight:700;">{{ "%+.2f"|format(s.chg) }}%</div>
     </div>
   </div>
 
@@ -384,7 +397,7 @@ tr:nth-child(even) td { background: #f8fafc; }
     {% for m in s.metrics %}
     <div class="metric-card">
       <div class="label">{{ m.label }}</div>
-      <div class="value" style="color:{{ m.color_print }};">{{ m.value }}</div>
+      <div class="value" style="color:{{ m.color }};">{{ m.value }}</div>
       <div class="dir">{{ m.direction }}</div>
     </div>
     {% endfor %}
@@ -414,6 +427,43 @@ tr:nth-child(even) td { background: #f8fafc; }
       </div>
     </div>
   </div>
+
+  <!-- 판정 근거 상세 -->
+  {% if s.breakdown %}
+  <div class="breakdown-box">
+    <div class="breakdown-title">🔍 판정 근거 상세</div>
+
+    {% if s.breakdown.ai_explanation %}
+    <div class="ai-box">{{ s.breakdown.ai_explanation }}</div>
+    {% endif %}
+
+    {% for stage_key in ['entry1', 'entry2', 'entry3'] %}
+    {% set stage = s.breakdown[stage_key] %}
+    <div class="stage-block">
+      <div class="stage-block-header">
+        <div class="stage-name">{{ stage.title }}</div>
+        <div class="{{ 'stage-met-ok' if stage.met >= stage.required else 'stage-met-ng' }}">
+          {{ stage.met }}/{{ stage.total }} 충족
+        </div>
+      </div>
+      {% if stage.blocked and stage.block_reason %}
+      <div class="block-reason">⛔ {{ stage.block_reason }}</div>
+      {% endif %}
+      <div class="cond-list">
+        {% for cond in stage.conditions %}
+        <div class="cond-row {{ 'pass' if cond.pass else 'fail' }}">
+          <span class="cond-icon">{{ '✅' if cond.pass else '❌' }}</span>
+          <div style="flex:1; min-width:0;">
+            <div class="cond-name">{{ cond.name }}</div>
+            <div class="cond-desc">{{ cond.ok if cond.pass else cond.fail }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
 
   <div class="report-footer">
     본 보고서는 AI 기반 자동 기술적 분석으로, 투자 권유가 아닙니다. | Data: Yahoo Finance (yfinance)

@@ -287,6 +287,10 @@ def render(target_tickers=None, open_browser=False):
         raw_metrics = build_metrics(d, sk2)
         for m in raw_metrics:
             m['color_print'] = color_for_print(m['color'])
+        try:
+            breakdown = get_condition_breakdown(d)
+        except Exception:
+            breakdown = None
         stocks_detail.append({
             'ticker':      d['ticker'],
             'company':     d.get('company', d['ticker']),
@@ -302,6 +306,7 @@ def render(target_tickers=None, open_browser=False):
             'metrics':     raw_metrics,
             'action':      build_action(d, sk2),
             'chart_path':  chart_path,
+            'breakdown':   breakdown,
         })
     tmpl = env.get_template('print_all.html')
     html = tmpl.render(today_str=today_str, stocks=summary_stocks, stocks_detail=stocks_detail)
