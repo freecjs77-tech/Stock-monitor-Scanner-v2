@@ -355,30 +355,40 @@ tr:nth-child(even) td { background: #f8fafc; }
       <tbody>
         <tr>
           <td style="color:var(--sub);">0️⃣ 시장 필터</td>
-          <td>QQQ 종가 &gt; MA200(200일선) 위 → 매수 허용 &nbsp;|&nbsp; 아래 → 전종목 매수 금지 (대세 하락장)</td>
+          <td>정상장: QQQ &gt; MA200 AND SPY &gt; MA200 → 전 단계 허용<br>
+            경계장: 둘 중 하나만 MA200 위 → 관심 진입(20%)만 허용<br>
+            하락장: QQQ·SPY 모두 MA200 아래 → 신규 매수 금지</td>
         </tr>
         <tr>
-          <td class="c-orange">1차 매수<br><span style="font-size:9px; font-weight:400;">자금 20%</span></td>
-          <td>6조건 중 3개 이상 충족 &nbsp;|&nbsp; 🚫 RSI &gt; 50 또는 당일 -5% 이상 시 금지<br>
+          <td style="color:#FFEE58;font-weight:700;">관심 진입<br><span style="font-size:9px; font-weight:400;">자금 20%</span></td>
+          <td>[필수] MACD 히스토그램 2일 연속 증가 &nbsp;+&nbsp; 6조건 중 3개 이상 &nbsp;|&nbsp; 🚫 RSI &gt; 50 또는 당일 -5% 이상 시 금지<br>
             ① RSI(14) ≤ 38 &nbsp; ② ADX(14) ≤ 25 &nbsp; ③ 종가 ≤ BB하단 × 1.02<br>
-            ④ 종가 &lt; MA20 &nbsp; ⑤ 하락 멈춤(오늘 ≥ 최근 3일 최저) &nbsp; ⑥ 당일 +2% 이상 반등</td>
+            ④ 종가 &lt; MA20 &nbsp; ⑤ 하락 멈춤(오늘 ≥ 최근 3일 최저) &nbsp; ⑥ 당일 +2% 이상 양봉 (윗꼬리 ≤ 2%)</td>
         </tr>
         <tr>
-          <td class="c-orange">2차 매수<br><span style="font-size:9px; font-weight:400;">자금 30%</span></td>
-          <td>4조건 모두(ALL) 충족<br>
+          <td style="color:#26C6DA;font-weight:700;">바닥 확인<br><span style="font-size:9px; font-weight:400;">자금 30%</span></td>
+          <td>4조건 모두(ALL) 충족 &nbsp;|&nbsp; [정상장만]<br>
             ① 이중 바닥: 최근 5일 최저 ≥ 이전 5일 최저 × 0.98<br>
             ② RSI &gt; 35 + 3일 연속 상승 &nbsp; ③ MACD 골든크로스 또는 히스토그램 3일 연속 증가<br>
             ④ 거래량 ≥ 20일 평균 × 1.2</td>
         </tr>
         <tr>
-          <td class="c-green">3차 매수<br><span style="font-size:9px; font-weight:400;">자금 50%</span></td>
-          <td>4조건 모두(ALL) 충족 &nbsp;|&nbsp; 🚫 RSI &gt; 75 또는 장대음봉 시 금지<br>
+          <td style="color:#00E676;font-weight:700;">본격 매수<br><span style="font-size:9px; font-weight:400;">자금 50%</span></td>
+          <td>4조건 모두(ALL) 충족 &nbsp;|&nbsp; [정상장만]<br>
             ① 종가 2일 연속 MA20 위 마감 &nbsp; ② MA20 기울기 양수 (3일 전 대비)<br>
-            ③ MACD 라인 0선 위 돌파 &nbsp; ④ 거래량 ≥ 20일 평균 × 1.3</td>
+            ③ MACD 라인 0선 위 돌파 &nbsp; ④ 거래량 ≥ 20일 평균 × 1.3 또는 최근 5일 중 2일 연속 증가</td>
         </tr>
         <tr>
-          <td class="c-gray">관망</td>
-          <td>위 조건 미충족 — 현금 보유, 다음 신호 대기</td>
+          <td style="color:#FFA726;font-weight:700;">경계장</td>
+          <td>경계장에서 관심 진입 조건 미충족 — 관망 유지, 신호 재확인 대기</td>
+        </tr>
+        <tr>
+          <td style="color:#EF5350;font-weight:700;">하락장</td>
+          <td>QQQ·SPY 모두 MA200 아래 — 모든 신규 매수 금지, 현금 보존</td>
+        </tr>
+        <tr>
+          <td style="color:#FFFFFF;font-weight:700;">대기</td>
+          <td>정상장이나 단계 조건 미충족 — 현금 보유, 다음 신호 대기</td>
         </tr>
       </tbody>
     </table>
