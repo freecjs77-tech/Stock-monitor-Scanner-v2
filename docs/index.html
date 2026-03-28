@@ -451,82 +451,88 @@ tr:nth-child(even) td { background: var(--row2); }
 
   <div style="margin-top: 28px;">
     <div class="section-title">
-      <h2>판정 조건 기준</h2>
+      <h2>판정 조건 기준 (v2.2 성장주 / v2.4 ETF / v2.3 에너지 / v2.5 Exit)</h2>
       <span>타이밍 판단에 사용된 기술적 조건 요약</span>
     </div>
     <table class="cond-table">
       <tbody>
+        <!-- 공통 시장 필터 -->
         <tr>
-          <td style="color:var(--sub);font-size:10px;font-weight:700;">0️⃣ 시장 필터</td>
+          <td style="color:var(--sub);font-size:10px;font-weight:700;">0️⃣ 공통<br>시장 필터</td>
           <td class="cond-text">정상장: QQQ &gt; MA200 AND SPY &gt; MA200 → 전 단계 허용<br>
-            경계장: 둘 중 하나만 MA200 위 → 관심 진입(20%)만 허용<br>
-            하락장: QQQ·SPY 모두 MA200 아래 → 신규 매수 금지</td>
+            경계장: 둘 중 하나만 MA200 위 → 관심 진입(1차 20%)만 허용<br>
+            하락장: QQQ·SPY 모두 MA200 아래 → 신규 매수 절대 금지 &nbsp;|&nbsp; ⚠ VIX &gt; 25: 전체 비중 70% 축소 권장</td>
+        </tr>
+        <!-- v2.2 성장주 -->
+        <tr>
+          <td style="color:#90CAF9;font-weight:700;">성장주 v2.2<br><span style="font-size:9px;font-weight:400;">관심 진입 20%</span></td>
+          <td class="cond-text">[필수] MACD 히스토그램 2일 연속 증가 + 6조건 중 3개 이상 &nbsp;|&nbsp; 🚫 RSI &gt; 50 또는 -5%↓ 시 금지<br>
+            ① RSI ≤ 38 &nbsp; ② ADX ≤ 25 &nbsp; ③ 종가 ≤ BB하단×1.02 &nbsp; ④ 종가 &lt; MA20 &nbsp; ⑤ 하락멈춤 &nbsp; ⑥ +2% 양봉</td>
         </tr>
         <tr>
-          <td style="color:#FFEE58;font-weight:700;">관심 진입<br><span style="font-size:9px;font-weight:400;">자금 20%</span></td>
-          <td class="cond-text">[필수] MACD 히스토그램 2일 연속 증가 &nbsp;+&nbsp; 6조건 중 3개 이상 &nbsp;|&nbsp; 🚫 RSI &gt; 50 또는 당일 -5% 이상 시 금지<br>
-            ① RSI(14) ≤ 38 &nbsp; ② ADX(14) ≤ 25 &nbsp; ③ 종가 ≤ BB하단 × 1.02<br>
-            ④ 종가 &lt; MA20 &nbsp; ⑤ 하락 멈춤(오늘 ≥ 최근 3일 최저) &nbsp; ⑥ 당일 +2% 이상 양봉 (윗꼬리 ≤ 2%)</td>
+          <td style="color:#90CAF9;font-weight:700;">성장주 v2.2<br><span style="font-size:9px;font-weight:400;">바닥 확인 30%</span></td>
+          <td class="cond-text">[정상장] 4조건 ALL — ① 이중바닥(≥0.98) &nbsp; ② RSI&gt;35 + 3일상승 &nbsp; ③ MACD골든크로스 또는 히스토3일↑ &nbsp; ④ 거래량≥1.2배</td>
         </tr>
         <tr>
-          <td style="color:#26C6DA;font-weight:700;">바닥 확인<br><span style="font-size:9px;font-weight:400;">자금 30%</span></td>
-          <td class="cond-text">4조건 모두(ALL) 충족 &nbsp;|&nbsp; [정상장만]<br>
-            ① 이중 바닥: 최근 5일 최저 ≥ 이전 5일 최저 × 0.98<br>
-            ② RSI &gt; 35 + 3일 연속 상승 &nbsp; ③ MACD 골든크로스 또는 히스토그램 3일 연속 증가<br>
-            ④ 거래량 ≥ 20일 평균 × 1.2</td>
+          <td style="color:#90CAF9;font-weight:700;">성장주 v2.2<br><span style="font-size:9px;font-weight:400;">본격 매수 50%</span></td>
+          <td class="cond-text">[정상장] 4조건 ALL — ① MA20 2일연속 위 &nbsp; ② MA20 기울기↑ &nbsp; ③ MACD 0선 위 &nbsp; ④ 거래량≥1.3배 또는 5일중 2일↑</td>
+        </tr>
+        <!-- v2.4 ETF -->
+        <tr>
+          <td style="color:#64B5F6;font-weight:700;">ETF v2.4<br><span style="font-size:9px;font-weight:400;">관심 진입 20%</span></td>
+          <td class="cond-text">[정상장·경계장] 5조건 중 3개 이상 &nbsp;|&nbsp; 🚫 RSI &gt; 70 전 단계 금지<br>
+            ① RSI ≤ 40 &nbsp; ② 종가 &lt; MA20 &nbsp; ③ BB하단 근접 &nbsp; ④ 하락멈춤 &nbsp; ⑤ 52주 고점 대비 -5% 이상 조정</td>
         </tr>
         <tr>
-          <td style="color:#00E676;font-weight:700;">본격 매수<br><span style="font-size:9px;font-weight:400;">자금 50%</span></td>
-          <td class="cond-text">4조건 모두(ALL) 충족 &nbsp;|&nbsp; [정상장만]<br>
-            ① 종가 2일 연속 MA20 위 마감 &nbsp; ② MA20 기울기 양수 (3일 전 대비)<br>
-            ③ MACD 라인 0선 위 돌파 &nbsp; ④ 거래량 ≥ 20일 평균 × 1.3 또는 최근 5일 중 2일 연속 증가</td>
+          <td style="color:#64B5F6;font-weight:700;">ETF v2.4<br><span style="font-size:9px;font-weight:400;">바닥 확인 30%</span></td>
+          <td class="cond-text">[정상장] 4조건 중 3개 이상 — ① RSI &gt; 42 &nbsp; ② MACD 골든크로스 &nbsp; ③ MA20 위 또는 이탈아님 &nbsp; ④ Higher Low</td>
         </tr>
+        <tr>
+          <td style="color:#64B5F6;font-weight:700;">ETF v2.4<br><span style="font-size:9px;font-weight:400;">본격 매수 50%</span></td>
+          <td class="cond-text">[정상장] 4조건 중 3개 이상 — ① MA20 2일연속 위 &nbsp; ② MA20 기울기↑ &nbsp; ③ RSI &gt; 48 &nbsp; ④ MACD 0선 위</td>
+        </tr>
+        <!-- v2.3 에너지 -->
+        <tr>
+          <td style="color:#A5D6A7;font-weight:700;">에너지 v2.3<br><span style="font-size:9px;font-weight:400;">관심 진입 20%</span></td>
+          <td class="cond-text">성장주 v2.2 1차 조건과 동일 (보수적 정찰) &nbsp;|&nbsp; 🚫 RSI &gt; 70 전 단계 금지</td>
+        </tr>
+        <tr>
+          <td style="color:#A5D6A7;font-weight:700;">에너지 v2.3<br><span style="font-size:9px;font-weight:400;">바닥 확인 30%</span></td>
+          <td class="cond-text">[정상장] 4조건 중 3개 이상 — ① 이중바닥(±3%) &nbsp; ② RSI &gt; 40 &nbsp; ③ MACD 골든크로스 &nbsp; ④ 종가 &gt; MA20</td>
+        </tr>
+        <tr>
+          <td style="color:#A5D6A7;font-weight:700;">에너지 v2.3<br><span style="font-size:9px;font-weight:400;">본격 매수 50%</span></td>
+          <td class="cond-text">[정상장] 4조건 중 3개 이상 — ① MA20 2일 위 &nbsp; ② MA20 기울기↑ &nbsp; ③ MACD 골든크로스 &nbsp; ④ RSI &gt; 45</td>
+        </tr>
+        <!-- Exit v2.5 -->
+        <tr>
+          <td style="color:#FFEE58;font-weight:700;">📡 Early Warning</td>
+          <td class="cond-text">2개 이상: MACD히스토↓ / RSI 65이상→꺾임 / BB상단 터치후 이탈 / 종가↑+거래량↓<br>→ 관찰 강화, 신규 매수 금지</td>
+        </tr>
+        <tr>
+          <td style="color:#FFA726;font-weight:700;">📡 Trend Weakening</td>
+          <td class="cond-text">2개 이상: MACD히스토 3일↓ / RSI 고점낮아짐 / MA20 1일이탈 / RSI 65꺾임<br>→ 보유 30~50% 익절 권장</td>
+        </tr>
+        <tr>
+          <td style="color:#EF5350;font-weight:700;">📡 Trend Breakdown</td>
+          <td class="cond-text">1개라도: MA20 2일이탈 / 저점 하향돌파 / MACD 데드크로스 / -8% 트레일링스탑<br>→ 적극 매도, 전량 청산 고려</td>
+        </tr>
+        <tr>
+          <td style="color:#FF1744;font-weight:700;">⚠️ 과열 경보</td>
+          <td class="cond-text">RSI ≥ 75 / BB상단 바깥 2일연속 / 최근 3일 +10% 이상<br>→ 즉시 일부 강제 익절, "더 가더라도 내 자리 아님"</td>
+        </tr>
+        <!-- 시장 상태 -->
         <tr>
           <td style="color:#FFA726;font-weight:700;">경계장</td>
-          <td class="cond-text">경계장에서 관심 진입 조건 미충족 — 관망 유지, 신호 재확인 대기</td>
+          <td class="cond-text">경계장에서 관심 진입 조건 미충족 — 관망, 신호 재확인 대기</td>
         </tr>
         <tr>
           <td style="color:#EF5350;font-weight:700;">하락장</td>
-          <td class="cond-text">QQQ·SPY 모두 MA200 아래 — 모든 신규 매수 금지, 현금 보존</td>
+          <td class="cond-text">QQQ·SPY 모두 MA200 아래 — 모든 신규 매수 절대 금지, 현금 100% 보존</td>
         </tr>
         <tr>
           <td style="color:#FFFFFF;font-weight:700;">대기</td>
           <td class="cond-text">정상장이나 단계 조건 미충족 — 현금 보유, 다음 신호 대기</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Exit v2.5 조건 기준 -->
-  <div style="margin-top:24px;">
-    <div class="section-title">
-      <h2>📡 Exit v2.5 청산 신호 기준</h2>
-      <span>보유 포지션 청산/축소 타이밍 — 매수 전략과 독립적으로 적용</span>
-    </div>
-    <table class="cond-table">
-      <tbody>
-        <tr>
-          <td style="color:#FF1744;font-weight:700;">⚠️ 과열 경보<br><span style="font-size:9px;font-weight:400;">즉시 실현 검토</span></td>
-          <td class="cond-text">아래 중 <b>1개라도</b> 충족 시 발동<br>
-            ① RSI ≥ 75 &nbsp; ② BB 상단 <b>2일 연속</b> 돌파 &nbsp; ③ 3일간 <b>10% 이상</b> 급등</td>
-        </tr>
-        <tr>
-          <td style="color:#EF5350;font-weight:700;">Trend Breakdown<br><span style="font-size:9px;font-weight:400;">포지션 축소 권장</span></td>
-          <td class="cond-text">아래 중 <b>1개라도</b> 충족 시 발동<br>
-            ① MA20 <b>2일 연속</b> 하회 &nbsp; ② 직전 10일 저점 하향 돌파(Lower Low)<br>
-            ③ MACD 데드크로스 발생 &nbsp; ④ 최근 20일 고점 대비 <b>-8%</b> 이하</td>
-        </tr>
-        <tr>
-          <td style="color:#FFA726;font-weight:700;">Trend Weakening<br><span style="font-size:9px;font-weight:400;">비중 조절 고려</span></td>
-          <td class="cond-text">아래 중 <b>2개 이상</b> 충족 시 발동<br>
-            ① MACD 히스토그램 <b>3일 연속</b> 감소 &nbsp; ② RSI 고점 하락 (최근 5일 고점 &lt; 이전 5일 고점)<br>
-            ③ MA20 1일 하회 &nbsp; ④ RSI 피크 후 하락 (전일 RSI ≥ 65 + 오늘 하락)</td>
-        </tr>
-        <tr>
-          <td style="color:#FFEE58;font-weight:700;">Early Warning<br><span style="font-size:9px;font-weight:400;">신규 매수 자제</span></td>
-          <td class="cond-text">아래 중 <b>2개 이상</b> 충족 시 발동<br>
-            ① MACD 히스토그램 <b>1일</b> 감소 &nbsp; ② RSI 피크 신호 (전일 ≥ 65 + 오늘 하락)<br>
-            ③ BB 상단 돌파 후 후퇴 &nbsp; ④ 거래량 다이버전스 (종가↑ + 거래량↓)</td>
         </tr>
       </tbody>
     </table>
