@@ -451,126 +451,326 @@ def opinion_label(total):
 # ══════════════════════════════════════════════════════════════════
 
 def get_condition_breakdown(d):
-    """판정2 기준 각 단계별 조건 체크 결과 반환 (HTML 표시용)"""
-    def sig(key, default=False):
-        return bool(d.get(key, default))
+    """판정2 기준 각 단계별 조건 체크 결과 반환 (HTML 표시용) — strategy_type 분기"""
+    stype = _get_strategy_type(d)
+    if stype == 'etf':
+        return _breakdown_etf(d)
+    if stype == 'energy':
+        return _breakdown_energy(d)
+    return _breakdown_growth(d)
 
-    rsi  = d.get('rsi', 0)
-    adx  = d.get('adx', 0)
-    chg  = d.get('change_pct', 0)
-    close = d.get('close', 0)
-    ma20  = d.get('ma20', close)
-    bb_l  = d.get('bb_lower', 0)
 
-    # ── 1차 매수 조건 ([필수] MACD히스토2일증가 + 6개 중 3개 이상) ──
-    block1 = sig('sig_block_rsi50') or sig('sig_block_bigdrop')
+def _breakdown_growth(d):
+    """v2.2 성장주 판정 근거"""
+    def sig(key, default=False): return bool(d.get(key, default))
+    rsi   = d.get('rsi', 0);  adx  = d.get('adx', 0)
+    chg   = d.get('change_pct', 0)
+    close = d.get('close', 0); ma20 = d.get('ma20', close)
+
+    block1       = sig('sig_block_rsi50') or sig('sig_block_bigdrop')
     macd_hist_2d = sig('sig_macd_hist_2d_up')
     cond1 = [
         {'name': '[필수] MACD 히스토그램 2일 연속 증가',
          'pass': macd_hist_2d,
-         'ok':   '하락 에너지가 이틀 연속 줄어들고 있어요',
-         'fail': '하락 에너지가 아직 줄어들지 않았어요 (필수 미충족)'},
+         'ok':  '하락 에너지가 이틀 연속 줄어들고 있어요',
+         'fail':'하락 에너지가 아직 줄어들지 않았어요 (필수 미충족)'},
         {'name': 'RSI(14) ≤ 38',
          'pass': sig('sig_rsi_le38'),
-         'ok':   f'RSI {rsi:.1f} — 충분히 과매도 상태예요',
-         'fail': f'RSI {rsi:.1f} — 기준(38)보다 아직 높아요'},
+         'ok':  f'RSI {rsi:.1f} — 충분히 과매도 상태예요',
+         'fail':f'RSI {rsi:.1f} — 기준(38)보다 아직 높아요'},
         {'name': 'ADX(14) ≤ 25',
          'pass': sig('sig_adx_le25'),
-         'ok':   f'ADX {adx:.1f} — 하락 에너지가 약해지고 있어요',
-         'fail': f'ADX {adx:.1f} — 아직 추세가 강하게 지속 중이에요'},
+         'ok':  f'ADX {adx:.1f} — 하락 에너지가 약해지고 있어요',
+         'fail':f'ADX {adx:.1f} — 아직 추세가 강하게 지속 중이에요'},
         {'name': '종가 < MA20',
          'pass': sig('sig_below_ma20'),
-         'ok':   f'${close:.2f} < ${ma20:.2f} — 단기 이평선 아래에 있어요',
-         'fail': f'${close:.2f} ≥ ${ma20:.2f} — 이평선 위에 있어요'},
+         'ok':  f'${close:.2f} < ${ma20:.2f} — 단기 이평선 아래에 있어요',
+         'fail':f'${close:.2f} ≥ ${ma20:.2f} — 이평선 위에 있어요'},
         {'name': '하락 멈춤',
          'pass': sig('sig_low_stopped'),
-         'ok':   '최근 3일 저점보다 높아요 — 하락이 일단 멈췄어요',
-         'fail': '아직 저점을 갱신 중이에요 — 하락이 계속되고 있어요'},
+         'ok':  '최근 3일 저점보다 높아요 — 하락이 일단 멈췄어요',
+         'fail':'아직 저점을 갱신 중이에요 — 하락이 계속되고 있어요'},
         {'name': 'BB 하단 근처',
          'pass': sig('sig_near_bb_low'),
-         'ok':   f'볼린저 밴드 하단 지지구간에 있어요',
-         'fail': f'밴드 하단에서 아직 멀리 있어요'},
+         'ok':  '볼린저 밴드 하단 지지구간에 있어요',
+         'fail':'밴드 하단에서 아직 멀리 있어요'},
         {'name': '당일 +2% 이상 몸통 양봉 (윗꼬리≤2%)',
          'pass': sig('sig_bounce2pct'),
-         'ok':   f'오늘 {chg:+.1f}% — 꽉 찬 양봉 반등 신호가 나왔어요',
-         'fail': f'오늘 {chg:+.1f}% — 반등 or 몸통 기준 미충족'},
+         'ok':  f'오늘 {chg:+.1f}% — 꽉 찬 양봉 반등 신호가 나왔어요',
+         'fail':f'오늘 {chg:+.1f}% — 반등 or 몸통 기준 미충족'},
     ]
-    # 필수 제외한 선택 조건 충족 수
     met1 = sum(1 for c in cond1[1:] if c['pass'])
 
-    # ── 2차 매수 조건 (4개 ALL) ──────────────────────────────────
     cond2 = [
         {'name': '이중 바닥 패턴',
          'pass': sig('sig_double_bottom'),
-         'ok':   'W자 바닥 패턴이 확인됐어요',
-         'fail': '바닥 패턴이 아직 만들어지지 않았어요'},
+         'ok':  'W자 바닥 패턴이 확인됐어요',
+         'fail':'바닥 패턴이 아직 만들어지지 않았어요'},
         {'name': 'RSI > 35 + 3일 연속 상승',
          'pass': sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),
-         'ok':   f'RSI {rsi:.1f} — 반등 흐름이 이어지고 있어요',
-         'fail': f'RSI {rsi:.1f} — 반등이 아직 확인되지 않았어요'},
+         'ok':  f'RSI {rsi:.1f} — 반등 흐름이 이어지고 있어요',
+         'fail':f'RSI {rsi:.1f} — 반등이 아직 확인되지 않았어요'},
         {'name': 'MACD 골든크로스 or 히스토그램 3일↑',
          'pass': sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'),
-         'ok':   '상승 전환 신호가 나왔어요',
-         'fail': '상승 전환 신호를 기다리는 중이에요'},
+         'ok':  '상승 전환 신호가 나왔어요',
+         'fail':'상승 전환 신호를 기다리는 중이에요'},
         {'name': '거래량 평균 1.2배 이상',
          'pass': sig('sig_vol_1p2'),
-         'ok':   '평균보다 거래량이 많아요 — 매수 세력이 들어오고 있어요',
-         'fail': '거래량이 평균 이하예요 — 아직 조용한 상태예요'},
+         'ok':  '평균보다 거래량이 많아요',
+         'fail':'거래량이 평균 이하예요 — 아직 조용한 상태예요'},
     ]
     met2 = sum(1 for c in cond2 if c['pass'])
 
-    # ── 3차 매수 조건 (4개 ALL, RSI75 차단 제거) ─────────────────
     cond3 = [
         {'name': 'MA20 위에서 2일 연속',
          'pass': sig('sig_above_ma20_2d'),
-         'ok':   '이평선 위에 안착했어요 — 추세 전환 확인',
-         'fail': '이평선 위로 아직 안착하지 못했어요'},
+         'ok':  '이평선 위에 안착했어요 — 추세 전환 확인',
+         'fail':'이평선 위로 아직 안착하지 못했어요'},
         {'name': 'MA20 기울기 상향',
          'pass': sig('sig_ma20_slope_pos'),
-         'ok':   '이평선이 위를 향하고 있어요',
-         'fail': '이평선이 아직 내려가고 있어요'},
+         'ok':  '이평선이 위를 향하고 있어요',
+         'fail':'이평선이 아직 내려가고 있어요'},
         {'name': 'MACD 0선 위',
          'pass': sig('sig_macd_above_zero'),
-         'ok':   '상승 모멘텀이 확실히 살아났어요',
-         'fail': '모멘텀이 아직 음수 영역이에요'},
+         'ok':  '상승 모멘텀이 확실히 살아났어요',
+         'fail':'모멘텀이 아직 음수 영역이에요'},
         {'name': '거래량 1.3배 이상 or 최근 5일 중 2일 증가',
          'pass': sig('sig_vol_1p3') or sig('sig_vol_5d_2up'),
-         'ok':   '거래량 조건 충족 — 추세 신뢰도 높아요',
-         'fail': '거래량이 충분하지 않아요'},
+         'ok':  '거래량 조건 충족 — 추세 신뢰도 높아요',
+         'fail':'거래량이 충분하지 않아요'},
     ]
     met3 = sum(1 for c in cond3 if c['pass'])
-    block3 = False  # v2.2: RSI75 차단 제거
-
-    # 현재 판정
     sk, lbl, _ = trading_stage2(d)
-
     return {
-        'stage': sk,
-        'label': lbl,
+        'stage': sk, 'label': lbl,
         'ai_explanation': d.get('condition_explanation', ''),
         'entry1': {
-            'title': '🟡 1차 매수 조건 ([필수] MACD히스토2일증가 + 6개 중 3개 이상)',
-            'conditions': cond1,
-            'met': met1, 'required': 3, 'total': 6,
-            'mandatory_ok': macd_hist_2d,
-            'blocked': block1,
+            'title': '🟡 1차 매수 조건 — 성장주 v2.2 ([필수] MACD히스토2일증가 + 6개 중 3개 이상)',
+            'conditions': cond1, 'met': met1, 'required': 3, 'total': 6,
+            'mandatory_ok': macd_hist_2d, 'blocked': block1,
             'block_reason': ('RSI > 50 — 아직 과열 구간이에요' if sig('sig_block_rsi50')
-                             else '장대음봉 발생 (-5% 이상) — 추세가 강하게 꺾였어요' if sig('sig_block_bigdrop')
+                             else '장대음봉 발생 (-5% 이상)' if sig('sig_block_bigdrop')
                              else None if macd_hist_2d
                              else 'MACD 히스토그램 2일 연속 증가 미충족 (필수조건)'),
         },
         'entry2': {
-            'title': '🟢 2차 매수 조건 (4개 모두 충족)',
-            'conditions': cond2,
-            'met': met2, 'required': 4, 'total': 4,
+            'title': '🔵 2차 매수 조건 — 성장주 v2.2 (4개 모두 충족)',
+            'conditions': cond2, 'met': met2, 'required': 4, 'total': 4,
             'blocked': False, 'block_reason': None,
         },
         'entry3': {
-            'title': '🟢 3차 매수 조건 (4개 모두 충족)',
-            'conditions': cond3,
-            'met': met3, 'required': 4, 'total': 4,
-            'blocked': block3,
-            'block_reason': None,
+            'title': '🟢 3차 매수 조건 — 성장주 v2.2 (4개 모두 충족)',
+            'conditions': cond3, 'met': met3, 'required': 4, 'total': 4,
+            'blocked': False, 'block_reason': None,
+        },
+    }
+
+
+def _breakdown_etf(d):
+    """v2.4 ETF 판정 근거"""
+    def sig(key, default=False): return bool(d.get(key, default))
+    rsi   = d.get('rsi', 0)
+    close = d.get('close', 0); ma20 = d.get('ma20', close)
+    h52   = d.get('high_52w', close * 1.3)
+
+    rsi_block = sig('sig_rsi_gt70_block')
+    # 1차: 5조건 중 3개 (MACD 필수 없음)
+    cond1 = [
+        {'name': 'RSI(14) ≤ 40',
+         'pass': sig('sig_rsi_le40'),
+         'ok':  f'RSI {rsi:.1f} — 과매도 구간 진입',
+         'fail':f'RSI {rsi:.1f} — 아직 40 초과 (기준 미달)'},
+        {'name': '종가 < MA20',
+         'pass': sig('sig_below_ma20'),
+         'ok':  f'${close:.2f} < ${ma20:.2f} — MA20 아래에 있어요',
+         'fail':f'${close:.2f} ≥ ${ma20:.2f} — MA20 위에 있어요'},
+        {'name': 'BB 하단 근접',
+         'pass': sig('sig_near_bb_low'),
+         'ok':  '볼린저 밴드 하단 지지구간이에요',
+         'fail':'밴드 하단에서 아직 멀리 있어요'},
+        {'name': '하락 멈춤',
+         'pass': sig('sig_low_stopped'),
+         'ok':  '최근 3일 저점보다 높아요 — 하락이 일단 멈췄어요',
+         'fail':'아직 저점을 갱신 중이에요'},
+        {'name': f'52주 고점 대비 -5% 이상 조정 (고점 ${h52:.2f})',
+         'pass': sig('sig_correction_5pct'),
+         'ok':  f'고점 대비 충분히 조정됐어요',
+         'fail':f'고점 대비 조정 폭이 아직 부족해요'},
+    ]
+    met1 = sum(1 for c in cond1 if c['pass'])
+
+    # 2차: 4조건 중 3개
+    cond2 = [
+        {'name': 'RSI > 42',
+         'pass': sig('sig_rsi_gt42'),
+         'ok':  f'RSI {rsi:.1f} — 반등 흐름 시작',
+         'fail':f'RSI {rsi:.1f} — 아직 42 미만'},
+        {'name': 'MACD 골든크로스',
+         'pass': sig('sig_macd_golden'),
+         'ok':  'MACD 상향 교차 — 상승 전환 신호',
+         'fail':'MACD 골든크로스 아직 미발생'},
+        {'name': 'MA20 위 또는 근접 (이탈 아님)',
+         'pass': sig('sig_above_ma20_2d') or not sig('sig_below_ma20'),
+         'ok':  'MA20 위에 있거나 근접해요',
+         'fail':'MA20 아래 이탈 중'},
+        {'name': 'Higher Low (고점 하락 멈춤)',
+         'pass': sig('sig_higher_low'),
+         'ok':  '저점이 높아지고 있어요 — 매도 압력 감소',
+         'fail':'저점이 아직 낮아지고 있어요'},
+    ]
+    met2 = sum(1 for c in cond2 if c['pass'])
+
+    # 3차: 4조건 중 3개
+    cond3 = [
+        {'name': 'MA20 위에서 2일 연속',
+         'pass': sig('sig_above_ma20_2d'),
+         'ok':  'MA20 위에 안착 — 추세 전환 확인',
+         'fail':'MA20 위로 아직 안착하지 못했어요'},
+        {'name': 'MA20 기울기 상향',
+         'pass': sig('sig_ma20_slope_pos'),
+         'ok':  '이평선이 위를 향하고 있어요',
+         'fail':'이평선이 아직 내려가고 있어요'},
+        {'name': 'RSI > 48',
+         'pass': sig('sig_rsi_gt48'),
+         'ok':  f'RSI {rsi:.1f} — 중립선 위 상승 모멘텀',
+         'fail':f'RSI {rsi:.1f} — 48 미만 (모멘텀 부족)'},
+        {'name': 'MACD 0선 위',
+         'pass': sig('sig_macd_above_zero'),
+         'ok':  '상승 모멘텀이 확실히 살아났어요',
+         'fail':'모멘텀이 아직 음수 영역이에요'},
+    ]
+    met3 = sum(1 for c in cond3 if c['pass'])
+    sk, lbl, _ = trading_stage2(d)
+    return {
+        'stage': sk, 'label': lbl,
+        'ai_explanation': d.get('condition_explanation', ''),
+        'entry1': {
+            'title': '🟡 1차 매수 조건 — ETF v2.4 (5개 중 3개 이상, MACD 필수 없음)',
+            'conditions': cond1, 'met': met1, 'required': 3, 'total': 5,
+            'mandatory_ok': True, 'blocked': rsi_block,
+            'block_reason': f'RSI {rsi:.1f} > 70 — ETF 과열 차단 (전 단계 진입 불가)' if rsi_block else None,
+        },
+        'entry2': {
+            'title': '🔵 2차 매수 조건 — ETF v2.4 (4개 중 3개 이상)',
+            'conditions': cond2, 'met': met2, 'required': 3, 'total': 4,
+            'blocked': rsi_block, 'block_reason': None,
+        },
+        'entry3': {
+            'title': '🟢 3차 매수 조건 — ETF v2.4 (4개 중 3개 이상)',
+            'conditions': cond3, 'met': met3, 'required': 3, 'total': 4,
+            'blocked': rsi_block, 'block_reason': None,
+        },
+    }
+
+
+def _breakdown_energy(d):
+    """v2.3 에너지 판정 근거"""
+    def sig(key, default=False): return bool(d.get(key, default))
+    rsi   = d.get('rsi', 0);  adx  = d.get('adx', 0)
+    chg   = d.get('change_pct', 0)
+    close = d.get('close', 0); ma20 = d.get('ma20', close)
+
+    rsi_block    = sig('sig_rsi_gt70_block')
+    block1       = sig('sig_block_rsi50') or sig('sig_block_bigdrop')
+    macd_hist_2d = sig('sig_macd_hist_2d_up')
+    # 1차: 성장주 v2.2 동일 조건 | RSI > 70 차단
+    cond1 = [
+        {'name': '[필수] MACD 히스토그램 2일 연속 증가',
+         'pass': macd_hist_2d,
+         'ok':  '하락 에너지가 이틀 연속 줄어들고 있어요',
+         'fail':'하락 에너지가 아직 줄어들지 않았어요 (필수 미충족)'},
+        {'name': 'RSI(14) ≤ 38',
+         'pass': sig('sig_rsi_le38'),
+         'ok':  f'RSI {rsi:.1f} — 충분히 과매도 상태예요',
+         'fail':f'RSI {rsi:.1f} — 기준(38)보다 아직 높아요'},
+        {'name': 'ADX(14) ≤ 25',
+         'pass': sig('sig_adx_le25'),
+         'ok':  f'ADX {adx:.1f} — 하락 에너지가 약해지고 있어요',
+         'fail':f'ADX {adx:.1f} — 아직 추세가 강하게 지속 중이에요'},
+        {'name': '종가 < MA20',
+         'pass': sig('sig_below_ma20'),
+         'ok':  f'${close:.2f} < ${ma20:.2f} — 단기 이평선 아래에 있어요',
+         'fail':f'${close:.2f} ≥ ${ma20:.2f} — 이평선 위에 있어요'},
+        {'name': '하락 멈춤',
+         'pass': sig('sig_low_stopped'),
+         'ok':  '최근 3일 저점보다 높아요 — 하락이 일단 멈췄어요',
+         'fail':'아직 저점을 갱신 중이에요'},
+        {'name': 'BB 하단 근처',
+         'pass': sig('sig_near_bb_low'),
+         'ok':  '볼린저 밴드 하단 지지구간에 있어요',
+         'fail':'밴드 하단에서 아직 멀리 있어요'},
+        {'name': '당일 +2% 이상 몸통 양봉 (윗꼬리≤2%)',
+         'pass': sig('sig_bounce2pct'),
+         'ok':  f'오늘 {chg:+.1f}% — 꽉 찬 양봉 반등 신호가 나왔어요',
+         'fail':f'오늘 {chg:+.1f}% — 반등 or 몸통 기준 미충족'},
+    ]
+    met1 = sum(1 for c in cond1[1:] if c['pass'])
+
+    # 2차: 4조건 중 3개 (이중바닥±3%, RSI>40, MACD골든, 종가>MA20)
+    cond2 = [
+        {'name': '이중 바닥 (±3% 허용)',
+         'pass': sig('sig_double_bottom_3pct'),
+         'ok':  '에너지 섹터 바닥 패턴 확인 (±3%)',
+         'fail':'바닥 패턴이 아직 확인되지 않았어요'},
+        {'name': 'RSI > 40',
+         'pass': sig('sig_rsi_gt40'),
+         'ok':  f'RSI {rsi:.1f} — 과매도 탈출 신호',
+         'fail':f'RSI {rsi:.1f} — 아직 40 미만'},
+        {'name': 'MACD 골든크로스',
+         'pass': sig('sig_macd_golden'),
+         'ok':  'MACD 상향 교차 — 상승 전환 신호',
+         'fail':'MACD 골든크로스 아직 미발생'},
+        {'name': '종가 > MA20',
+         'pass': not sig('sig_below_ma20'),
+         'ok':  f'${close:.2f} > ${ma20:.2f} — MA20 위에 안착',
+         'fail':f'${close:.2f} ≤ ${ma20:.2f} — 아직 MA20 아래'},
+    ]
+    met2 = sum(1 for c in cond2 if c['pass'])
+
+    # 3차: 4조건 중 3개 (MA20 2일↑, 기울기↑, MACD골든, RSI>45)
+    cond3 = [
+        {'name': 'MA20 위에서 2일 연속',
+         'pass': sig('sig_above_ma20_2d'),
+         'ok':  'MA20 위에 안착 — 추세 전환 확인',
+         'fail':'MA20 위로 아직 안착하지 못했어요'},
+        {'name': 'MA20 기울기 상향',
+         'pass': sig('sig_ma20_slope_pos'),
+         'ok':  '이평선이 위를 향하고 있어요',
+         'fail':'이평선이 아직 내려가고 있어요'},
+        {'name': 'MACD 골든크로스',
+         'pass': sig('sig_macd_golden'),
+         'ok':  '상승 전환 신호가 나왔어요',
+         'fail':'골든크로스를 기다리는 중이에요'},
+        {'name': 'RSI > 45',
+         'pass': sig('sig_rsi_gt45'),
+         'ok':  f'RSI {rsi:.1f} — 상승 모멘텀 확인',
+         'fail':f'RSI {rsi:.1f} — 45 미만 (모멘텀 부족)'},
+    ]
+    met3 = sum(1 for c in cond3 if c['pass'])
+    sk, lbl, _ = trading_stage2(d)
+    return {
+        'stage': sk, 'label': lbl,
+        'ai_explanation': d.get('condition_explanation', ''),
+        'entry1': {
+            'title': '🟡 1차 매수 조건 — 에너지 v2.3 ([필수] MACD히스토2일증가 + 6개 중 3개 이상)',
+            'conditions': cond1, 'met': met1, 'required': 3, 'total': 6,
+            'mandatory_ok': macd_hist_2d,
+            'blocked': rsi_block or block1,
+            'block_reason': (f'RSI {rsi:.1f} > 70 — 에너지 전략 과열 차단' if rsi_block
+                             else 'RSI > 50' if sig('sig_block_rsi50')
+                             else '장대음봉 발생' if sig('sig_block_bigdrop')
+                             else None if macd_hist_2d
+                             else 'MACD 히스토그램 2일 연속 증가 미충족 (필수조건)'),
+        },
+        'entry2': {
+            'title': '🔵 2차 매수 조건 — 에너지 v2.3 (4개 중 3개 이상)',
+            'conditions': cond2, 'met': met2, 'required': 3, 'total': 4,
+            'blocked': rsi_block, 'block_reason': None,
+        },
+        'entry3': {
+            'title': '🟢 3차 매수 조건 — 에너지 v2.3 (4개 중 3개 이상)',
+            'conditions': cond3, 'met': met3, 'required': 3, 'total': 4,
+            'blocked': rsi_block, 'block_reason': None,
         },
     }
 
