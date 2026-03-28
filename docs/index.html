@@ -82,6 +82,11 @@ tr:nth-child(even) td { background: var(--row2); }
 .badge-caution { color: #FFA726; background: rgba(255,167,38,0.12); }
 .badge-sell    { color: #EF5350; background: rgba(239,83,80,0.12); }
 .badge-watch   { color: #FFFFFF; background: rgba(255,255,255,0.06); }
+/* Exit v2.5 배지 */
+.badge-exit-hot   { color: #FF1744; background: rgba(255,23,68,0.15);   font-size:10px; padding:2px 7px; border-radius:3px; font-weight:700; }
+.badge-exit-break { color: #EF5350; background: rgba(239,83,80,0.12);   font-size:10px; padding:2px 7px; border-radius:3px; font-weight:700; }
+.badge-exit-weak  { color: #FFA726; background: rgba(255,167,38,0.12);  font-size:10px; padding:2px 7px; border-radius:3px; font-weight:700; }
+.badge-exit-warn  { color: #FFEE58; background: rgba(255,238,88,0.10);  font-size:10px; padding:2px 7px; border-radius:3px; font-weight:700; }
 
 /* 색상 유틸 */
 .c-green  { color: var(--green); }
@@ -247,8 +252,10 @@ tr:nth-child(even) td { background: var(--row2); }
     <thead>
       <tr>
         <th>티커</th>
+        <th>전략</th>
         <th>판정1<br><span style="font-size:9px;font-weight:400;color:var(--sub);">시장필터 포함</span></th>
         <th>판정2<br><span style="font-size:9px;font-weight:400;color:var(--sub);">기술신호만</span></th>
+        <th>Exit v2.5</th>
         <th>종가</th>
         <th>변동률</th>
         <th>RSI</th>
@@ -261,8 +268,10 @@ tr:nth-child(even) td { background: var(--row2); }
         <td class="bold">
           <a href="MU.html" style="color:var(--text);text-decoration:none;">MU</a>
         </td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">성장주 v2.2</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td><span style="color:var(--sub);font-size:10px;">-</span></td>
         <td class="bold">$357.22</td>
         <td class="c-green bold">+0.50%</td>
         <td class="">37.7</td>
@@ -273,8 +282,10 @@ tr:nth-child(even) td { background: var(--row2); }
         <td class="bold">
           <a href="GOOGL.html" style="color:var(--text);text-decoration:none;">GOOGL</a>
         </td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">성장주 v2.2</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td><span style="color:var(--sub);font-size:10px;">-</span></td>
         <td class="bold">$274.34</td>
         <td class="c-red bold">-2.34%</td>
         <td class="c-green bold">25.2</td>
@@ -285,8 +296,10 @@ tr:nth-child(even) td { background: var(--row2); }
         <td class="bold">
           <a href="AMZN.html" style="color:var(--text);text-decoration:none;">AMZN</a>
         </td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">성장주 v2.2</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td><span style="color:var(--sub);font-size:10px;">-</span></td>
         <td class="bold">$199.34</td>
         <td class="c-red bold">-3.95%</td>
         <td class="">37.8</td>
@@ -297,8 +310,10 @@ tr:nth-child(even) td { background: var(--row2); }
         <td class="bold">
           <a href="SPY.html" style="color:var(--text);text-decoration:none;">SPY</a>
         </td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">ETF v2.4</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td><span style="color:var(--sub);font-size:10px;">-</span></td>
         <td class="bold">$634.09</td>
         <td class="c-red bold">-1.71%</td>
         <td class="c-green bold">28.5</td>
@@ -309,8 +324,10 @@ tr:nth-child(even) td { background: var(--row2); }
         <td class="bold">
           <a href="QQQ.html" style="color:var(--text);text-decoration:none;">QQQ</a>
         </td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">ETF v2.4</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td><span style="color:var(--sub);font-size:10px;">-</span></td>
         <td class="bold">$562.58</td>
         <td class="c-red bold">-1.95%</td>
         <td class="c-green bold">30.4</td>
@@ -321,8 +338,10 @@ tr:nth-child(even) td { background: var(--row2); }
         <td class="bold">
           <a href="TLT.html" style="color:var(--text);text-decoration:none;">TLT</a>
         </td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">ETF v2.4</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td><span style="color:var(--sub);font-size:10px;">-</span></td>
         <td class="bold">$85.64</td>
         <td class="c-red bold">-0.55%</td>
         <td class="">38.3</td>
@@ -333,8 +352,10 @@ tr:nth-child(even) td { background: var(--row2); }
         <td class="bold">
           <a href="TSLA.html" style="color:var(--text);text-decoration:none;">TSLA</a>
         </td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">성장주 v2.2</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td><span style="color:var(--sub);font-size:10px;">-</span></td>
         <td class="bold">$361.83</td>
         <td class="c-red bold">-2.76%</td>
         <td class="c-green bold">33.9</td>
@@ -345,8 +366,10 @@ tr:nth-child(even) td { background: var(--row2); }
         <td class="bold">
           <a href="SOXL.html" style="color:var(--text);text-decoration:none;">SOXL</a>
         </td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">ETF v2.4</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td><span style="color:var(--sub);font-size:10px;">-</span></td>
         <td class="bold">$46.61</td>
         <td class="c-red bold">-4.82%</td>
         <td class="">39.0</td>
@@ -357,8 +380,10 @@ tr:nth-child(even) td { background: var(--row2); }
         <td class="bold">
           <a href="GLD.html" style="color:var(--text);text-decoration:none;">GLD</a>
         </td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">ETF v2.4</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td><span style="color:var(--sub);font-size:10px;">-</span></td>
         <td class="bold">$414.70</td>
         <td class="c-green bold">+3.51%</td>
         <td class="">38.4</td>
@@ -369,8 +394,10 @@ tr:nth-child(even) td { background: var(--row2); }
         <td class="bold">
           <a href="SLV.html" style="color:var(--text);text-decoration:none;">SLV</a>
         </td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">ETF v2.4</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td><span style="color:var(--sub);font-size:10px;">-</span></td>
         <td class="bold">$63.44</td>
         <td class="c-green bold">+4.39%</td>
         <td class="">40.0</td>
@@ -381,8 +408,10 @@ tr:nth-child(even) td { background: var(--row2); }
         <td class="bold">
           <a href="NVDA.html" style="color:var(--text);text-decoration:none;">NVDA</a>
         </td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">성장주 v2.2</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td><span style="color:var(--sub);font-size:10px;">-</span></td>
         <td class="bold">$167.52</td>
         <td class="c-red bold">-2.17%</td>
         <td class="">35.8</td>
@@ -393,8 +422,10 @@ tr:nth-child(even) td { background: var(--row2); }
         <td class="bold">
           <a href="CRCL.html" style="color:var(--text);text-decoration:none;">CRCL</a>
         </td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">성장주 v2.2</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td><span style="color:var(--sub);font-size:10px;">-</span></td>
         <td class="bold">$93.66</td>
         <td class="c-red bold">-4.69%</td>
         <td class="">43.5</td>
@@ -405,8 +436,10 @@ tr:nth-child(even) td { background: var(--row2); }
         <td class="bold">
           <a href="XOM.html" style="color:var(--text);text-decoration:none;">XOM</a>
         </td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">에너지 v2.3</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-entry3">본격 매수</span></td>
+        <td><span style="color:var(--sub);font-size:10px;">-</span></td>
         <td class="bold">$170.99</td>
         <td class="c-green bold">+3.36%</td>
         <td class="c-red bold">76.3</td>

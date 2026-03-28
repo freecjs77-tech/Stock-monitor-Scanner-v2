@@ -36,8 +36,10 @@
     <thead>
       <tr>
         <th>티커</th>
+        <th>전략</th>
         <th>판정1<br><span style="font-size:9px;font-weight:400;color:var(--sub);">시장필터 포함</span></th>
         <th>판정2<br><span style="font-size:9px;font-weight:400;color:var(--sub);">기술신호만</span></th>
+        <th>Exit v2.5</th>
         <th>종가</th>
         <th>변동률</th>
         <th>RSI</th>
@@ -50,8 +52,10 @@
         <td class="bold">
           <a href="{{ s.ticker }}.html" style="color:var(--text);text-decoration:none;">{{ s.ticker }}</a>
         </td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">{{ s.stype_lbl }}</td>
         <td><span class="badge badge-{{ s.sk1 }}">{{ s.lbl1 }}</span></td>
         <td><span class="badge badge-{{ s.sk2 }}">{{ s.lbl2 }}</span></td>
+        <td>{% if s.ex_lbl and s.ex_lbl != '-' %}<span class="badge badge-{{ s.ex_cls }}" title="{{ s.ex_detail }}">{{ s.ex_lbl }}</span>{% else %}<span style="color:var(--sub);font-size:10px;">-</span>{% endif %}</td>
         <td class="bold">${{ "%.2f"|format(s.close) }}</td>
         <td class="{{ 'c-green bold' if s.chg >= 0 else 'c-red bold' }}">{{ "%+.2f"|format(s.chg) }}%</td>
         <td class="{{ 'c-green bold' if s.rsi <= 35 else 'c-red bold' if s.rsi >= 70 else '' }}">{{ "%.1f"|format(s.rsi) }}</td>
