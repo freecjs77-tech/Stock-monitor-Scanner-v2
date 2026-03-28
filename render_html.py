@@ -263,6 +263,7 @@ def render(target_tickers=None, open_browser=False):
         except Exception:
             breakdown = None
 
+        ex_level, ex_lbl, _, ex_detail = calc_exit_signal(d)
         html = tmpl.render(
             d=d,
             sk1=get_badge_class(sk1), lbl1=lbl1, stage_desc1=stage_desc1,
@@ -274,6 +275,11 @@ def render(target_tickers=None, open_browser=False):
             pos_pct=pos_pct,
             stocks=nav_stocks,
             breakdown=breakdown,
+            ex_level=ex_level,
+            ex_lbl=ex_lbl,
+            ex_cls=get_exit_badge_class(ex_level),
+            ex_detail=ex_detail,
+            stype_lbl=get_stype_label(d),
         )
         out = os.path.join(OUTPUT_DIR, f"{d['ticker']}.html")
         with open(out, 'w', encoding='utf-8') as f:

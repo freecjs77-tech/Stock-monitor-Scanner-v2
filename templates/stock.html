@@ -13,7 +13,10 @@
   <!-- 헤더 -->
   <div class="page-header" style="margin-bottom:16px; border-radius:6px 6px 0 0;">
     <div>
-      <h1 style="font-size:18px;">{{ d.ticker }} &nbsp;<span style="font-weight:400; color:#ffffff; font-size:14px;">{{ d.company }}</span></h1>
+      <h1 style="font-size:18px;">{{ d.ticker }} &nbsp;<span style="font-weight:400; color:#ffffff; font-size:14px;">{{ d.company }}</span>
+        <span style="font-size:9px; color:rgba(100,181,246,0.8); border:1px solid rgba(100,181,246,0.3); border-radius:3px; padding:1px 5px; margin-left:6px; vertical-align:middle;">{{ stype_lbl }}</span>
+        {% if ex_level > 0 %}<span class="badge badge-{{ ex_cls }}" style="font-size:9px; vertical-align:middle; margin-left:4px;" title="{{ ex_detail }}">📡 {{ ex_lbl }}</span>{% endif %}
+      </h1>
       <div style="font-size:11px; color:#ffffff; margin-top:4px;">{{ d.exchange }} | {{ d.sector }} | {{ today_str }}</div>
     </div>
     <div style="text-align:right;">
@@ -100,6 +103,26 @@
       </div>
     </div>
   </div>
+
+  <!-- Exit v2.5 신호 섹션 -->
+  {% if ex_level > 0 %}
+  <div style="background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:14px 16px; margin-top:12px;">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+      <div style="font-size:13px; font-weight:700; color:var(--fg);">📡 Exit v2.5 신호</div>
+      <span class="badge badge-{{ ex_cls }}">{{ ex_lbl }}</span>
+    </div>
+    <div style="font-size:12px; color:#ffffff; line-height:1.8; background:var(--bg); border-radius:4px; padding:10px 14px;">
+      {% for line in ex_detail.split(' | ') %}<div>• {{ line }}</div>{% endfor %}
+    </div>
+    <div style="margin-top:10px; font-size:11px; color:var(--sub); line-height:1.6;">
+      {% if ex_level == 99 %}⚠️ <b style="color:#FF1744;">과열 경보</b> — RSI≥75 또는 BB 상단 2일 연속 돌파 또는 3일 10% 급등. 즉시 수익 실현 검토.
+      {% elif ex_level == 3 %}🔴 <b style="color:#EF5350;">Trend Breakdown</b> — 추세 붕괴 신호. MA20 이탈/저점 하락/MACD 데드크로스/고점比 -8% 중 1개 이상 발생. 포지션 축소 권장.
+      {% elif ex_level == 2 %}🟠 <b style="color:#FFA726;">Trend Weakening</b> — 추세 약화. MACD히스토/RSI/MA20 복합 신호 2개 이상. 비중 조절 고려.
+      {% elif ex_level == 1 %}🟡 <b style="color:#FFEE58;">Early Warning</b> — 초기 경고. 단기 과열/다이버전스 2개 이상. 신규 매수 자제, 기존 포지션 모니터링.
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
 
   <!-- 판정 근거 설명 -->
   {% if breakdown %}

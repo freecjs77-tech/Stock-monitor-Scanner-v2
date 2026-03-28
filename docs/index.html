@@ -496,6 +496,41 @@ tr:nth-child(even) td { background: var(--row2); }
       </tbody>
     </table>
   </div>
+
+  <!-- Exit v2.5 조건 기준 -->
+  <div style="margin-top:24px;">
+    <div class="section-title">
+      <h2>📡 Exit v2.5 청산 신호 기준</h2>
+      <span>보유 포지션 청산/축소 타이밍 — 매수 전략과 독립적으로 적용</span>
+    </div>
+    <table class="cond-table">
+      <tbody>
+        <tr>
+          <td style="color:#FF1744;font-weight:700;">⚠️ 과열 경보<br><span style="font-size:9px;font-weight:400;">즉시 실현 검토</span></td>
+          <td class="cond-text">아래 중 <b>1개라도</b> 충족 시 발동<br>
+            ① RSI ≥ 75 &nbsp; ② BB 상단 <b>2일 연속</b> 돌파 &nbsp; ③ 3일간 <b>10% 이상</b> 급등</td>
+        </tr>
+        <tr>
+          <td style="color:#EF5350;font-weight:700;">Trend Breakdown<br><span style="font-size:9px;font-weight:400;">포지션 축소 권장</span></td>
+          <td class="cond-text">아래 중 <b>1개라도</b> 충족 시 발동<br>
+            ① MA20 <b>2일 연속</b> 하회 &nbsp; ② 직전 10일 저점 하향 돌파(Lower Low)<br>
+            ③ MACD 데드크로스 발생 &nbsp; ④ 최근 20일 고점 대비 <b>-8%</b> 이하</td>
+        </tr>
+        <tr>
+          <td style="color:#FFA726;font-weight:700;">Trend Weakening<br><span style="font-size:9px;font-weight:400;">비중 조절 고려</span></td>
+          <td class="cond-text">아래 중 <b>2개 이상</b> 충족 시 발동<br>
+            ① MACD 히스토그램 <b>3일 연속</b> 감소 &nbsp; ② RSI 고점 하락 (최근 5일 고점 &lt; 이전 5일 고점)<br>
+            ③ MA20 1일 하회 &nbsp; ④ RSI 피크 후 하락 (전일 RSI ≥ 65 + 오늘 하락)</td>
+        </tr>
+        <tr>
+          <td style="color:#FFEE58;font-weight:700;">Early Warning<br><span style="font-size:9px;font-weight:400;">신규 매수 자제</span></td>
+          <td class="cond-text">아래 중 <b>2개 이상</b> 충족 시 발동<br>
+            ① MACD 히스토그램 <b>1일</b> 감소 &nbsp; ② RSI 피크 신호 (전일 ≥ 65 + 오늘 하락)<br>
+            ③ BB 상단 돌파 후 후퇴 &nbsp; ④ 거래량 다이버전스 (종가↑ + 거래량↓)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <div class="container">
