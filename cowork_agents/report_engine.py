@@ -877,9 +877,24 @@ def _stage_reason2(d, sk):
     """판정2 근거 텍스트 (QQQ 필터 제외 버전)"""
     rsi = d['rsi']
     chg = d.get('change_pct', 0.0)
+    stype = _get_strategy_type(d)
 
     def sig(key, default=False):
         return bool(d.get(key, default))
+
+    # 에너지 v2.3 관망 이유
+    if sk == 'watch' and stype == 'energy':
+        if sig('sig_rsi_gt70_block'):
+            return f'RSI {rsi:.1f} > 70 → 에너지 전략 과열 차단'
+        if not sig('sig_macd_hist_2d_up'):
+            return 'MACD 히스토그램 2일 증가 미충족 (에너지 v2.3)'
+        return f'에너지 v2.3 조건 미충족'
+
+    # ETF v2.4 관망 이유
+    if sk == 'watch' and stype == 'etf':
+        if sig('sig_rsi_gt70_block'):
+            return f'RSI {rsi:.1f} > 70 → ETF 과열 차단'
+        return 'ETF v2.4 조건 미충족'
 
     if sk == 'entry3':
         parts = []
@@ -899,6 +914,16 @@ def _stage_reason2(d, sk):
         return '2차: ' + ' + '.join(parts)
 
     if sk == 'entry1':
+        if stype == 'etf':
+            met = []
+            if sig('sig_rsi_le40'):         met.append(f'RSI {rsi:.1f}≤40')
+            if sig('sig_adx_le25'):         met.append('ADX≤25')
+            if sig('sig_near_bb_low'):      met.append('BB하단')
+            if sig('sig_below_ma20'):       met.append('MA20아래')
+            if sig('sig_higher_low'):       met.append('고점하락멈춤')
+            if sig('sig_correction_5pct'):  met.append('52주고점-5%')
+            macd_ok = '✓' if sig('sig_macd_hist_2d_up') else '✗'
+            return f'1차({len(met)}/6, MACD히스토{macd_ok}): ' + ' + '.join(met)
         macd_ok = '✓' if sig('sig_macd_hist_2d_up') else '✗'
         met = []
         if sig('sig_rsi_le38'):    met.append(f'RSI {rsi:.1f}≤38')
