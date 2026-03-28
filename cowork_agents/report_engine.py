@@ -579,20 +579,165 @@ def get_condition_breakdown(d):
 #  4단계 타이밍 판정
 # ══════════════════════════════════════════════════════════════════
 
+# ── 전략 유형 분류 ─────────────────────────────────────────────────
+_ETF_LIST    = {'QQQ','SPY','VOO','GLD','SLV','TLT','SOXL','SCHD',
+                'IWM','XLF','XLE','IYR','VNQ','HYG','LQD','TIP',
+                'SQQQ','TQQQ','UVXY','QLD','SSO','UPRO'}
+_ENERGY_LIST = {'XOM','CVX','OXY','COP','BP','SLB','EOG','MPC',
+                'PSX','VLO','HAL','BKR','DVN','FANG'}
+
+def _get_strategy_type(d):
+    st = d.get('strategy_type', '')
+    if st in ('etf','energy','growth'): return st
+    ticker = d.get('ticker','')
+    if ticker in _ETF_LIST:    return 'etf'
+    if ticker in _ENERGY_LIST: return 'energy'
+    return 'growth'
+
+
+def _market_filter(d):
+    """QQQ+SPY Dual MA200 시장 필터 → 'normal'|'caution'|'bear'"""
+    def sig(k, default=False): return bool(d.get(k, default))
+    qqq = sig('qqq_above_ma200', True)
+    spy = sig('spy_above_ma200', True)
+    ms  = d.get('market_state', 'normal' if (qqq and spy) else 'caution' if (qqq or spy) else 'bear')
+    return ms
+
+
+def _trading_stage_etf(d):
+    """v2.4 ETF 전략 — 균형 진입, 거래량 제거, RSI>70 차단"""
+    def sig(k, default=False): return bool(d.get(k, default))
+    ms = _market_filter(d)
+
+    if ms == 'bear':
+        return ('watch_market', '하락장', C_BEAR)
+
+    if not sig('sig_rsi_gt70_block'):          # RSI > 70 → 전 단계 금지
+        if ms == 'normal':
+            # 3차 (50%): 4개 중 3개 이상
+            cond3 = [sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
+                     sig('sig_rsi_gt48'),       sig('sig_macd_above_zero')]
+            if sum(cond3) >= 3:
+                return ('entry3', '본격 매수', C_ENTRY3)
+
+            # 2차 (30%): 4개 중 3개 이상
+            cond2 = [sig('sig_rsi_gt42'), sig('sig_macd_golden'),
+                     sig('sig_above_ma20_2d') or not sig('sig_below_ma20'),
+                     sig('sig_higher_low')]
+            if sum(cond2) >= 3:
+                return ('entry2', '바닥 확인', C_ENTRY2)
+
+        # 1차 (20%): 5개 중 3개 이상 (경계장도 허용)
+        cond1 = [sig('sig_rsi_le40'), sig('sig_below_ma20'), sig('sig_near_bb_low'),
+                 sig('sig_low_stopped'), sig('sig_correction_5pct')]
+        if sum(cond1) >= 3:
+            return ('entry1', '관심 진입', C_ENTRY1)
+
+    if ms == 'caution':
+        return ('caution_market', '경계장', C_CAUTION)
+    return ('watch', '대기', C_WAIT)
+
+
+def _trading_stage_energy(d):
+    """v2.3 에너지/가치 전략 — 선제 진입, 거래량 제거, RSI>70 차단"""
+    def sig(k, default=False): return bool(d.get(k, default))
+    ms = _market_filter(d)
+
+    if ms == 'bear':
+        return ('watch_market', '하락장', C_BEAR)
+
+    if not sig('sig_rsi_gt70_block'):          # RSI > 70 → 전 단계 금지
+        if ms == 'normal':
+            # 3차 (50%): 4개 중 3개 이상
+            cond3 = [sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
+                     sig('sig_macd_golden'),   sig('sig_rsi_gt45')]
+            if sum(cond3) >= 3:
+                return ('entry3', '본격 매수', C_ENTRY3)
+
+            # 2차 (30%): 4개 중 3개 이상
+            cond2 = [sig('sig_double_bottom_3pct'), sig('sig_rsi_gt40'),
+                     sig('sig_macd_golden'),         not sig('sig_below_ma20')]
+            if sum(cond2) >= 3:
+                return ('entry2', '바닥 확인', C_ENTRY2)
+
+        # 1차 (20%): 성장주 1차와 동일 (보수적 정찰대)
+        block1 = sig('sig_block_rsi50') or sig('sig_block_bigdrop')
+        if not block1 and sig('sig_macd_hist_2d_up'):
+            cond1 = [sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
+                     sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')]
+            if sum(cond1) >= 3:
+                return ('entry1', '관심 진입', C_ENTRY1)
+
+    if ms == 'caution':
+        return ('caution_market', '경계장', C_CAUTION)
+    return ('watch', '대기', C_WAIT)
+
+
+def calc_exit_signal(d):
+    """
+    v2.5 상승 꺾임 감지 시스템 (Exit Signal)
+    Returns: (level, label, color, detail)
+      level 0  → 없음
+      level 1  → Early Warning   (주의)
+      level 2  → Trend Weakening (약화)
+      level 3  → Trend Breakdown (붕괴)
+      level 99 → 과열 경보
+    """
+    def ex(k): return bool(d.get(k, False))
+
+    # 과열 경보 (최우선)
+    if ex('exit_rsi_ge75') or ex('exit_bb_outside_2d') or ex('exit_3d_rise_10pct'):
+        parts = []
+        if ex('exit_rsi_ge75'):      parts.append(f"RSI {d.get('rsi',0):.0f}≥75")
+        if ex('exit_bb_outside_2d'): parts.append('BB상단 2일연속')
+        if ex('exit_3d_rise_10pct'): parts.append('3일+10%폭등')
+        return (99, '⚠️ 과열 경보', colors.HexColor('#FF1744'), ' + '.join(parts))
+
+    # Level 3 — Trend Breakdown (1개라도)
+    l3 = [ex('exit_ma20_break_2d'), ex('exit_lower_low'),
+          ex('exit_macd_dead_cross'), ex('exit_trailing_stop_8pct')]
+    if any(l3):
+        parts = []
+        if ex('exit_ma20_break_2d'):        parts.append('MA20 2일이탈')
+        if ex('exit_lower_low'):             parts.append('저점하향돌파')
+        if ex('exit_macd_dead_cross'):       parts.append('MACD데드크로스')
+        if ex('exit_trailing_stop_8pct'):    parts.append('-8%트레일링')
+        return (3, 'Trend Breakdown', colors.HexColor('#EF5350'), ' + '.join(parts))
+
+    # Level 2 — Trend Weakening (2개 이상)
+    l2 = [ex('exit_macd_hist_3d_down'), ex('exit_rsi_lower_high'),
+          ex('exit_ma20_break_1d'),     ex('exit_rsi_peaked_65')]
+    if sum(l2) >= 2:
+        parts = []
+        if ex('exit_macd_hist_3d_down'): parts.append('MACD히스토3일↓')
+        if ex('exit_rsi_lower_high'):    parts.append('RSI고점낮아짐')
+        if ex('exit_ma20_break_1d'):     parts.append('MA20이탈')
+        if ex('exit_rsi_peaked_65'):     parts.append('RSI65↓')
+        return (2, 'Trend Weakening', colors.HexColor('#FFA726'), ' + '.join(parts))
+
+    # Level 1 — Early Warning (2개 이상)
+    l1 = [ex('exit_macd_hist_1d_down'), ex('exit_rsi_peaked_65'),
+          ex('exit_bb_top_retreating'), ex('exit_vol_divergence')]
+    if sum(l1) >= 2:
+        parts = []
+        if ex('exit_macd_hist_1d_down'):  parts.append('MACD히스토↓')
+        if ex('exit_rsi_peaked_65'):      parts.append('RSI65꺾임')
+        if ex('exit_bb_top_retreating'):  parts.append('BB상단이탈')
+        if ex('exit_vol_divergence'):     parts.append('거래량다이버전스')
+        return (1, 'Early Warning', colors.HexColor('#FFEE58'), ' + '.join(parts))
+
+    return (0, '-', colors.HexColor('#FFFFFF'), '')
+
+
 def trading_stage(d):
     """
-    분할 매수 전략 v2.2
-    우선순위: 0 시장필터 > 3차매수 > 2차매수 > 1차매수 > 관망
-
-    0️⃣ 시장 필터 (Dual): QQQ+SPY 둘 다 MA200 아래 → 하락장 매수 금지
-                          둘 중 하나만 위 → 경계장 (1차만 허용)
-                          둘 다 위 → 정상장 (전 단계 허용)
-    1️⃣ 1차 매수 (20%): [필수] MACD히스토2일증가 + 6조건 중 3개 이상
-    2️⃣ 2차 매수 (30%): 4조건 ALL (정상장만)
-    3️⃣ 3차 매수 (50%): 4조건 ALL (정상장만, RSI75 차단 제거)
-
+    v2.2/v2.3/v2.4 통합 진입 판정 — strategy_type 기반 라우팅
     Returns: (stage_key, label, color)
     """
+    stype = _get_strategy_type(d)
+    if stype == 'etf':    return _trading_stage_etf(d)
+    if stype == 'energy': return _trading_stage_energy(d)
+    # ── 이하 v2.2 성장주 원본 로직 ─────────────────────────
     def sig(key, default=False):
         return bool(d.get(key, default))
 
@@ -656,21 +801,58 @@ def trading_stage(d):
     return ('watch', '대기', C_WAIT)
 
 
+def _trading_stage2_etf(d):
+    """판정2 ETF v2.4 — 기술 신호만"""
+    def sig(k, default=False): return bool(d.get(k, default))
+    if not sig('sig_rsi_gt70_block'):
+        cond3 = [sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
+                 sig('sig_rsi_gt48'),       sig('sig_macd_above_zero')]
+        if sum(cond3) >= 3: return ('entry3', '본격 매수', C_ENTRY3)
+        cond2 = [sig('sig_rsi_gt42'), sig('sig_macd_golden'),
+                 sig('sig_above_ma20_2d') or not sig('sig_below_ma20'),
+                 sig('sig_higher_low')]
+        if sum(cond2) >= 3: return ('entry2', '바닥 확인', C_ENTRY2)
+        cond1 = [sig('sig_rsi_le40'), sig('sig_below_ma20'), sig('sig_near_bb_low'),
+                 sig('sig_low_stopped'), sig('sig_correction_5pct')]
+        if sum(cond1) >= 3: return ('entry1', '관심 진입', C_ENTRY1)
+    return ('watch', '대기', C_WAIT)
+
+
+def _trading_stage2_energy(d):
+    """판정2 Energy v2.3 — 기술 신호만"""
+    def sig(k, default=False): return bool(d.get(k, default))
+    if not sig('sig_rsi_gt70_block'):
+        cond3 = [sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
+                 sig('sig_macd_golden'),   sig('sig_rsi_gt45')]
+        if sum(cond3) >= 3: return ('entry3', '본격 매수', C_ENTRY3)
+        cond2 = [sig('sig_double_bottom_3pct'), sig('sig_rsi_gt40'),
+                 sig('sig_macd_golden'),         not sig('sig_below_ma20')]
+        if sum(cond2) >= 3: return ('entry2', '바닥 확인', C_ENTRY2)
+        block1 = sig('sig_block_rsi50') or sig('sig_block_bigdrop')
+        if not block1 and sig('sig_macd_hist_2d_up'):
+            cond1 = [sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
+                     sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')]
+            if sum(cond1) >= 3: return ('entry1', '관심 진입', C_ENTRY1)
+    return ('watch', '대기', C_WAIT)
+
+
 def trading_stage2(d):
     """
-    분할 매수 전략 v2.2 — 판정2 (시장 필터 제외, 기술 신호만)
-    종목 자체 기술 신호만으로 판정 (시장 환경 무관)
+    v2.2/v2.3/v2.4 통합 판정2 — 기술 신호만 (시장 필터 제외)
     """
+    stype = _get_strategy_type(d)
+    if stype == 'etf':    return _trading_stage2_etf(d)
+    if stype == 'energy': return _trading_stage2_energy(d)
+
+    # v2.2 성장주 기술 신호만
     def sig(key, default=False):
         return bool(d.get(key, default))
 
-    # 3차 매수 — RSI75 차단 제거
     if all([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
             sig('sig_macd_above_zero'),
             sig('sig_vol_1p3') or sig('sig_vol_5d_2up')]):
         return ('entry3', '본격 매수', C_ENTRY3)
 
-    # 2차 매수
     if all([
         sig('sig_double_bottom'),
         sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),
@@ -679,7 +861,6 @@ def trading_stage2(d):
     ]):
         return ('entry2', '바닥 확인', C_ENTRY2)
 
-    # 1차 매수 — [필수] MACD 히스토그램 2일 연속 증가
     block1 = sig('sig_block_rsi50') or sig('sig_block_bigdrop')
     if not block1 and sig('sig_macd_hist_2d_up'):
         cond1_list = [
@@ -1976,45 +2157,84 @@ def generate_summary_page(stocks_list, output_path, ai_data=None):
     story.append(cond_label)
     story.append(Spacer(1, 3 * mm))
 
-    # 조건 정의: (라벨, 텍스트색, 배지배경, 조건 설명)  [v2.2 Split-Buy 전략]
-    C_E3 = colors.HexColor('#00E676')
-    C_E2 = colors.HexColor('#26C6DA')
-    C_E1 = colors.HexColor('#FFEE58')
-    C_CM = colors.HexColor('#FFA726')
-    C_WM = colors.HexColor('#EF5350')
-    C_W  = colors.HexColor('#FFFFFF')
+    # 조건 정의 v2.2/v2.3/v2.4/v2.5
+    C_E3  = colors.HexColor('#00E676')
+    C_E2  = colors.HexColor('#26C6DA')
+    C_E1  = colors.HexColor('#FFEE58')
+    C_CM  = colors.HexColor('#FFA726')
+    C_WM  = colors.HexColor('#EF5350')
+    C_W   = colors.HexColor('#FFFFFF')
+    C_XW  = colors.HexColor('#FFEE58')   # Exit Level 1
+    C_XO  = colors.HexColor('#FFA726')   # Exit Level 2
+    C_XR  = colors.HexColor('#EF5350')   # Exit Level 3
+    C_XH  = colors.HexColor('#FF1744')   # 과열
+    C_ETF = colors.HexColor('#64B5F6')   # ETF 라벨
+    C_EN  = colors.HexColor('#A5D6A7')   # Energy 라벨
     BG_E3 = colors.HexColor('#0A2E1A')
     BG_E2 = colors.HexColor('#0A2830')
     BG_E1 = colors.HexColor('#2A2600')
     BG_CM = colors.HexColor('#2A1800')
     BG_WM = colors.HexColor('#2A0A0A')
     BG_W  = colors.HexColor('#0D1B2C')
+    BG_XW = colors.HexColor('#2A2600')
+    BG_XO = colors.HexColor('#2A1800')
+    BG_XR = colors.HexColor('#2A0A0A')
+    BG_XH = colors.HexColor('#3A0010')
     stage_defs = [
-        ('시장 필터', S_GRAY,  BADGE_S,
-         '정상장: QQQ > MA200 AND SPY > MA200  →  본격·바닥·관심 전 단계 허용\n'
-         '경계장: 둘 중 하나만 MA200 위  →  관심 진입(20%)만 허용\n'
-         '하락장: QQQ·SPY 모두 MA200 아래  →  신규 매수 금지 (현금 보존)'),
-        ('본격 매수 50%', C_E3, BG_E3,
-         '[정상장만]  조건 4가지 ALL 충족\n'
-         '① 종가 2일 연속 MA20 위 (안착)  ② MA20 기울기 상향 (3일 전 대비)\n'
-         '③ MACD 라인 0선 위  ④ 거래량 ≥ 평균 1.3배  또는  최근 5일 중 2일 연속 증가'),
-        ('바닥 확인 30%', C_E2, BG_E2,
-         '[정상장만]  조건 4가지 ALL 충족\n'
-         '① 이중 바닥: 최근 5일 저점 ≥ 이전 5일 저점 × 0.98\n'
-         '② RSI > 35  +  3일 연속 상승  ③ MACD 골든크로스 또는 히스토그램 3일 연속 증가\n'
-         '④ 거래량 ≥ 평균 1.2배'),
-        ('관심 진입 20%', C_E1, BG_E1,
-         '[정상장·경계장]  [필수] MACD 히스토그램 2일 연속 증가  +  아래 6개 중 3개 이상\n'
-         '① RSI ≤ 38  ② ADX ≤ 25  ③ 종가 ≤ BB하단 × 1.02  ④ 종가 < MA20\n'
-         '⑤ 하락 멈춤 (최근 3일 최저 이상)  ⑥ 당일 +2% 이상 양봉 (윗꼬리 ≤ 2%)\n'
-         '✗ 금지: RSI > 50  또는  당일 -5% 이상 장대음봉'),
+        # ── 공통 시장 필터 ──
+        ('0️⃣ 시장 필터', S_GRAY, BADGE_S,
+         '정상장: QQQ > MA200 AND SPY > MA200  →  전 단계 허용\n'
+         '경계장: 둘 중 하나만 MA200 위  →  관심 진입(1차 20%)만 허용\n'
+         '하락장: 둘 다 MA200 아래  →  신규 매수 금지 (현금 보존)\n'
+         '⚠ VIX > 25: 전체 운용 비중 70%로 축소 권장'),
+        # ── v2.2 성장주 ──
+        ('성장주 v2.2\n본격 매수', C_E3, BG_E3,
+         '[정상장]  4개 ALL — ① MA20 2일 연속 위  ② MA20 기울기 상향\n'
+         '③ MACD 0선 위  ④ 거래량 ≥ 1.3배 또는 5일 중 2일 증가'),
+        ('성장주 v2.2\n바닥 확인', C_E2, BG_E2,
+         '[정상장]  4개 ALL — ① 이중 바닥(저점 ≥ 이전 × 0.98)  ② RSI>35 + 3일 상승\n'
+         '③ MACD 골든크로스 또는 히스토 3일 증가  ④ 거래량 ≥ 1.2배'),
+        ('성장주 v2.2\n관심 진입', C_E1, BG_E1,
+         '[정상장·경계장]  [필수] MACD히스토 2일↑  +  6개 중 3개\n'
+         'RSI≤38 / ADX≤25 / BB하단 / MA20아래 / 하락멈춤 / +2%반등\n'
+         '✗ 금지: RSI>50 또는 -5%장대음봉'),
+        # ── v2.4 ETF ──
+        ('ETF v2.4\n본격 매수', C_E3, BG_E3,
+         '[정상장]  4개 중 3개 이상 — ① MA20 2일 위  ② MA20 상향\n'
+         '③ RSI>48  ④ MACD 0선 위   ✗ RSI>70 전 단계 금지'),
+        ('ETF v2.4\n바닥 확인', C_E2, BG_E2,
+         '[정상장]  4개 중 3개 이상 — ① RSI>42  ② MACD골든크로스\n'
+         '③ MA20 위(또는 이탈아님)  ④ Higher Low (오늘 저점 > 이전 10일 최저×1.01)'),
+        ('ETF v2.4\n관심 진입', C_E1, BG_E1,
+         '[정상장·경계장]  5개 중 3개 이상\n'
+         'RSI≤40 / MA20아래 / BB하단근접 / 하락멈춤 / 52주고점 대비 -5%조정'),
+        # ── v2.3 에너지 ──
+        ('에너지 v2.3\n본격 매수', C_E3, BG_E3,
+         '[정상장]  4개 중 3개 이상 — ① MA20 2일 위  ② MA20 상향\n'
+         '③ MACD골든크로스  ④ RSI>45   ✗ RSI>70 전 단계 금지'),
+        ('에너지 v2.3\n바닥 확인', C_E2, BG_E2,
+         '[정상장]  4개 중 3개 이상 — ① 이중바닥(±3%)  ② RSI>40\n'
+         '③ MACD골든크로스  ④ 종가>MA20'),
+        # ── 공통 하락장/경계장/대기 ──
         ('경계장', C_CM, BG_CM,
-         '경계장 (QQQ·SPY 중 하나만 MA200 위)에서 관심 진입 조건 미충족\n'
-         '→  관망 유지, 1차 신호 재확인 대기'),
+         '경계장에서 관심 진입 조건 미충족 → 관망, 신호 재확인 대기'),
         ('하락장', C_WM, BG_WM,
-         'QQQ·SPY 모두 MA200 아래 — 모든 신규 매수 금지, 현금 보존'),
+         'QQQ·SPY 모두 MA200 아래 — 신규 매수 절대 금지, 현금 100% 보존'),
         ('대기',   C_W,  BG_W,
-         '정상장이나 단계 조건 미충족  —  신호 대기, 현금 보유 권장'),
+         '정상장이나 단계 조건 미충족 — 현금 보유, 다음 신호 대기'),
+        # ── v2.5 Exit ──
+        ('⚠️ 과열 경보', C_XH, BG_XH,
+         'RSI≥75  또는  BB상단 바깥 2일 연속  또는  3일 +10% 이상\n'
+         '→ 무조건 일부 익절, "더 가더라도 내 자리가 아님"'),
+        ('Trend Breakdown', C_XR, BG_XR,
+         '1개라도: MA20 2일이탈 / 저점 하향돌파 / MACD데드크로스 / -8%트레일링\n'
+         '→ 전량 매도 또는 코어 물량만 유지'),
+        ('Trend Weakening', C_XO, BG_XO,
+         '2개 이상: MACD히스토 3일↓ / RSI고점낮아짐 / MA20 1일이탈 / RSI65꺾임\n'
+         '→ 보유량 30~50% 익절 권장'),
+        ('Early Warning',   C_XW, BG_XW,
+         '2개 이상: MACD히스토↓ / RSI65꺾임 / BB상단이탈 / 거래량다이버전스\n'
+         '→ 관찰 강화, 신규 매수 금지'),
     ]
 
     LBL_W = CW * 0.13

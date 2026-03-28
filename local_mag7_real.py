@@ -492,6 +492,108 @@ def fetch_stock_data(ticker, retry=2):
                     sum(float(vol[-i]) > float(vol[-i-1]) for i in range(1, 6)) >= 2
                 ),
                 'sig_block_rsi75':    bool(rsi_val > 75),
+
+                # ── ETF v2.4 전용 신호 ───────────────────────────────
+                'sig_rsi_le40':       bool(rsi_val <= 40),
+                'sig_rsi_gt42':       bool(rsi_val > 42),
+                'sig_rsi_gt48':       bool(rsi_val > 48),
+                'sig_rsi_gt70_block': bool(rsi_val > 70),
+                'sig_higher_low':     bool(                 # 오늘 저점 > 최근 10일 최저 * 1.01
+                    len(low_h) >= 11 and
+                    float(low_h[-1]) > float(min(low_h[-11:-1])) * 1.01
+                ),
+                'sig_correction_5pct': bool(                # 52주 고점 대비 -5% 이상 조정
+                    high_52w > 0 and cur_close <= high_52w * 0.95
+                ),
+                # Energy v2.3 전용 신호
+                'sig_double_bottom_3pct': bool(             # ±3% 더블바텀
+                    len(close) >= 10 and
+                    min(close[-5:]) >= min(close[-10:-5]) * 0.97
+                ),
+                'sig_rsi_gt40':       bool(rsi_val > 40),
+                'sig_rsi_gt45':       bool(rsi_val > 45),
+
+                # ── Exit v2.5 신호 (청산 감지) ───────────────────────
+                'exit_macd_hist_1d_down': bool(             # 히스토그램 전일 대비 감소
+                    len(hist_arr) >= 2 and
+                    not np.isnan(hist_arr[-1]) and not np.isnan(hist_arr[-2]) and
+                    hist_arr[-1] < hist_arr[-2]
+                ),
+                'exit_rsi_peaked_65': bool(                 # RSI 65이상 → 꺾임
+                    len(rsi_arr) >= 2 and
+                    not np.isnan(rsi_arr[-1]) and not np.isnan(rsi_arr[-2]) and
+                    rsi_arr[-2] >= 65 and rsi_arr[-1] < rsi_arr[-2]
+                ),
+                'exit_bb_top_retreating': bool(             # BB상단 터치 후 안으로 복귀
+                    len(close) >= 3 and len(bb_u_arr) >= 3 and
+                    not np.isnan(bb_u_arr[-2]) and not np.isnan(bb_u_arr[-3]) and
+                    (float(close[-2]) >= float(bb_u_arr[-2]) or float(close[-3]) >= float(bb_u_arr[-3])) and
+                    float(close[-1]) < float(bb_u_arr[-1])
+                ),
+                'exit_vol_divergence': bool(                # 종가↑ + 거래량↓
+                    len(close) >= 2 and len(vol) >= 2 and
+                    float(close[-1]) > float(close[-2]) and
+                    float(vol[-1]) < float(vol[-2])
+                ),
+                'exit_macd_hist_3d_down': bool(             # 히스토그램 3일 연속 감소
+                    len(hist_arr) >= 4 and
+                    not np.isnan(hist_arr[-1]) and not np.isnan(hist_arr[-2]) and
+                    not np.isnan(hist_arr[-3]) and not np.isnan(hist_arr[-4]) and
+                    hist_arr[-1] < hist_arr[-2] < hist_arr[-3]
+                ),
+                'exit_rsi_lower_high': bool(                # RSI 고점이 낮아짐 (약세 다이버전스)
+                    len(rsi_arr) >= 11 and
+                    not any(np.isnan(rsi_arr[-11:])) and
+                    float(max(rsi_arr[-5:])) < float(max(rsi_arr[-11:-5]))
+                ),
+                'exit_ma20_break_1d': bool(                 # MA20 이탈 1일
+                    not np.isnan(ma20_arr[-1]) and float(close[-1]) < float(ma20_arr[-1])
+                ),
+                'exit_ma20_break_2d': bool(                 # MA20 이탈 2일 연속
+                    len(close) >= 2 and len(ma20_arr) >= 2 and
+                    not np.isnan(ma20_arr[-1]) and not np.isnan(ma20_arr[-2]) and
+                    float(close[-1]) < float(ma20_arr[-1]) and
+                    float(close[-2]) < float(ma20_arr[-2])
+                ),
+                'exit_lower_low': bool(                     # 최근 저점 하향 돌파
+                    len(low_h) >= 11 and
+                    float(low_h[-1]) < float(min(low_h[-11:-1]))
+                ),
+                'exit_macd_dead_cross': bool(               # MACD 데드크로스
+                    macd_val < macd_s_val and
+                    len(macd_arr) >= 2 and len(macd_sig_arr) >= 2 and
+                    not np.isnan(macd_arr[-2]) and not np.isnan(macd_sig_arr[-2]) and
+                    float(macd_arr[-2]) >= float(macd_sig_arr[-2])
+                ),
+                'exit_trailing_stop_8pct': bool(            # 최근 20일 고점 대비 -8%
+                    len(high) >= 20 and
+                    cur_close < float(max(high[-20:])) * 0.92
+                ),
+                'exit_rsi_ge75':      bool(rsi_val >= 75),
+                'exit_bb_outside_2d': bool(                 # BB 상단 바깥 2일 연속
+                    len(close) >= 2 and len(bb_u_arr) >= 2 and
+                    not np.isnan(bb_u_arr[-1]) and not np.isnan(bb_u_arr[-2]) and
+                    float(close[-1]) >= float(bb_u_arr[-1]) and
+                    float(close[-2]) >= float(bb_u_arr[-2])
+                ),
+                'exit_3d_rise_10pct': bool(                 # 최근 3일 +10% 이상
+                    len(close) >= 4 and
+                    float(close[-1]) >= float(close[-4]) * 1.10
+                ),
+
+                # ── 종목 전략 유형 ────────────────────────────────────
+                'strategy_type': (
+                    'etf'    if ticker in {
+                        'QQQ','SPY','VOO','GLD','SLV','TLT','SOXL','SCHD',
+                        'IWM','XLF','XLE','IYR','VNQ','HYG','LQD','TIP',
+                        'SQQQ','TQQQ','UVXY','QLD','SSO','UPRO',
+                    } else
+                    'energy' if ticker in {
+                        'XOM','CVX','OXY','COP','BP','SLB','EOG','MPC',
+                        'PSX','VLO','HAL','BKR','DVN','FANG',
+                    } else
+                    'growth'
+                ),
             }
 
         except Exception as e:

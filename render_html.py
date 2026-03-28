@@ -24,7 +24,9 @@ TEMPLATE_DIR = os.path.join(ROOT, 'templates')
 OUTPUT_DIR   = os.path.join(ROOT, 'docs')   # GitHub Pages는 docs/ 사용
 
 sys.path.insert(0, os.path.join(ROOT, 'cowork_agents'))
-from report_engine import trading_stage, trading_stage2, auto_score, _stage_reason, _stage_reason2, build_chart, get_condition_breakdown
+from report_engine import (trading_stage, trading_stage2, auto_score,
+                           _stage_reason, _stage_reason2, build_chart,
+                           get_condition_breakdown, calc_exit_signal, _get_strategy_type)
 
 # Jinja2 환경
 env = Environment(loader=FileSystemLoader(TEMPLATE_DIR), autoescape=False)
@@ -47,6 +49,13 @@ def get_badge_class(sk):
         'caution_market':'caution',
         'watch_market':  'sell',
     }.get(sk, 'watch')
+
+def get_exit_badge_class(level):
+    return {99:'exit-hot', 3:'exit-break', 2:'exit-weak', 1:'exit-warn'}.get(level, '')
+
+def get_stype_label(d):
+    stype = _get_strategy_type(d)
+    return {'etf':'ETF v2.4', 'energy':'에너지 v2.3', 'growth':'성장주 v2.2'}.get(stype, 'v2.2')
 
 def get_stage_desc(d, sk, lbl):
     c    = d['close']
@@ -203,13 +212,19 @@ def render(target_tickers=None, open_browser=False):
             reason2 = _stage_reason2(d, sk2)
         except Exception:
             reason2 = lbl2
+        ex_level, ex_lbl, _, ex_detail = calc_exit_signal(d)
         summary_stocks.append({
-            'ticker':  d['ticker'],
-            'sk1':     get_badge_class(sk1), 'lbl1': lbl1, 'reason1': reason1,
-            'sk2':     get_badge_class(sk2), 'lbl2': lbl2, 'reason2': reason2,
-            'close':   d['close'],
-            'chg':     d.get('change_pct', d.get('chg_pct', 0.0)),
-            'rsi':     d['rsi'],
+            'ticker':     d['ticker'],
+            'sk1':        get_badge_class(sk1), 'lbl1': lbl1, 'reason1': reason1,
+            'sk2':        get_badge_class(sk2), 'lbl2': lbl2, 'reason2': reason2,
+            'close':      d['close'],
+            'chg':        d.get('change_pct', d.get('chg_pct', 0.0)),
+            'rsi':        d['rsi'],
+            'ex_level':   ex_level,
+            'ex_lbl':     ex_lbl,
+            'ex_cls':     get_exit_badge_class(ex_level),
+            'ex_detail':  ex_detail,
+            'stype_lbl':  get_stype_label(d),
         })
 
     # 요약 페이지
@@ -291,6 +306,7 @@ def render(target_tickers=None, open_browser=False):
             breakdown = get_condition_breakdown(d)
         except Exception:
             breakdown = None
+        ex_level2, ex_lbl2, _, ex_detail2 = calc_exit_signal(d)
         stocks_detail.append({
             'ticker':      d['ticker'],
             'company':     d.get('company', d['ticker']),
@@ -307,6 +323,11 @@ def render(target_tickers=None, open_browser=False):
             'action':      build_action(d, sk2),
             'chart_path':  chart_path,
             'breakdown':   breakdown,
+            'ex_level':    ex_level2,
+            'ex_lbl':      ex_lbl2,
+            'ex_cls':      get_exit_badge_class(ex_level2),
+            'ex_detail':   ex_detail2,
+            'stype_lbl':   get_stype_label(d),
         })
     tmpl = env.get_template('print_all.html')
     html = tmpl.render(today_str=today_str, stocks=summary_stocks, stocks_detail=stocks_detail)

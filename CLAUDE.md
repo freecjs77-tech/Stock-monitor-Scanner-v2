@@ -14,7 +14,19 @@
 
 ---
 
-## 2. v2.2 분할 매수 전략 — 핵심 규칙
+## 2. 다중 전략 시스템 (v2.2~v2.5)
+
+### 전략 유형 분류 (strategy_type)
+
+| 전략 | strategy_type | 대상 종목 | 특징 |
+|---|---|---|---|
+| v2.2 성장주 | `growth` | MAG7, 반도체, 기술주 | MACD히스토 필수, 6조건 중 3개, 거래량 필수 |
+| v2.3 에너지/가치 | `energy` | XOM, CVX, OXY, COP 등 | ±3% 더블바텀, RSI>40/45/70 기준, 선제 진입 |
+| v2.4 ETF | `etf` | QQQ, SPY, GLD, TLT, SOXL 등 | 거래량 제거, RSI>70 차단, ≥3/4 조건 |
+| v2.5 Exit Signal | (overlay) | 모든 종목 | 4레벨 청산 감지 — 전략 유형과 독립적 적용 |
+
+> 전략 분류는 `local_mag7_real.py`의 `_ETF_LIST`, `_ENERGY_LIST` 집합으로 자동 분류.
+> `tickers.json` 형식 변경 없이 코드 내 집합으로 관리 (하위 호환성 유지).
 
 ### 스테이지 키 & 라벨 & 색상 (전파일 통일)
 
@@ -28,6 +40,16 @@
 | `watch` | 대기 | `#FFFFFF` | 흰색 |
 
 > **금지**: `buy3`, `buy2`, `buy1` 등 구버전 stage key 사용 절대 금지. 모든 파일에서 `entry3/entry2/entry1` 사용.
+
+### Exit Signal v2.5 레벨
+
+| 레벨 | 라벨 | 색상 | 트리거 |
+|---|---|---|---|
+| 99 | ⚠️ 과열 경보 | `#FF1744` | RSI≥75 OR BB 상단 2일 돌파 OR 3일 10% 급등 |
+| 3 | Trend Breakdown | `#EF5350` | MA20 2일 이탈 OR 저점 하락 OR MACD 데드크로스 OR 고점比 8% 하락 중 1개 |
+| 2 | Trend Weakening | `#FFA726` | MACD히스토 3일 하락/RSI 고점하락/MA20 이탈/RSI 피크 중 2개 |
+| 1 | Early Warning | `#FFEE58` | MACD히스토 1일 하락/RSI 피크/BB상단 후퇴/거래량 다이버전스 중 2개 |
+| 0 | - | `#FFFFFF` | 조건 미충족 |
 
 ### 판정1 vs 판정2
 
