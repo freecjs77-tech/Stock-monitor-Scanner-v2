@@ -91,6 +91,13 @@ tr:nth-child(even) td { background: var(--row2); }
 .badge-sell   { color: #EF5350; background: rgba(239,83,80,0.15);  border: 1px solid rgba(239,83,80,0.35); }
 .badge-watch  { color: #FFFFFF; background: rgba(255,255,255,0.07);border: 1px solid rgba(255,255,255,0.18); }
 
+/* ─── Exit v2.5 배지 ─── */
+.badge-exit-hot   { color: #FF1744; background: rgba(255,23,68,0.15);   border: 1px solid rgba(255,23,68,0.4);   font-size:10px; padding:2px 6px; border-radius:4px; font-weight:700; }
+.badge-exit-break { color: #EF5350; background: rgba(239,83,80,0.12);   border: 1px solid rgba(239,83,80,0.35);  font-size:10px; padding:2px 6px; border-radius:4px; font-weight:700; }
+.badge-exit-weak  { color: #FFA726; background: rgba(255,167,38,0.12);  border: 1px solid rgba(255,167,38,0.35); font-size:10px; padding:2px 6px; border-radius:4px; font-weight:700; }
+.badge-exit-warn  { color: #FFEE58; background: rgba(255,238,88,0.10);  border: 1px solid rgba(255,238,88,0.30); font-size:10px; padding:2px 6px; border-radius:4px; font-weight:700; }
+.badge-stype      { font-size:9px;  color:rgba(100,181,246,0.8); border:1px solid rgba(100,181,246,0.3); border-radius:3px; padding:1px 4px; margin-left:5px; }
+
 /* ─── 색상 유틸 ─── */
 .c-green  { color: #00E676; font-weight: 700; }
 .c-red    { color: #EF5350; font-weight: 700; }
@@ -268,10 +275,11 @@ tr:nth-child(even) td { background: var(--row2); }
     <thead>
       <tr>
         <th>티커</th>
+        <th>전략</th>
         <th>판정1<br><span style="font-size:9px; font-weight:400;">시장필터</span></th>
         <th>판정2<br><span style="font-size:9px; font-weight:400;">기술신호</span></th>
+        <th>Exit v2.5</th>
         <th>종가</th>
-        <th>변동률</th>
         <th>RSI</th>
         <th class="td-left">근거 (판정2)</th>
       </tr>
@@ -280,130 +288,169 @@ tr:nth-child(even) td { background: var(--row2); }
       
       <tr>
         <td class="bold">MU</td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">성장주 v2.2</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td>
+          <span style="color:var(--sub);font-size:10px;">-</span>
+        </td>
         <td class="bold">$357.22</td>
-        <td class="c-green">+0.50%</td>
         <td class="">37.7</td>
         <td class="td-left c-sub">MACD 히스토그램 2일 증가 미충족 (1차 필수조건)</td>
       </tr>
       
       <tr>
         <td class="bold">GOOGL</td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">성장주 v2.2</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td>
+          <span style="color:var(--sub);font-size:10px;">-</span>
+        </td>
         <td class="bold">$274.34</td>
-        <td class="c-red">-2.34%</td>
         <td class="c-green">25.2</td>
         <td class="td-left c-sub">MACD 히스토그램 2일 증가 미충족 (1차 필수조건)</td>
       </tr>
       
       <tr>
         <td class="bold">AMZN</td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">성장주 v2.2</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td>
+          <span style="color:var(--sub);font-size:10px;">-</span>
+        </td>
         <td class="bold">$199.34</td>
-        <td class="c-red">-3.95%</td>
         <td class="">37.8</td>
         <td class="td-left c-sub">MACD 히스토그램 2일 증가 미충족 (1차 필수조건)</td>
       </tr>
       
       <tr>
         <td class="bold">SPY</td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">ETF v2.4</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td>
+          <span style="color:var(--sub);font-size:10px;">-</span>
+        </td>
         <td class="bold">$634.09</td>
-        <td class="c-red">-1.71%</td>
         <td class="c-green">28.5</td>
         <td class="td-left c-sub">MACD 히스토그램 2일 증가 미충족 (1차 필수조건)</td>
       </tr>
       
       <tr>
         <td class="bold">QQQ</td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">ETF v2.4</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td>
+          <span style="color:var(--sub);font-size:10px;">-</span>
+        </td>
         <td class="bold">$562.58</td>
-        <td class="c-red">-1.95%</td>
         <td class="c-green">30.4</td>
         <td class="td-left c-sub">MACD 히스토그램 2일 증가 미충족 (1차 필수조건)</td>
       </tr>
       
       <tr>
         <td class="bold">TLT</td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">ETF v2.4</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td>
+          <span style="color:var(--sub);font-size:10px;">-</span>
+        </td>
         <td class="bold">$85.64</td>
-        <td class="c-red">-0.55%</td>
         <td class="">38.3</td>
         <td class="td-left c-sub">MACD 히스토그램 2일 증가 미충족 (1차 필수조건)</td>
       </tr>
       
       <tr>
         <td class="bold">TSLA</td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">성장주 v2.2</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td>
+          <span style="color:var(--sub);font-size:10px;">-</span>
+        </td>
         <td class="bold">$361.83</td>
-        <td class="c-red">-2.76%</td>
         <td class="c-green">33.9</td>
         <td class="td-left c-sub">MACD 히스토그램 2일 증가 미충족 (1차 필수조건)</td>
       </tr>
       
       <tr>
         <td class="bold">SOXL</td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">ETF v2.4</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td>
+          <span style="color:var(--sub);font-size:10px;">-</span>
+        </td>
         <td class="bold">$46.61</td>
-        <td class="c-red">-4.82%</td>
         <td class="">39.0</td>
         <td class="td-left c-sub">MACD 히스토그램 2일 증가 미충족 (1차 필수조건)</td>
       </tr>
       
       <tr>
         <td class="bold">GLD</td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">ETF v2.4</td>
         <td><span class="badge badge-sell">하락장</span></td>
-        <td><span class="badge badge-entry1">관심 진입</span></td>
+        <td><span class="badge badge-watch">대기</span></td>
+        <td>
+          <span style="color:var(--sub);font-size:10px;">-</span>
+        </td>
         <td class="bold">$414.70</td>
-        <td class="c-green">+3.51%</td>
         <td class="">38.4</td>
-        <td class="td-left c-sub">1차(3/6, MACD히스토✓): MA20아래 + 하락멈춤 + +3.5%몸통양봉</td>
+        <td class="td-left c-sub">1차 3/6개 충족</td>
       </tr>
       
       <tr>
         <td class="bold">SLV</td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">ETF v2.4</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td>
+          <span style="color:var(--sub);font-size:10px;">-</span>
+        </td>
         <td class="bold">$63.44</td>
-        <td class="c-green">+4.39%</td>
         <td class="">40.0</td>
         <td class="td-left c-sub">MACD 히스토그램 2일 증가 미충족 (1차 필수조건)</td>
       </tr>
       
       <tr>
         <td class="bold">NVDA</td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">성장주 v2.2</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td>
+          <span style="color:var(--sub);font-size:10px;">-</span>
+        </td>
         <td class="bold">$167.52</td>
-        <td class="c-red">-2.17%</td>
         <td class="">35.8</td>
         <td class="td-left c-sub">MACD 히스토그램 2일 증가 미충족 (1차 필수조건)</td>
       </tr>
       
       <tr>
         <td class="bold">CRCL</td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">성장주 v2.2</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-watch">대기</span></td>
+        <td>
+          <span style="color:var(--sub);font-size:10px;">-</span>
+        </td>
         <td class="bold">$93.66</td>
-        <td class="c-red">-4.69%</td>
         <td class="">43.5</td>
         <td class="td-left c-sub">MACD 히스토그램 2일 증가 미충족 (1차 필수조건)</td>
       </tr>
       
       <tr>
         <td class="bold">XOM</td>
+        <td style="font-size:9px; color:rgba(100,181,246,0.8);">에너지 v2.3</td>
         <td><span class="badge badge-sell">하락장</span></td>
         <td><span class="badge badge-entry3">본격 매수</span></td>
+        <td>
+          <span style="color:var(--sub);font-size:10px;">-</span>
+        </td>
         <td class="bold">$170.99</td>
-        <td class="c-green">+3.36%</td>
         <td class="c-red">76.3</td>
         <td class="td-left c-sub">3차: MA20 2일↑ + MA20기울기+ + MACD 0선↑</td>
       </tr>
@@ -413,41 +460,80 @@ tr:nth-child(even) td { background: var(--row2); }
 
   <!-- 조건 기준 표 -->
   <div class="cond-section">
-    <h3>판정 조건 기준</h3>
+    <h3>판정 조건 기준 (v2.2 성장주 / v2.4 ETF / v2.3 에너지 / v2.5 Exit)</h3>
     <table class="cond-table">
       <tbody>
         <tr>
-          <td style="color:var(--sub);">0️⃣ 시장 필터</td>
+          <td style="color:var(--sub);">0️⃣ 공통<br>시장 필터</td>
           <td>정상장: QQQ &gt; MA200 AND SPY &gt; MA200 → 전 단계 허용<br>
-            경계장: 둘 중 하나만 MA200 위 → 관심 진입(20%)만 허용<br>
-            하락장: QQQ·SPY 모두 MA200 아래 → 신규 매수 금지</td>
+            경계장: 둘 중 하나만 MA200 위 → 관심 진입(1차 20%)만 허용<br>
+            하락장: QQQ·SPY 모두 MA200 아래 → 신규 매수 절대 금지 &nbsp;|&nbsp; ⚠ VIX &gt; 25: 전체 비중 70% 축소 권장</td>
+        </tr>
+        <!-- v2.2 성장주 -->
+        <tr>
+          <td style="color:#90CAF9;font-weight:700;">성장주 v2.2<br>관심 진입 20%</td>
+          <td>[필수] MACD 히스토그램 2일 연속 증가 + 6조건 중 3개 이상 &nbsp;|&nbsp; 🚫 RSI &gt; 50 또는 -5%↓ 시 금지<br>
+            ① RSI ≤ 38 &nbsp; ② ADX ≤ 25 &nbsp; ③ 종가 ≤ BB하단×1.02 &nbsp; ④ 종가 &lt; MA20 &nbsp; ⑤ 하락멈춤 &nbsp; ⑥ +2% 양봉</td>
         </tr>
         <tr>
-          <td style="color:#FFEE58;font-weight:700;">관심 진입<br><span style="font-size:9px; font-weight:400;">자금 20%</span></td>
-          <td>[필수] MACD 히스토그램 2일 연속 증가 &nbsp;+&nbsp; 6조건 중 3개 이상 &nbsp;|&nbsp; 🚫 RSI &gt; 50 또는 당일 -5% 이상 시 금지<br>
-            ① RSI(14) ≤ 38 &nbsp; ② ADX(14) ≤ 25 &nbsp; ③ 종가 ≤ BB하단 × 1.02<br>
-            ④ 종가 &lt; MA20 &nbsp; ⑤ 하락 멈춤(오늘 ≥ 최근 3일 최저) &nbsp; ⑥ 당일 +2% 이상 양봉 (윗꼬리 ≤ 2%)</td>
+          <td style="color:#90CAF9;font-weight:700;">성장주 v2.2<br>바닥 확인 30%</td>
+          <td>[정상장] 4조건 ALL — ① 이중바닥(≥0.98) &nbsp; ② RSI&gt;35 + 3일상승 &nbsp; ③ MACD골든크로스 또는 히스토3일↑ &nbsp; ④ 거래량≥1.2배</td>
         </tr>
         <tr>
-          <td style="color:#26C6DA;font-weight:700;">바닥 확인<br><span style="font-size:9px; font-weight:400;">자금 30%</span></td>
-          <td>4조건 모두(ALL) 충족 &nbsp;|&nbsp; [정상장만]<br>
-            ① 이중 바닥: 최근 5일 최저 ≥ 이전 5일 최저 × 0.98<br>
-            ② RSI &gt; 35 + 3일 연속 상승 &nbsp; ③ MACD 골든크로스 또는 히스토그램 3일 연속 증가<br>
-            ④ 거래량 ≥ 20일 평균 × 1.2</td>
+          <td style="color:#90CAF9;font-weight:700;">성장주 v2.2<br>본격 매수 50%</td>
+          <td>[정상장] 4조건 ALL — ① MA20 2일연속 위 &nbsp; ② MA20 기울기↑ &nbsp; ③ MACD 0선 위 &nbsp; ④ 거래량≥1.3배 또는 5일중 2일↑</td>
+        </tr>
+        <!-- v2.4 ETF -->
+        <tr>
+          <td style="color:#64B5F6;font-weight:700;">ETF v2.4<br>관심 진입 20%</td>
+          <td>[정상장·경계장] 5조건 중 3개 이상 &nbsp;|&nbsp; 🚫 RSI &gt; 70 전 단계 금지<br>
+            ① RSI ≤ 40 &nbsp; ② 종가 &lt; MA20 &nbsp; ③ BB하단 근접 &nbsp; ④ 하락멈춤 &nbsp; ⑤ 52주 고점 대비 -5% 이상 조정</td>
         </tr>
         <tr>
-          <td style="color:#00E676;font-weight:700;">본격 매수<br><span style="font-size:9px; font-weight:400;">자금 50%</span></td>
-          <td>4조건 모두(ALL) 충족 &nbsp;|&nbsp; [정상장만]<br>
-            ① 종가 2일 연속 MA20 위 마감 &nbsp; ② MA20 기울기 양수 (3일 전 대비)<br>
-            ③ MACD 라인 0선 위 돌파 &nbsp; ④ 거래량 ≥ 20일 평균 × 1.3 또는 최근 5일 중 2일 연속 증가</td>
+          <td style="color:#64B5F6;font-weight:700;">ETF v2.4<br>바닥 확인 30%</td>
+          <td>[정상장] 4조건 중 3개 이상 — ① RSI &gt; 42 &nbsp; ② MACD 골든크로스 &nbsp; ③ MA20 위 또는 이탈아님 &nbsp; ④ Higher Low</td>
+        </tr>
+        <tr>
+          <td style="color:#64B5F6;font-weight:700;">ETF v2.4<br>본격 매수 50%</td>
+          <td>[정상장] 4조건 중 3개 이상 — ① MA20 2일연속 위 &nbsp; ② MA20 기울기↑ &nbsp; ③ RSI &gt; 48 &nbsp; ④ MACD 0선 위</td>
+        </tr>
+        <!-- v2.3 에너지 -->
+        <tr>
+          <td style="color:#A5D6A7;font-weight:700;">에너지 v2.3<br>관심 진입 20%</td>
+          <td>성장주 v2.2 1차 조건과 동일 (보수적 정찰) &nbsp;|&nbsp; 🚫 RSI &gt; 70 전 단계 금지</td>
+        </tr>
+        <tr>
+          <td style="color:#A5D6A7;font-weight:700;">에너지 v2.3<br>바닥 확인 30%</td>
+          <td>[정상장] 4조건 중 3개 이상 — ① 이중바닥(±3%) &nbsp; ② RSI &gt; 40 &nbsp; ③ MACD 골든크로스 &nbsp; ④ 종가 &gt; MA20</td>
+        </tr>
+        <tr>
+          <td style="color:#A5D6A7;font-weight:700;">에너지 v2.3<br>본격 매수 50%</td>
+          <td>[정상장] 4조건 중 3개 이상 — ① MA20 2일 위 &nbsp; ② MA20 기울기↑ &nbsp; ③ MACD 골든크로스 &nbsp; ④ RSI &gt; 45</td>
+        </tr>
+        <!-- Exit v2.5 -->
+        <tr>
+          <td style="color:#FFEE58;font-weight:700;">📡 Early Warning</td>
+          <td>2개 이상: MACD히스토↓ / RSI 65이상→꺾임 / BB상단 터치후 이탈 / 종가↑+거래량↓<br>→ 관찰 강화, 신규 매수 금지</td>
+        </tr>
+        <tr>
+          <td style="color:#FFA726;font-weight:700;">📡 Trend Weakening</td>
+          <td>2개 이상: MACD히스토 3일↓ / RSI 고점낮아짐 / MA20 1일이탈 / RSI 65꺾임<br>→ 보유 30~50% 익절 권장</td>
+        </tr>
+        <tr>
+          <td style="color:#EF5350;font-weight:700;">📡 Trend Breakdown</td>
+          <td>1개라도: MA20 2일이탈 / 저점 하향돌파 / MACD 데드크로스 / -8% 트레일링스탑<br>→ 적극 매도, 전량 청산 고려</td>
+        </tr>
+        <tr>
+          <td style="color:#FF1744;font-weight:700;">⚠️ 과열 경보</td>
+          <td>RSI ≥ 75 / BB상단 바깥 2일연속 / 최근 3일 +10% 이상<br>→ 즉시 일부 강제 익절, "더 가더라도 내 자리 아님"</td>
         </tr>
         <tr>
           <td style="color:#FFA726;font-weight:700;">경계장</td>
-          <td>경계장에서 관심 진입 조건 미충족 — 관망 유지, 신호 재확인 대기</td>
+          <td>경계장에서 관심 진입 조건 미충족 — 관망, 신호 재확인 대기</td>
         </tr>
         <tr>
           <td style="color:#EF5350;font-weight:700;">하락장</td>
-          <td>QQQ·SPY 모두 MA200 아래 — 모든 신규 매수 금지, 현금 보존</td>
+          <td>QQQ·SPY 모두 MA200 아래 — 모든 신규 매수 절대 금지, 현금 100% 보존</td>
         </tr>
         <tr>
           <td style="color:#FFFFFF;font-weight:700;">대기</td>
@@ -469,7 +555,9 @@ tr:nth-child(even) td { background: var(--row2); }
   <!-- 종목 헤더 -->
   <div class="stock-header">
     <div class="left">
-      <h2>MU &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">MU</span></h2>
+      <h2>MU &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">MU</span>
+        <span class="badge-stype">성장주 v2.2</span>
+      </h2>
       <div class="meta">NASDAQ | N/A | 2026년 03월 28일</div>
     </div>
     <div class="right" style="text-align:right;">
@@ -491,6 +579,9 @@ tr:nth-child(even) td { background: var(--row2); }
       <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
     </div>
   </div>
+
+  <!-- Exit v2.5 신호 -->
+  
 
   <!-- 52주 범위 바 -->
   <div class="range-wrap">
@@ -761,7 +852,9 @@ tr:nth-child(even) td { background: var(--row2); }
   <!-- 종목 헤더 -->
   <div class="stock-header">
     <div class="left">
-      <h2>GOOGL &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">Alphabet Inc.</span></h2>
+      <h2>GOOGL &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">Alphabet Inc.</span>
+        <span class="badge-stype">성장주 v2.2</span>
+      </h2>
       <div class="meta">NASDAQ | 검색 / 클라우드 / AI | 2026년 03월 28일</div>
     </div>
     <div class="right" style="text-align:right;">
@@ -783,6 +876,9 @@ tr:nth-child(even) td { background: var(--row2); }
       <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
     </div>
   </div>
+
+  <!-- Exit v2.5 신호 -->
+  
 
   <!-- 52주 범위 바 -->
   <div class="range-wrap">
@@ -1053,7 +1149,9 @@ tr:nth-child(even) td { background: var(--row2); }
   <!-- 종목 헤더 -->
   <div class="stock-header">
     <div class="left">
-      <h2>AMZN &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">Amazon.com Inc.</span></h2>
+      <h2>AMZN &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">Amazon.com Inc.</span>
+        <span class="badge-stype">성장주 v2.2</span>
+      </h2>
       <div class="meta">NASDAQ | 이커머스 / 클라우드 | 2026년 03월 28일</div>
     </div>
     <div class="right" style="text-align:right;">
@@ -1075,6 +1173,9 @@ tr:nth-child(even) td { background: var(--row2); }
       <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
     </div>
   </div>
+
+  <!-- Exit v2.5 신호 -->
+  
 
   <!-- 52주 범위 바 -->
   <div class="range-wrap">
@@ -1345,7 +1446,9 @@ tr:nth-child(even) td { background: var(--row2); }
   <!-- 종목 헤더 -->
   <div class="stock-header">
     <div class="left">
-      <h2>SPY &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">SPY</span></h2>
+      <h2>SPY &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">SPY</span>
+        <span class="badge-stype">ETF v2.4</span>
+      </h2>
       <div class="meta">NASDAQ | N/A | 2026년 03월 28일</div>
     </div>
     <div class="right" style="text-align:right;">
@@ -1367,6 +1470,9 @@ tr:nth-child(even) td { background: var(--row2); }
       <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
     </div>
   </div>
+
+  <!-- Exit v2.5 신호 -->
+  
 
   <!-- 52주 범위 바 -->
   <div class="range-wrap">
@@ -1637,7 +1743,9 @@ tr:nth-child(even) td { background: var(--row2); }
   <!-- 종목 헤더 -->
   <div class="stock-header">
     <div class="left">
-      <h2>QQQ &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">QQQ</span></h2>
+      <h2>QQQ &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">QQQ</span>
+        <span class="badge-stype">ETF v2.4</span>
+      </h2>
       <div class="meta">NASDAQ | N/A | 2026년 03월 28일</div>
     </div>
     <div class="right" style="text-align:right;">
@@ -1659,6 +1767,9 @@ tr:nth-child(even) td { background: var(--row2); }
       <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
     </div>
   </div>
+
+  <!-- Exit v2.5 신호 -->
+  
 
   <!-- 52주 범위 바 -->
   <div class="range-wrap">
@@ -1929,7 +2040,9 @@ tr:nth-child(even) td { background: var(--row2); }
   <!-- 종목 헤더 -->
   <div class="stock-header">
     <div class="left">
-      <h2>TLT &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">TLT</span></h2>
+      <h2>TLT &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">TLT</span>
+        <span class="badge-stype">ETF v2.4</span>
+      </h2>
       <div class="meta">NASDAQ | N/A | 2026년 03월 28일</div>
     </div>
     <div class="right" style="text-align:right;">
@@ -1951,6 +2064,9 @@ tr:nth-child(even) td { background: var(--row2); }
       <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
     </div>
   </div>
+
+  <!-- Exit v2.5 신호 -->
+  
 
   <!-- 52주 범위 바 -->
   <div class="range-wrap">
@@ -2221,7 +2337,9 @@ tr:nth-child(even) td { background: var(--row2); }
   <!-- 종목 헤더 -->
   <div class="stock-header">
     <div class="left">
-      <h2>TSLA &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">Tesla Inc.</span></h2>
+      <h2>TSLA &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">Tesla Inc.</span>
+        <span class="badge-stype">성장주 v2.2</span>
+      </h2>
       <div class="meta">NASDAQ | EV / 에너지 | 2026년 03월 28일</div>
     </div>
     <div class="right" style="text-align:right;">
@@ -2243,6 +2361,9 @@ tr:nth-child(even) td { background: var(--row2); }
       <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
     </div>
   </div>
+
+  <!-- Exit v2.5 신호 -->
+  
 
   <!-- 52주 범위 바 -->
   <div class="range-wrap">
@@ -2513,7 +2634,9 @@ tr:nth-child(even) td { background: var(--row2); }
   <!-- 종목 헤더 -->
   <div class="stock-header">
     <div class="left">
-      <h2>SOXL &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">SOXL</span></h2>
+      <h2>SOXL &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">SOXL</span>
+        <span class="badge-stype">ETF v2.4</span>
+      </h2>
       <div class="meta">NASDAQ | N/A | 2026년 03월 28일</div>
     </div>
     <div class="right" style="text-align:right;">
@@ -2535,6 +2658,9 @@ tr:nth-child(even) td { background: var(--row2); }
       <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
     </div>
   </div>
+
+  <!-- Exit v2.5 신호 -->
+  
 
   <!-- 52주 범위 바 -->
   <div class="range-wrap">
@@ -2805,7 +2931,9 @@ tr:nth-child(even) td { background: var(--row2); }
   <!-- 종목 헤더 -->
   <div class="stock-header">
     <div class="left">
-      <h2>GLD &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">GLD</span></h2>
+      <h2>GLD &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">GLD</span>
+        <span class="badge-stype">ETF v2.4</span>
+      </h2>
       <div class="meta">NASDAQ | N/A | 2026년 03월 28일</div>
     </div>
     <div class="right" style="text-align:right;">
@@ -2821,12 +2949,15 @@ tr:nth-child(even) td { background: var(--row2); }
       <div class="v-badge"><span class="badge badge-sell">하락장</span></div>
       <div class="v-desc">신호 대기 중</div>
     </div>
-    <div class="verdict-box entry1">
+    <div class="verdict-box watch">
       <div class="v-label">판정2 — 기술신호만 (종목 자체)</div>
-      <div class="v-badge"><span class="badge badge-entry1">관심 진입</span></div>
-      <div class="v-desc">신호 대기 중</div>
+      <div class="v-badge"><span class="badge badge-watch">대기</span></div>
+      <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
     </div>
   </div>
+
+  <!-- Exit v2.5 신호 -->
+  
 
   <!-- 52주 범위 바 -->
   <div class="range-wrap">
@@ -2894,22 +3025,22 @@ tr:nth-child(even) td { background: var(--row2); }
     <div class="action-item">
       <div class="action-icon">⏰</div>
       <div class="action-content">
-        <div class="title">1차 매수 타이밍이에요 (자금의 20%)</div>
-        <div class="desc">현재가 $414.70 근처에서 소액 분할 진입 — 추가 하락 여지를 남겨두세요</div>
+        <div class="title">지금은 기다리는 게 맞아요</div>
+        <div class="desc">아직 1차 매수 조건(6개 중 3개)이 채워지지 않았어요. 서두르지 않아도 됩니다</div>
       </div>
     </div>
     <div class="action-item">
       <div class="action-icon">📈</div>
       <div class="action-content">
-        <div class="title">2차 매수 신호를 기다리세요</div>
-        <div class="desc">이중 바닥 확인 + RSI 35 돌파 + 거래량 증가 시 2차(30%) 추가 진입</div>
+        <div class="title">이런 신호가 오면 주목하세요</div>
+        <div class="desc">RSI 38 이하 + 하락 멈춤 + MA20($448.40) 아래 진입 시 1차 매수 검토</div>
       </div>
     </div>
     <div class="action-item">
       <div class="action-icon">🚫</div>
       <div class="action-content">
-        <div class="title">손절 기준</div>
-        <div class="desc c-red">$393.96 아래로 내려가면 손절 — 진입가 대비 -5% 룰을 지키세요</div>
+        <div class="title">이미 갖고 있다면</div>
+        <div class="desc c-red">$434.95 아래로 내려가면 미련 없이 일부 정리하세요</div>
       </div>
     </div>
   </div>
@@ -3097,7 +3228,9 @@ tr:nth-child(even) td { background: var(--row2); }
   <!-- 종목 헤더 -->
   <div class="stock-header">
     <div class="left">
-      <h2>SLV &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">SLV</span></h2>
+      <h2>SLV &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">SLV</span>
+        <span class="badge-stype">ETF v2.4</span>
+      </h2>
       <div class="meta">NASDAQ | N/A | 2026년 03월 28일</div>
     </div>
     <div class="right" style="text-align:right;">
@@ -3119,6 +3252,9 @@ tr:nth-child(even) td { background: var(--row2); }
       <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
     </div>
   </div>
+
+  <!-- Exit v2.5 신호 -->
+  
 
   <!-- 52주 범위 바 -->
   <div class="range-wrap">
@@ -3389,7 +3525,9 @@ tr:nth-child(even) td { background: var(--row2); }
   <!-- 종목 헤더 -->
   <div class="stock-header">
     <div class="left">
-      <h2>NVDA &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">NVIDIA Corporation</span></h2>
+      <h2>NVDA &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">NVIDIA Corporation</span>
+        <span class="badge-stype">성장주 v2.2</span>
+      </h2>
       <div class="meta">NASDAQ | AI / 반도체 | 2026년 03월 28일</div>
     </div>
     <div class="right" style="text-align:right;">
@@ -3411,6 +3549,9 @@ tr:nth-child(even) td { background: var(--row2); }
       <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
     </div>
   </div>
+
+  <!-- Exit v2.5 신호 -->
+  
 
   <!-- 52주 범위 바 -->
   <div class="range-wrap">
@@ -3681,7 +3822,9 @@ tr:nth-child(even) td { background: var(--row2); }
   <!-- 종목 헤더 -->
   <div class="stock-header">
     <div class="left">
-      <h2>CRCL &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">CRCL</span></h2>
+      <h2>CRCL &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">CRCL</span>
+        <span class="badge-stype">성장주 v2.2</span>
+      </h2>
       <div class="meta">NASDAQ | N/A | 2026년 03월 28일</div>
     </div>
     <div class="right" style="text-align:right;">
@@ -3703,6 +3846,9 @@ tr:nth-child(even) td { background: var(--row2); }
       <div class="v-desc">아직 진입 신호 없음 — 현금 보유 대기</div>
     </div>
   </div>
+
+  <!-- Exit v2.5 신호 -->
+  
 
   <!-- 52주 범위 바 -->
   <div class="range-wrap">
@@ -3973,7 +4119,9 @@ tr:nth-child(even) td { background: var(--row2); }
   <!-- 종목 헤더 -->
   <div class="stock-header">
     <div class="left">
-      <h2>XOM &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">XOM</span></h2>
+      <h2>XOM &nbsp;<span style="font-size:14px; font-weight:400; color:#EEF4FB;">XOM</span>
+        <span class="badge-stype">에너지 v2.3</span>
+      </h2>
       <div class="meta">NASDAQ | N/A | 2026년 03월 28일</div>
     </div>
     <div class="right" style="text-align:right;">
@@ -3995,6 +4143,9 @@ tr:nth-child(even) td { background: var(--row2); }
       <div class="v-desc">신호 대기 중</div>
     </div>
   </div>
+
+  <!-- Exit v2.5 신호 -->
+  
 
   <!-- 52주 범위 바 -->
   <div class="range-wrap">
