@@ -56,6 +56,7 @@ jobs:
           git config user.name "GitHub Actions"
           git add docs/
           git add cowork_agents/mag7_data.json
+          git add history/signals_history.json
           git diff --staged --quiet || git commit -m "chore: update report $(date +'%Y-%m-%d') [skip ci]"
           git push
         env:
@@ -81,19 +82,13 @@ jobs:
                   cache = json.load(f)
               import sys
               sys.path.insert(0, 'cowork_agents')
-              from report_engine import trading_stage, trading_stage2
+              from report_engine import trading_signal
               lines = []
-              badge = {'entry3':'🟢','entry2':'🔵','entry1':'🟡','caution_market':'🟠','watch_market':'🔴','watch':'⚪'}
+              badge = {'3rd_BUY':'🟢','2nd_BUY':'🔵','1st_BUY':'🟡','WATCH':'⚪','HOLD':'⚪','CASH':'💵','BOND_WATCH':'📊'}
               for d in cache.get('stocks', []):
-                  sk1, lbl1, _ = trading_stage(d)
-                  sk2, lbl2, _ = trading_stage2(d)
-                  if sk1 == 'watch_market':
-                      sk, lbl = sk1, f"📉 하락장관망 / 기술:{lbl2}"
-                  elif sk1 == 'caution_market':
-                      sk, lbl = sk1, f"⚠️ 경계장(1차만) / 기술:{lbl2}"
-                  else:
-                      sk, lbl = sk2, lbl2
-                  lines.append(f"{badge.get(sk,'⚪')} <b>{d['ticker']}</b>  {lbl}   RSI {d['rsi']:.1f}")
+                  sk, lbl, _ = trading_signal(d)
+                  streak = d.get('streak_annotation', '')
+                  lines.append(f"{badge.get(sk,'⚪')} <b>{d['ticker']}</b>  {lbl} {streak}  RSI {d['rsi']:.1f}")
           except Exception as e:
               lines = [f"(종목 요약 생성 실패: {e})"]
 
@@ -138,19 +133,13 @@ jobs:
                   cache = json.load(f)
               import sys
               sys.path.insert(0, 'cowork_agents')
-              from report_engine import trading_stage, trading_stage2
+              from report_engine import trading_signal
               rows = ""
-              badge = {'entry3':'🟢','entry2':'🔵','entry1':'🟡','caution_market':'🟠','watch_market':'🔴','watch':'⚪'}
+              badge = {'3rd_BUY':'🟢','2nd_BUY':'🔵','1st_BUY':'🟡','WATCH':'⚪','HOLD':'⚪','CASH':'💵','BOND_WATCH':'📊'}
               for d in cache.get('stocks', []):
-                  sk1, lbl1, _ = trading_stage(d)
-                  sk2, lbl2, _ = trading_stage2(d)
-                  if sk1 == 'watch_market':
-                      sk, lbl = sk1, f"📉 하락장관망 / 기술:{lbl2}"
-                  elif sk1 == 'caution_market':
-                      sk, lbl = sk1, f"⚠️ 경계장(1차만) / 기술:{lbl2}"
-                  else:
-                      sk, lbl = sk2, lbl2
-                  rows += f"<tr><td>{badge.get(sk,'⚪')} <b>{d['ticker']}</b></td><td>{lbl}</td><td>{d['rsi']:.1f}</td></tr>"
+                  sk, lbl, _ = trading_signal(d)
+                  streak = d.get('streak_annotation', '')
+                  rows += f"<tr><td>{badge.get(sk,'⚪')} <b>{d['ticker']}</b></td><td>{lbl} {streak}</td><td>{d['rsi']:.1f}</td></tr>"
           except:
               rows = "<tr><td colspan=3>종목 요약 생성 실패</td></tr>"
 

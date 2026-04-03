@@ -353,172 +353,55 @@ KNOWN = {
     'IONQ':'IonQ', 'MSTR':'MicroStrategy', 'IBIT':'iShares Bitcoin ETF',
 }
 
-# ── 전략 유형 분류 (app.py 버전) ─────────────────────────────────────
-_ETF_LIST_APP    = {'QQQ','SPY','VOO','GLD','SLV','TLT','SOXL','SCHD',
-                    'IWM','XLF','XLE','IYR','VNQ','HYG','LQD','TIP',
-                    'SQQQ','TQQQ','UVXY','QLD','SSO','UPRO'}
-_ENERGY_LIST_APP = {'XOM','CVX','OXY','COP','BP','SLB','EOG','MPC',
-                    'PSX','VLO','HAL','BKR','DVN','FANG'}
-
-def _get_stype(p):
-    st = p.get('strategy_type','')
-    if st in ('etf','energy','growth'): return st
-    tk = p.get('ticker','')
-    if tk in _ETF_LIST_APP:    return 'etf'
-    if tk in _ENERGY_LIST_APP: return 'energy'
-    return 'growth'
-
-def _ms(p):
-    def sig(k, d=False): return bool(p.get(k, d))
-    q, s = sig('qqq_above_ma200', True), sig('spy_above_ma200', True)
-    return p.get('market_state', 'normal' if (q and s) else 'caution' if (q or s) else 'bear')
+# ── v5.2 판정 로직 import ──────────────────────────────────────────
+import sys as _sys
+_sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cowork_agents'))
+try:
+    from report_engine import (trading_signal as _trading_signal,
+                               calc_exit_signal as _calc_exit_signal,
+                               _get_strategy_type as _get_stype,
+                               _market_filter as _ms_filter,
+                               S_3RD_BUY, S_2ND_BUY, S_1ST_BUY, S_WATCH,
+                               S_HOLD, S_CASH, S_BOND_WATCH,
+                               E_TOP, E_TP2, E_TP1,
+                               _SIGNAL_COLORS, _SIGNAL_LABELS)
+    _ENGINE_OK = True
+except ImportError:
+    _ENGINE_OK = False
 
 
 def trading_stage_v2(p):
-    """v2.2/v2.3/v2.4 통합 판정1: 시장 필터 포함"""
-    def sig(k, d=False): return bool(p.get(k, d))
-    stype = _get_stype(p)
-    ms    = _ms(p)
-
-    if ms == 'bear':
-        return 'watch_market', '하락장', '#EF5350'
-
-    # ── ETF v2.4 ─────────────────────────────────────
-    if stype == 'etf':
-        if not sig('sig_rsi_gt70_block'):
-            if ms == 'normal':
-                if sum([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
-                        sig('sig_rsi_gt48'), sig('sig_macd_above_zero')]) >= 3:
-                    return 'entry3', '본격 매수', '#00E676'
-                if sum([sig('sig_rsi_gt42'), sig('sig_macd_golden'),
-                        sig('sig_above_ma20_2d') or not sig('sig_below_ma20'),
-                        sig('sig_higher_low')]) >= 3:
-                    return 'entry2', '바닥 확인', '#26C6DA'
-            if sum([sig('sig_rsi_le40'), sig('sig_below_ma20'), sig('sig_near_bb_low'),
-                    sig('sig_low_stopped'), sig('sig_correction_5pct')]) >= 3:
-                return 'entry1', '관심 진입', '#FFEE58'
-        return ('caution_market', '경계장', '#FFA726') if ms == 'caution' else ('watch', '대기', '#FFFFFF')
-
-    # ── Energy v2.3 ──────────────────────────────────
-    if stype == 'energy':
-        if not sig('sig_rsi_gt70_block'):
-            if ms == 'normal':
-                if sum([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
-                        sig('sig_macd_golden'), sig('sig_rsi_gt45')]) >= 3:
-                    return 'entry3', '본격 매수', '#00E676'
-                if sum([sig('sig_double_bottom_3pct'), sig('sig_rsi_gt40'),
-                        sig('sig_macd_golden'), not sig('sig_below_ma20')]) >= 3:
-                    return 'entry2', '바닥 확인', '#26C6DA'
-            if not (sig('sig_block_rsi50') or sig('sig_block_bigdrop')) and sig('sig_macd_hist_2d_up'):
-                if sum([sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
-                        sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')]) >= 3:
-                    return 'entry1', '관심 진입', '#FFEE58'
-        return ('caution_market', '경계장', '#FFA726') if ms == 'caution' else ('watch', '대기', '#FFFFFF')
-
-    # ── Growth v2.2 ──────────────────────────────────
-    if ms == 'normal':
-        if all([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
-                sig('sig_macd_above_zero'),
-                sig('sig_vol_1p3') or sig('sig_vol_5d_2up')]):
-            return 'entry3', '본격 매수', '#00E676'
-        if all([sig('sig_double_bottom'),
-                sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),
-                sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'),
-                sig('sig_vol_1p2')]):
-            return 'entry2', '바닥 확인', '#26C6DA'
-    if not (sig('sig_block_rsi50') or sig('sig_block_bigdrop')) and sig('sig_macd_hist_2d_up'):
-        if sum([sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
-                sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')]) >= 3:
-            return 'entry1', '관심 진입', '#FFEE58'
-    if ms == 'caution':
-        return 'caution_market', '경계장', '#FFA726'
-    return 'watch', '대기', '#FFFFFF'
-
+    """v5.2 통합 판정 — report_engine.trading_signal() 위임"""
+    if _ENGINE_OK:
+        sk, lbl, color_obj = _trading_signal(p)
+        color = _SIGNAL_COLORS.get(sk, '#FFFFFF')
+        return sk, lbl, color
+    return 'HOLD', 'HOLD', '#FFFFFF'
 
 def trading_stage2_v2(p):
-    """v2.2/v2.3/v2.4 통합 판정2: 기술신호만"""
-    def sig(k, d=False): return bool(p.get(k, d))
-    stype = _get_stype(p)
-
-    if stype == 'etf':
-        if not sig('sig_rsi_gt70_block'):
-            if sum([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
-                    sig('sig_rsi_gt48'), sig('sig_macd_above_zero')]) >= 3:
-                return 'entry3', '본격 매수', '#00E676'
-            if sum([sig('sig_rsi_gt42'), sig('sig_macd_golden'),
-                    sig('sig_above_ma20_2d') or not sig('sig_below_ma20'),
-                    sig('sig_higher_low')]) >= 3:
-                return 'entry2', '바닥 확인', '#26C6DA'
-            if sum([sig('sig_rsi_le40'), sig('sig_below_ma20'), sig('sig_near_bb_low'),
-                    sig('sig_low_stopped'), sig('sig_correction_5pct')]) >= 3:
-                return 'entry1', '관심 진입', '#FFEE58'
-        return 'watch', '대기', '#FFFFFF'
-
-    if stype == 'energy':
-        if not sig('sig_rsi_gt70_block'):
-            if sum([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
-                    sig('sig_macd_golden'), sig('sig_rsi_gt45')]) >= 3:
-                return 'entry3', '본격 매수', '#00E676'
-            if sum([sig('sig_double_bottom_3pct'), sig('sig_rsi_gt40'),
-                    sig('sig_macd_golden'), not sig('sig_below_ma20')]) >= 3:
-                return 'entry2', '바닥 확인', '#26C6DA'
-            if not (sig('sig_block_rsi50') or sig('sig_block_bigdrop')) and sig('sig_macd_hist_2d_up'):
-                if sum([sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
-                        sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')]) >= 3:
-                    return 'entry1', '관심 진입', '#FFEE58'
-        return 'watch', '대기', '#FFFFFF'
-
-    # growth v2.2
-    if all([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
-            sig('sig_macd_above_zero'),
-            sig('sig_vol_1p3') or sig('sig_vol_5d_2up')]):
-        return 'entry3', '본격 매수', '#00E676'
-    if all([sig('sig_double_bottom'),
-            sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),
-            sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'),
-            sig('sig_vol_1p2')]):
-        return 'entry2', '바닥 확인', '#26C6DA'
-    if not (sig('sig_block_rsi50') or sig('sig_block_bigdrop')) and sig('sig_macd_hist_2d_up'):
-        if sum([sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
-                sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')]) >= 3:
-            return 'entry1', '관심 진입', '#FFEE58'
-    return 'watch', '대기', '#FFFFFF'
-
+    """v5.2 판정 (단일) — trading_stage_v2와 동일"""
+    return trading_stage_v2(p)
 
 def calc_exit_signal_v2(p):
-    """v2.5 Exit 신호 — (level, label, color, detail)"""
-    def ex(k): return bool(p.get(k, False))
-    if ex('exit_rsi_ge75') or ex('exit_bb_outside_2d') or ex('exit_3d_rise_10pct'):
-        pts = []
-        if ex('exit_rsi_ge75'):      pts.append(f"RSI {p.get('rsi',0):.0f}≥75")
-        if ex('exit_bb_outside_2d'): pts.append('BB상단2일')
-        if ex('exit_3d_rise_10pct'): pts.append('3일+10%')
-        return 99, '⚠️ 과열', '#FF1744', ' '.join(pts)
-    l3 = [ex('exit_ma20_break_2d'), ex('exit_lower_low'),
-          ex('exit_macd_dead_cross'), ex('exit_trailing_stop_8pct')]
-    if any(l3):
-        pts = [v for k,v in [('exit_ma20_break_2d','MA20이탈'),('exit_lower_low','저점↓'),
-               ('exit_macd_dead_cross','데드크로스'),('exit_trailing_stop_8pct','-8%')] if ex(k)]
-        return 3, 'Breakdown', '#EF5350', ' '.join(pts)
-    l2 = [ex('exit_macd_hist_3d_down'), ex('exit_rsi_lower_high'),
-          ex('exit_ma20_break_1d'),     ex('exit_rsi_peaked_65')]
-    if sum(l2) >= 2:
-        pts = [v for k,v in [('exit_macd_hist_3d_down','MACD3일↓'),('exit_rsi_lower_high','RSI다이버'),
-               ('exit_ma20_break_1d','MA20↓'),('exit_rsi_peaked_65','RSI65꺾')] if ex(k)]
-        return 2, 'Weakening', '#FFA726', ' '.join(pts)
-    l1 = [ex('exit_macd_hist_1d_down'), ex('exit_rsi_peaked_65'),
-          ex('exit_bb_top_retreating'), ex('exit_vol_divergence')]
-    if sum(l1) >= 2:
-        pts = [v for k,v in [('exit_macd_hist_1d_down','MACD↓'),('exit_rsi_peaked_65','RSI65'),
-               ('exit_bb_top_retreating','BB이탈'),('exit_vol_divergence','거량↓')] if ex(k)]
-        return 1, 'Warning', '#FFEE58', ' '.join(pts)
+    """v5.2 Exit 신호 — (name|None, label, color, detail)"""
+    if _ENGINE_OK:
+        ex_name, ex_lbl, color_obj, detail = _calc_exit_signal(p)
+        color = '#FF1744' if ex_name == E_TOP else '#EF5350' if ex_name == E_TP2 else '#FFA726' if ex_name == E_TP1 else '#FFFFFF'
+        level = 99 if ex_name == E_TOP else 3 if ex_name == E_TP2 else 2 if ex_name == E_TP1 else 0
+        return level, ex_lbl, color, detail
     return 0, '', '#FFFFFF', ''
 
 
 def stage_pill_cls(sk):
-    return {'entry3': 'tp-entry3', 'entry2': 'tp-entry2', 'entry1': 'tp-entry1',
-            'watch_market': 'tp-sell', 'caution_market': 'tp-caution',
-            'watch': 'tp-watch'}.get(sk, 'tp-watch')
+    return {
+        '3rd_BUY': 'tp-entry3', '2nd_BUY': 'tp-entry2', '1st_BUY': 'tp-entry1',
+        'WATCH': 'tp-watch', 'HOLD': 'tp-watch', 'CASH': 'tp-watch',
+        'BOND_WATCH': 'tp-entry1',
+        # 하위호환
+        'entry3': 'tp-entry3', 'entry2': 'tp-entry2', 'entry1': 'tp-entry1',
+        'watch_market': 'tp-sell', 'caution_market': 'tp-caution',
+        'watch': 'tp-watch',
+    }.get(sk, 'tp-watch')
 
 
 def exit_pill_html(level, lbl, color, detail):
@@ -535,12 +418,19 @@ def exit_pill_html(level, lbl, color, detail):
 
 
 def stype_badge_html(p):
-    """전략 유형 배지 (ETF/에너지/성장주)"""
+    """전략 유형 배지 (v5.2: 8종)"""
     stype = _get_stype(p)
-    cfg = {'etf':    ('#64B5F6', 'ETF v2.4'),
-           'energy': ('#A5D6A7', '에너지 v2.3'),
-           'growth': ('#90CAF9', '성장주 v2.2')}
-    color, label = cfg.get(stype, ('#90CAF9', 'v2.2'))
+    cfg = {
+        'etf':         ('#64B5F6', 'ETF v2.4'),
+        'energy':      ('#A5D6A7', '에너지 v2.3'),
+        'growth':      ('#90CAF9', '성장주 v2.3'),
+        'value':       ('#CE93D8', '가치주 v2.4'),
+        'bond':        ('#80CBC4', '채권 v2.6'),
+        'metal':       ('#FFD54F', '금속 v2.6'),
+        'speculative': ('#FF8A65', '투기 v2.3'),
+        'bil':         ('#B0BEC5', '현금성'),
+    }
+    color, label = cfg.get(stype, ('#90CAF9', 'v2.3'))
     return (f'<span style="font-size:9px;color:{color};opacity:0.75;'
             f'border:1px solid {color}55;border-radius:3px;padding:1px 4px">{label}</span>')
 
@@ -735,9 +625,9 @@ missing = [t for t in st.session_state.tickers if t not in price_map]
 # ══════════════════════════════════════════════════════════════════
 n          = len(st.session_state.tickers)
 buy_count  = sum(1 for t in st.session_state.tickers
-                 if price_map.get(t) and trading_stage_v2(price_map[t])[0] in ('entry1','entry2','entry3'))
+                 if price_map.get(t) and trading_stage_v2(price_map[t])[0] in ('1st_BUY','2nd_BUY','3rd_BUY','entry1','entry2','entry3'))
 sell_count = sum(1 for t in st.session_state.tickers
-                 if price_map.get(t) and trading_stage_v2(price_map[t])[0] in ('watch_market', 'caution_market'))
+                 if price_map.get(t) and trading_stage_v2(price_map[t])[0] in ('WATCH',))
 
 st.markdown(f"""
 <div class="header-wrap">
@@ -755,11 +645,11 @@ st.markdown(f"""
     </div>
     <div class="stat-box">
       <div class="stat-val" style="color:#00E676">{buy_count}</div>
-      <div class="stat-lbl">매수 신호</div>
+      <div class="stat-lbl">BUY 신호</div>
     </div>
     <div class="stat-box">
-      <div class="stat-val" style="color:#FF5252">{sell_count}</div>
-      <div class="stat-lbl">시장 관망</div>
+      <div class="stat-val" style="color:#B0BEC5">{sell_count}</div>
+      <div class="stat-lbl">WATCH</div>
     </div>
   </div>
 </div>
@@ -876,11 +766,11 @@ for row in rows:
                   <hr class="ticker-divider">
                   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
                     <div>
-                      <div class="ts-lbl" style="margin-bottom:4px;text-align:left">판정1 시장필터</div>
+                      <div class="ts-lbl" style="margin-bottom:4px;text-align:left">시그널 v5.2</div>
                       <span class="timing-pill {v1_cls}" style="color:{v1_color}">{v1_lbl}</span>
                     </div>
                     <div style="text-align:right">
-                      <div class="ts-lbl" style="margin-bottom:4px">판정2 기술신호</div>
+                      <div class="ts-lbl" style="margin-bottom:4px;font-size:9px;color:rgba(255,255,255,0.4)">시장 참고</div>
                       <span class="timing-pill {v2_cls}" style="color:{v2_color}">{v2_lbl}</span>
                     </div>
                   </div>

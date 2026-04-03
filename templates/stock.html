@@ -15,7 +15,7 @@
     <div>
       <h1 style="font-size:18px;">{{ d.ticker }} &nbsp;<span style="font-weight:400; color:#ffffff; font-size:14px;">{{ d.company }}</span>
         <span style="font-size:9px; color:rgba(100,181,246,0.8); border:1px solid rgba(100,181,246,0.3); border-radius:3px; padding:1px 5px; margin-left:6px; vertical-align:middle;">{{ stype_lbl }}</span>
-        {% if ex_level > 0 %}<span class="badge badge-{{ ex_cls }}" style="font-size:9px; vertical-align:middle; margin-left:4px;" title="{{ ex_detail }}">📡 {{ ex_lbl }}</span>{% endif %}
+        {% if ex_level > 0 %}<span class="badge badge-{{ ex_cls }}" style="font-size:9px; vertical-align:middle; margin-left:4px;" title="{{ ex_detail }}">{{ ex_lbl }}</span>{% endif %}
       </h1>
       <div style="font-size:11px; color:#ffffff; margin-top:4px;">{{ d.exchange }} | {{ d.sector }} | {{ today_str }}</div>
     </div>
@@ -40,25 +40,23 @@
     </div>
   </div>
 
-  <!-- 요약 박스 -->
-  <div class="summary-box {{ sk2 if sk2 in ['buy','entry','sell'] else 'watch' }}">
-    <div style="display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap;">
-      <div style="flex:1; min-width:160px;">
-        <div style="font-size:11px; color:#94b8d4; margin-bottom:4px;">판정1 &nbsp;<span style="font-weight:400;">시장필터 포함 (QQQ+SPY Dual MA200)</span></div>
-        <div style="font-size:15px; font-weight:700; margin-bottom:4px;">
-          <span class="badge badge-{{ sk1 }}">{{ lbl1 }}</span>
-        </div>
-        <div style="font-size:12px; color:#ffffff;">{{ stage_desc1 }}</div>
-      </div>
-      <div style="width:1px; background:var(--border); align-self:stretch;"></div>
-      <div style="flex:1; min-width:160px;">
-        <div style="font-size:11px; color:#94b8d4; margin-bottom:4px;">판정2 &nbsp;<span style="font-weight:400;">기술신호만 (종목 자체)</span></div>
-        <div style="font-size:15px; font-weight:700; margin-bottom:4px;">
-          <span class="badge badge-{{ sk2 }}">{{ lbl2 }}</span>
-        </div>
-        <div style="font-size:12px; color:#ffffff;">{{ stage_desc2 }}</div>
-      </div>
+  <!-- 시장 상태 배너 (참고용) -->
+  {% if market_banner %}
+  <div class="market-banner {{ 'normal' if 'normal' in market_banner.text|lower or '정상' in market_banner.text else 'bear' if '하락' in market_banner.text else 'caution' }}">
+    <span>{{ market_banner.icon }}</span>
+    <span>{{ market_banner.text }}</span>
+    <span style="font-size:10px; opacity:0.7; margin-left:auto;">(참고용 — 시그널 판정에 미사용)</span>
+  </div>
+  {% endif %}
+
+  <!-- 시그널 판정 박스 (단일) -->
+  <div class="summary-box {{ 'buy' if 'BUY' in lbl1 else 'watch' }}">
+    <div style="font-size:11px; color:#94b8d4; margin-bottom:4px;">시그널 판정 &nbsp;<span style="font-weight:400;">Signal Decision Rules v5.2</span></div>
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+      <span class="badge badge-{{ sk1 }}" style="font-size:15px; padding:4px 14px;">{{ lbl1 }}</span>
+      {% if streak %}<span class="streak-badge {{ 'confirmed' if '확정' in streak else 'pending' }}">{{ streak }}</span>{% endif %}
     </div>
+    <div style="font-size:12px; color:#ffffff;">{{ stage_desc1 }}</div>
   </div>
 
   <!-- 차트 -->
@@ -104,21 +102,23 @@
     </div>
   </div>
 
-  <!-- Exit v2.5 신호 섹션 -->
+  <!-- Exit Signal 섹션 (v5.2 익절 전용) -->
   {% if ex_level > 0 %}
   <div style="background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:14px 16px; margin-top:12px;">
     <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-      <div style="font-size:13px; font-weight:700; color:var(--fg);">📡 Exit v2.5 신호</div>
+      <div style="font-size:13px; font-weight:700; color:var(--fg);">Exit Signal</div>
       <span class="badge badge-{{ ex_cls }}">{{ ex_lbl }}</span>
     </div>
     <div style="font-size:12px; color:#ffffff; line-height:1.8; background:var(--bg); border-radius:4px; padding:10px 14px;">
-      {% for line in ex_detail.split(' | ') %}<div>• {{ line }}</div>{% endfor %}
+      {% for line in ex_detail.split(' + ') %}<div>{{ line }}</div>{% endfor %}
     </div>
     <div style="margin-top:10px; font-size:11px; color:var(--sub); line-height:1.6;">
-      {% if ex_level == 99 %}⚠️ <b style="color:#FF1744;">과열 경보</b> — RSI≥75 또는 BB 상단 2일 연속 돌파 또는 3일 10% 급등. 즉시 수익 실현 검토.
-      {% elif ex_level == 3 %}🔴 <b style="color:#EF5350;">Trend Breakdown</b> — 추세 붕괴 신호. MA20 이탈/저점 하락/MACD 데드크로스/고점比 -8% 중 1개 이상 발생. 포지션 축소 권장.
-      {% elif ex_level == 2 %}🟠 <b style="color:#FFA726;">Trend Weakening</b> — 추세 약화. MACD히스토/RSI/MA20 복합 신호 2개 이상. 비중 조절 고려.
-      {% elif ex_level == 1 %}🟡 <b style="color:#FFEE58;">Early Warning</b> — 초기 경고. 단기 과열/다이버전스 2개 이상. 신규 매수 자제, 기존 포지션 모니터링.
+      {% if 'TOP' in ex_lbl or '과열' in ex_lbl %}
+        <b style="color:#FF1744;">TOP_SIGNAL</b> — RSI>=75 / BB상단 2일 / 3일+10%. 게이트·가드 없이 즉시 발동. 즉시 일부 익절.
+      {% elif 'PROFIT_2' in ex_lbl or 'TAKE' in ex_lbl and '2' in ex_lbl %}
+        <b style="color:#EF5350;">TAKE_PROFIT_2</b> — 대량 익절 50%. 고점 게이트(DD>-5%) 통과 + MACD 가드 미발동 시에만 작동.
+      {% elif 'PROFIT_1' in ex_lbl %}
+        <b style="color:#FFA726;">TAKE_PROFIT_1</b> — 1차 익절 30%. 고점 게이트(DD>-5%) 통과 + MACD 가드 미발동 시에만 작동.
       {% endif %}
     </div>
   </div>
@@ -127,7 +127,7 @@
   <!-- 판정 근거 설명 -->
   {% if breakdown %}
   <div style="background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:16px; margin-top:12px;">
-    <div style="font-size:13px; font-weight:700; color:var(--fg); margin-bottom:12px;">🔍 판정 근거 상세</div>
+    <div style="font-size:13px; font-weight:700; color:var(--fg); margin-bottom:12px;">Signal Breakdown</div>
 
     {% if breakdown.ai_explanation %}
     <div style="background:var(--bg); border-left:3px solid var(--accent,#60a5fa); border-radius:0 4px 4px 0; padding:10px 14px; margin-bottom:14px; font-size:12px; color:#ffffff; line-height:1.7;">
@@ -146,13 +146,13 @@
       </div>
       {% if stage.blocked and stage.block_reason %}
       <div style="font-size:11px; color:#F87171; background:rgba(248,113,113,0.1); border-radius:4px; padding:4px 8px; margin-bottom:6px;">
-        ⛔ {{ stage.block_reason }}
+        {{ stage.block_reason }}
       </div>
       {% endif %}
       <div style="border:1px solid var(--border); border-radius:4px; overflow:hidden;">
         {% for cond in stage.conditions %}
         <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:{% if not loop.last %}1px solid var(--border){% else %}none{% endif %}; background:{% if cond.pass %}rgba(52,211,153,0.05){% else %}rgba(248,113,113,0.04){% endif %};">
-          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">{{ '✅' if cond.pass else '❌' }}</span>
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">{{ '&#10004;' if cond.pass else '&#10008;' }}</span>
           <div style="flex:1; min-width:0;">
             <div style="font-size:11px; font-weight:600; color:var(--fg);">{{ cond.name }}</div>
             <div style="font-size:11px; color:#ffffff; margin-top:2px;">{{ cond.ok if cond.pass else cond.fail }}</div>

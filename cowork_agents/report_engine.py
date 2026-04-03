@@ -451,12 +451,16 @@ def opinion_label(total):
 # ══════════════════════════════════════════════════════════════════
 
 def get_condition_breakdown(d):
-    """판정2 기준 각 단계별 조건 체크 결과 반환 (HTML 표시용) — strategy_type 분기"""
+    """v5.2 각 단계별 조건 체크 결과 반환 (HTML 표시용) — strategy_type 분기"""
     stype = _get_strategy_type(d)
     if stype == 'etf':
         return _breakdown_etf(d)
     if stype == 'energy':
         return _breakdown_energy(d)
+    if stype in ('value', 'speculative'):
+        return _breakdown_growth(d)  # Growth 로직 공유
+    if stype in ('bond', 'metal', 'bil'):
+        return _breakdown_growth(d)  # 기본 breakdown 사용
     return _breakdown_growth(d)
 
 
@@ -776,374 +780,532 @@ def _breakdown_energy(d):
 
 
 # ══════════════════════════════════════════════════════════════════
-#  4단계 타이밍 판정
+#  v5.2 Signal Decision System
 # ══════════════════════════════════════════════════════════════════
 
-# ── 전략 유형 분류 ─────────────────────────────────────────────────
-_ETF_LIST    = {'QQQ','SPY','VOO','GLD','SLV','TLT','SOXL','SCHD',
+# ── 시그널 상수 ──────────────────────────────────────────────────
+S_3RD_BUY    = '3rd_BUY'
+S_2ND_BUY    = '2nd_BUY'
+S_1ST_BUY    = '1st_BUY'
+S_WATCH      = 'WATCH'
+S_HOLD       = 'HOLD'
+S_CASH       = 'CASH'
+S_BOND_WATCH = 'BOND_WATCH'
+
+E_TOP  = 'TOP_SIGNAL'
+E_TP2  = 'TAKE_PROFIT_2'
+E_TP1  = 'TAKE_PROFIT_1'
+
+# 시그널별 색상
+_SIGNAL_COLORS = {
+    S_3RD_BUY:    '#00E676',
+    S_2ND_BUY:    '#26C6DA',
+    S_1ST_BUY:    '#FFEE58',
+    S_WATCH:      '#B0BEC5',
+    S_HOLD:       '#FFFFFF',
+    S_CASH:       '#FFFFFF',
+    S_BOND_WATCH: '#90CAF9',
+    E_TOP:        '#FF1744',
+    E_TP2:        '#EF5350',
+    E_TP1:        '#FFA726',
+}
+
+# 시그널별 한글 라벨
+_SIGNAL_LABELS = {
+    S_3RD_BUY:    '3rd BUY (50%)',
+    S_2ND_BUY:    '2nd BUY (30%)',
+    S_1ST_BUY:    '1st BUY (20%)',
+    S_WATCH:      'WATCH',
+    S_HOLD:       'HOLD',
+    S_CASH:       'CASH',
+    S_BOND_WATCH: 'BOND WATCH',
+}
+
+def _sig_color(sk):
+    return colors.HexColor(_SIGNAL_COLORS.get(sk, '#FFFFFF'))
+
+def _sig_label(sk):
+    return _SIGNAL_LABELS.get(sk, sk)
+
+# ── 전략 유형 분류 (v5.2: 8종) ────────────────────────────────────
+_BIL_LIST    = {'BIL'}
+_BOND_LIST   = {'TLT'}
+_METAL_LIST  = {'GLD', 'SLV'}
+_VALUE_LIST  = {'O', 'UNH'}
+_SPEC_LIST   = {'TQQQ', 'SOXL', 'CRCL', 'BTDR', 'ETHU'}
+_ETF_LIST    = {'QQQ','SPY','VOO','SCHD','JEPI',
                 'IWM','XLF','XLE','IYR','VNQ','HYG','LQD','TIP',
-                'SQQQ','TQQQ','UVXY','QLD','SSO','UPRO'}
+                'SQQQ','UVXY','QLD','SSO','UPRO'}
 _ENERGY_LIST = {'XOM','CVX','OXY','COP','BP','SLB','EOG','MPC',
                 'PSX','VLO','HAL','BKR','DVN','FANG'}
 
 def _get_strategy_type(d):
     st = d.get('strategy_type', '')
-    if st in ('etf','energy','growth'): return st
+    if st in ('etf','energy','growth','value','bond','metal','speculative','bil'):
+        return st
     ticker = d.get('ticker','')
+    if ticker in _BIL_LIST:    return 'bil'
+    if ticker in _BOND_LIST:   return 'bond'
+    if ticker in _METAL_LIST:  return 'metal'
+    if ticker in _VALUE_LIST:  return 'value'
+    if ticker in _SPEC_LIST:   return 'speculative'
     if ticker in _ETF_LIST:    return 'etf'
     if ticker in _ENERGY_LIST: return 'energy'
     return 'growth'
 
 
 def _market_filter(d):
-    """QQQ+SPY Dual MA200 시장 필터 → 'normal'|'caution'|'bear'"""
-    def sig(k, default=False): return bool(d.get(k, default))
-    qqq = sig('qqq_above_ma200', True)
-    spy = sig('spy_above_ma200', True)
+    """QQQ+SPY Dual MA200 시장 필터 → 'normal'|'caution'|'bear' (참고용)"""
+    qqq = bool(d.get('qqq_above_ma200', True))
+    spy = bool(d.get('spy_above_ma200', True))
     ms  = d.get('market_state', 'normal' if (qqq and spy) else 'caution' if (qqq or spy) else 'bear')
     return ms
 
 
-def _trading_stage_etf(d):
-    """v2.4 ETF 전략 — 균형 진입, 거래량 제거, RSI>70 차단"""
-    def sig(k, default=False): return bool(d.get(k, default))
-    ms = _market_filter(d)
+# ── Entry 전략 함수들 (v5.2) ─────────────────────────────────────
 
-    if ms == 'bear':
-        return ('watch_market', '하락장', C_BEAR)
+def _signal_growth(d):
+    """Growth v2.3 — NVDA, TSLA, PLTR, AAPL, MSFT, GOOGL, AMZN 등"""
+    def sig(k): return bool(d.get(k, False))
 
-    if not sig('sig_rsi_gt70_block'):          # RSI > 70 → 전 단계 금지
-        if ms == 'normal':
-            # 3차 (50%): 4개 중 3개 이상
-            cond3 = [sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
-                     sig('sig_rsi_gt48'),       sig('sig_macd_above_zero')]
-            if sum(cond3) >= 3:
-                return ('entry3', '본격 매수', C_ENTRY3)
+    # 전 단계 거부: -5% 급락
+    if sig('sig_block_5pct_drop_all'):
+        return (S_HOLD, _sig_label(S_HOLD), _sig_color(S_HOLD))
 
-            # 2차 (30%): 4개 중 3개 이상
-            cond2 = [sig('sig_rsi_gt42'), sig('sig_macd_golden'),
-                     sig('sig_above_ma20_2d') or not sig('sig_below_ma20'),
-                     sig('sig_higher_low')]
-            if sum(cond2) >= 3:
-                return ('entry2', '바닥 확인', C_ENTRY2)
+    # 3rd BUY (50%) — ALL 4 + RSI>75 차단
+    if not sig('sig_rsi_gt75_block'):
+        cond3 = [
+            sig('sig_above_ma20_2d') or (not sig('sig_below_ma20')),  # 종가 > MA20
+            sig('sig_macd_above_zero') and sig('sig_macd_golden'),     # MACD>0 + 골든크로스
+            sig('sig_vol_1p3') or sig('sig_vol_5d_2up'),               # 거래량 ≥ 1.3x
+            sig('sig_rsi_gt55'),                                        # RSI > 55
+        ]
+        if all(cond3):
+            return (S_3RD_BUY, _sig_label(S_3RD_BUY), _sig_color(S_3RD_BUY))
 
-        # 1차 (20%): 5개 중 3개 이상 (경계장도 허용)
-        cond1 = [sig('sig_rsi_le40'), sig('sig_below_ma20'), sig('sig_near_bb_low'),
-                 sig('sig_low_stopped'), sig('sig_correction_5pct')]
-        if sum(cond1) >= 3:
-            return ('entry1', '관심 진입', C_ENTRY1)
+    # 2nd BUY (30%) — ALL 4
+    cond2 = [
+        sig('sig_double_bottom_diff_3pct'),  # 이중바닥 diff ≤ 3%
+        sig('sig_rsi_gt35'),                  # RSI > 35
+        sig('sig_macd_golden'),               # MACD > signal (필수)
+        sig('sig_vol_1p2'),                   # 거래량 ≥ 1.2x
+    ]
+    if all(cond2):
+        return (S_2ND_BUY, _sig_label(S_2ND_BUY), _sig_color(S_2ND_BUY))
 
-    if ms == 'caution':
-        return ('caution_market', '경계장', C_CAUTION)
-    return ('watch', '대기', C_WAIT)
+    # 1st BUY (20%) — 필수 ALL 3 + 선택 2/3
+    if not sig('sig_rsi_gt55_block'):  # RSI > 55 → 1st만 차단
+        mandatory = [sig('sig_rsi_le38'), sig('sig_below_ma20'), sig('sig_macd_hist_2d_up')]
+        optional  = [sig('sig_adx_le25'), sig('sig_near_bb_low'), sig('sig_bounce2pct')]
+        if all(mandatory) and sum(optional) >= 2:
+            return (S_1ST_BUY, _sig_label(S_1ST_BUY), _sig_color(S_1ST_BUY))
+
+    # WATCH — 부분 조건 충족
+    mandatory_cnt = sum([sig('sig_rsi_le38'), sig('sig_below_ma20'), sig('sig_macd_hist_2d_up')])
+    optional_cnt  = sum([sig('sig_adx_le25'), sig('sig_near_bb_low'), sig('sig_bounce2pct')])
+    if (mandatory_cnt >= 2 and optional_cnt >= 1) or (mandatory_cnt >= 1 and optional_cnt >= 2):
+        return (S_WATCH, _sig_label(S_WATCH), _sig_color(S_WATCH))
+
+    return (S_HOLD, _sig_label(S_HOLD), _sig_color(S_HOLD))
 
 
-def _trading_stage_energy(d):
-    """v2.3 에너지/가치 전략 — 선제 진입, 거래량 제거, RSI>70 차단"""
-    def sig(k, default=False): return bool(d.get(k, default))
-    ms = _market_filter(d)
+def _signal_etf(d):
+    """ETF v2.4 — QQQ, SPY, VOO, SCHD, JEPI 등"""
+    def sig(k): return bool(d.get(k, False))
 
-    if ms == 'bear':
-        return ('watch_market', '하락장', C_BEAR)
+    # RSI > 70 → 전 단계 금지
+    if sig('sig_rsi_gt70_block'):
+        return (S_HOLD, _sig_label(S_HOLD), _sig_color(S_HOLD))
 
-    if not sig('sig_rsi_gt70_block'):          # RSI > 70 → 전 단계 금지
-        if ms == 'normal':
-            # 3차 (50%): 4개 중 3개 이상
-            cond3 = [sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
-                     sig('sig_macd_golden'),   sig('sig_rsi_gt45')]
-            if sum(cond3) >= 3:
-                return ('entry3', '본격 매수', C_ENTRY3)
+    # 3rd BUY (50%) — ALL 3
+    cond3 = [
+        sig('sig_above_ma20_2d') or (not sig('sig_below_ma20')),
+        sig('sig_rsi_gt55'),
+        sig('sig_macd_above_zero') and sig('sig_macd_golden'),
+    ]
+    if all(cond3):
+        return (S_3RD_BUY, _sig_label(S_3RD_BUY), _sig_color(S_3RD_BUY))
 
-            # 2차 (30%): 4개 중 3개 이상
-            cond2 = [sig('sig_double_bottom_3pct'), sig('sig_rsi_gt40'),
-                     sig('sig_macd_golden'),         not sig('sig_below_ma20')]
-            if sum(cond2) >= 3:
-                return ('entry2', '바닥 확인', C_ENTRY2)
+    # 2nd BUY (30%) — Pick 3/4
+    cond2 = [sig('sig_rsi_gt42'), sig('sig_macd_golden'),
+             sig('sig_above_ma20_2d') or not sig('sig_below_ma20'),
+             sig('sig_higher_low')]
+    if sum(cond2) >= 3:
+        return (S_2ND_BUY, _sig_label(S_2ND_BUY), _sig_color(S_2ND_BUY))
 
-        # 1차 (20%): 성장주 1차와 동일 (보수적 정찰대)
-        block1 = sig('sig_block_rsi50') or sig('sig_block_bigdrop')
-        if not block1 and sig('sig_macd_hist_2d_up'):
-            cond1 = [sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
-                     sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')]
-            if sum(cond1) >= 3:
-                return ('entry1', '관심 진입', C_ENTRY1)
+    # 1st BUY (20%) — 필수 2 + 선택 1/3
+    mandatory = [sig('sig_rsi_le35'), sig('sig_correction_5pct')]
+    optional  = [sig('sig_below_ma20'), sig('sig_near_bb_low'), sig('sig_low_stopped')]
+    if all(mandatory) and sum(optional) >= 1:
+        return (S_1ST_BUY, _sig_label(S_1ST_BUY), _sig_color(S_1ST_BUY))
 
-    if ms == 'caution':
-        return ('caution_market', '경계장', C_CAUTION)
-    return ('watch', '대기', C_WAIT)
+    # WATCH — 1st 필수 1개 + 선택 1개
+    if sum(mandatory) >= 1 and sum(optional) >= 1:
+        return (S_WATCH, _sig_label(S_WATCH), _sig_color(S_WATCH))
 
+    return (S_HOLD, _sig_label(S_HOLD), _sig_color(S_HOLD))
+
+
+def _signal_energy(d):
+    """Energy v2.3 — XOM, CVX 등 (시장필터 차단 제거)"""
+    def sig(k): return bool(d.get(k, False))
+
+    if sig('sig_rsi_gt70_block'):
+        return (S_HOLD, _sig_label(S_HOLD), _sig_color(S_HOLD))
+
+    if sig('sig_block_5pct_drop_all'):
+        return (S_HOLD, _sig_label(S_HOLD), _sig_color(S_HOLD))
+
+    # 3차 (50%): 4개 중 3개 이상
+    cond3 = [sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
+             sig('sig_macd_golden'),   sig('sig_rsi_gt45')]
+    if sum(cond3) >= 3:
+        return (S_3RD_BUY, _sig_label(S_3RD_BUY), _sig_color(S_3RD_BUY))
+
+    # 2차 (30%): 4개 중 3개 이상
+    cond2 = [sig('sig_double_bottom_3pct'), sig('sig_rsi_gt40'),
+             sig('sig_macd_golden'),         not sig('sig_below_ma20')]
+    if sum(cond2) >= 3:
+        return (S_2ND_BUY, _sig_label(S_2ND_BUY), _sig_color(S_2ND_BUY))
+
+    # 1차 (20%): 필수 ALL 3 + 선택 2/3 (Growth와 동일)
+    if not sig('sig_rsi_gt55_block'):
+        mandatory = [sig('sig_rsi_le38'), sig('sig_below_ma20'), sig('sig_macd_hist_2d_up')]
+        optional  = [sig('sig_adx_le25'), sig('sig_near_bb_low'), sig('sig_bounce2pct')]
+        if all(mandatory) and sum(optional) >= 2:
+            return (S_1ST_BUY, _sig_label(S_1ST_BUY), _sig_color(S_1ST_BUY))
+
+    return (S_HOLD, _sig_label(S_HOLD), _sig_color(S_HOLD))
+
+
+def _signal_value(d):
+    """Value v2.4 — O, UNH (Growth와 동일하되 RSI 거부 55→70)"""
+    def sig(k): return bool(d.get(k, False))
+
+    if sig('sig_block_5pct_drop_all'):
+        return (S_HOLD, _sig_label(S_HOLD), _sig_color(S_HOLD))
+
+    # 3rd BUY — Growth와 동일
+    if not sig('sig_rsi_gt75_block'):
+        cond3 = [
+            sig('sig_above_ma20_2d') or (not sig('sig_below_ma20')),
+            sig('sig_macd_above_zero') and sig('sig_macd_golden'),
+            sig('sig_vol_1p3') or sig('sig_vol_5d_2up'),
+            sig('sig_rsi_gt55'),
+        ]
+        if all(cond3):
+            return (S_3RD_BUY, _sig_label(S_3RD_BUY), _sig_color(S_3RD_BUY))
+
+    # 2nd BUY — Growth와 동일
+    cond2 = [sig('sig_double_bottom_diff_3pct'), sig('sig_rsi_gt35'),
+             sig('sig_macd_golden'), sig('sig_vol_1p2')]
+    if all(cond2):
+        return (S_2ND_BUY, _sig_label(S_2ND_BUY), _sig_color(S_2ND_BUY))
+
+    # 1st BUY — RSI 거부 70 (Growth는 55)
+    if not sig('sig_rsi_gt70_block'):
+        mandatory = [sig('sig_rsi_le38'), sig('sig_below_ma20'), sig('sig_macd_hist_2d_up')]
+        optional  = [sig('sig_adx_le25'), sig('sig_near_bb_low'), sig('sig_bounce2pct')]
+        if all(mandatory) and sum(optional) >= 2:
+            return (S_1ST_BUY, _sig_label(S_1ST_BUY), _sig_color(S_1ST_BUY))
+
+    return (S_HOLD, _sig_label(S_HOLD), _sig_color(S_HOLD))
+
+
+def _signal_bond(d):
+    """Bond v2.6 — TLT (30Y 금리 기반)"""
+    def sig(k): return bool(d.get(k, False))
+    y30 = float(d.get('yield_30y', 0))
+
+    # 3rd BUY: TLT > MA20 2일 + 금리 피크 대비 하락 전환
+    if sig('sig_above_ma20_2d') and d.get('yield_30y_declining', False):
+        return (S_3RD_BUY, _sig_label(S_3RD_BUY), _sig_color(S_3RD_BUY))
+
+    # 2nd BUY: 금리 ≥ 5.2% OR MACD 골든크로스
+    if y30 >= 5.2 or sig('sig_macd_golden'):
+        return (S_2ND_BUY, _sig_label(S_2ND_BUY), _sig_color(S_2ND_BUY))
+
+    # 1st BUY: 금리 ≥ 5.0% AND RSI ≤ 35
+    if y30 >= 5.0 and sig('sig_rsi_le35'):
+        return (S_1ST_BUY, _sig_label(S_1ST_BUY), _sig_color(S_1ST_BUY))
+
+    # BOND_WATCH: 금리 4.9~5.0%
+    if 4.9 <= y30 < 5.0:
+        return (S_BOND_WATCH, _sig_label(S_BOND_WATCH), _sig_color(S_BOND_WATCH))
+
+    return (S_HOLD, _sig_label(S_HOLD), _sig_color(S_HOLD))
+
+
+def _signal_metal(d):
+    """Metal v2.6 — GLD, SLV"""
+    def sig(k): return bool(d.get(k, False))
+    rsi = float(d.get('rsi', 50))
+
+    # RSI > 80 → TOP_SIGNAL 강제
+    if rsi > 80:
+        return (S_HOLD, _sig_label(S_HOLD), _sig_color(S_HOLD))  # Exit에서 처리
+
+    # 3rd BUY: Pick 2/3
+    cond3 = [sig('sig_above_ma20_2d'), sig('sig_ma20_rising'), sig('sig_macd_above_zero')]
+    if sum(cond3) >= 2:
+        return (S_3RD_BUY, _sig_label(S_3RD_BUY), _sig_color(S_3RD_BUY))
+
+    # 2nd BUY: Pick 2/4
+    cond2 = [sig('sig_macd_golden'), sig('sig_rsi_gt42'),
+             sig('sig_higher_low'), sig('sig_ma20_flattening')]
+    if sum(cond2) >= 2:
+        return (S_2ND_BUY, _sig_label(S_2ND_BUY), _sig_color(S_2ND_BUY))
+
+    # 1st BUY: Pick 2/4
+    vix_high = float(d.get('vix_close', 0)) > 25
+    cond1 = [sig('sig_rsi_le40'), sig('sig_below_ma20'), vix_high, sig('sig_near_bb_low')]
+    if sum(cond1) >= 2:
+        return (S_1ST_BUY, _sig_label(S_1ST_BUY), _sig_color(S_1ST_BUY))
+
+    return (S_HOLD, _sig_label(S_HOLD), _sig_color(S_HOLD))
+
+
+# ── 통합 시그널 판정 (v5.2) ──────────────────────────────────────
+
+def trading_signal(d):
+    """
+    v5.2 통합 시그널 판정 — 순수 기술지표, 시장필터 미사용
+    Returns: (signal_key, label, color)
+    """
+    stype = _get_strategy_type(d)
+    if stype == 'bil':
+        return (S_CASH, _sig_label(S_CASH), _sig_color(S_CASH))
+
+    router = {
+        'growth':      _signal_growth,
+        'etf':         _signal_etf,
+        'energy':      _signal_energy,
+        'value':       _signal_value,
+        'bond':        _signal_bond,
+        'metal':       _signal_metal,
+        'speculative': _signal_growth,
+    }
+    fn = router.get(stype, _signal_growth)
+    return fn(d)
+
+
+# ── 하위호환: 기존 trading_stage/trading_stage2 래퍼 ──────────────
+
+def trading_stage(d):
+    """하위호환 래퍼 — trading_signal()로 위임"""
+    return trading_signal(d)
+
+def trading_stage2(d):
+    """하위호환 래퍼 — trading_signal()로 위임 (시장필터 구분 없음)"""
+    return trading_signal(d)
+
+
+# ── Exit Signal v5.2 (익절 전용) ─────────────────────────────────
 
 def calc_exit_signal(d):
     """
-    v2.5 상승 꺾임 감지 시스템 (Exit Signal)
-    Returns: (level, label, color, detail)
-      level 0  → 없음
-      level 1  → Early Warning   (주의)
-      level 2  → Trend Weakening (약화)
-      level 3  → Trend Breakdown (붕괴)
-      level 99 → 과열 경보
+    v5.2 익절 전용 Exit 시스템
+    Returns: (signal_name|None, label, color, detail)
+      TOP_SIGNAL    → 과열 즉시 발동
+      TAKE_PROFIT_2 → 대량 익절 50% (고점게이트 + MACD가드)
+      TAKE_PROFIT_1 → 1차 익절 30% (고점게이트 + MACD가드)
+      None          → 없음
     """
     def ex(k): return bool(d.get(k, False))
+    rsi = float(d.get('rsi', 50))
+    bb_pct = float(d.get('bb_pct', 50))
+    prev_bb_pct = float(d.get('prev_bb_pct', 50))
 
-    # 과열 경보 (최우선)
-    if ex('exit_rsi_ge75') or ex('exit_bb_outside_2d') or ex('exit_3d_rise_10pct'):
-        parts = []
-        if ex('exit_rsi_ge75'):      parts.append(f"RSI {d.get('rsi',0):.0f}≥75")
-        if ex('exit_bb_outside_2d'): parts.append('BB상단 2일연속')
-        if ex('exit_3d_rise_10pct'): parts.append('3일+10%폭등')
-        return (99, '⚠️ 과열 경보', colors.HexColor('#FF1744'), ' + '.join(parts))
-
-    # Level 3 — Trend Breakdown (1개라도)
-    l3 = [ex('exit_ma20_break_2d'), ex('exit_lower_low'),
-          ex('exit_macd_dead_cross'), ex('exit_trailing_stop_8pct')]
-    if any(l3):
-        parts = []
-        if ex('exit_ma20_break_2d'):        parts.append('MA20 2일이탈')
-        if ex('exit_lower_low'):             parts.append('저점하향돌파')
-        if ex('exit_macd_dead_cross'):       parts.append('MACD데드크로스')
-        if ex('exit_trailing_stop_8pct'):    parts.append('-8%트레일링')
-        return (3, 'Trend Breakdown', colors.HexColor('#EF5350'), ' + '.join(parts))
-
-    # Level 2 — Trend Weakening (2개 이상)
-    l2 = [ex('exit_macd_hist_3d_down'), ex('exit_rsi_lower_high'),
-          ex('exit_ma20_break_1d'),     ex('exit_rsi_peaked_65')]
-    if sum(l2) >= 2:
-        parts = []
-        if ex('exit_macd_hist_3d_down'): parts.append('MACD히스토3일↓')
-        if ex('exit_rsi_lower_high'):    parts.append('RSI고점낮아짐')
-        if ex('exit_ma20_break_1d'):     parts.append('MA20이탈')
-        if ex('exit_rsi_peaked_65'):     parts.append('RSI65↓')
-        return (2, 'Trend Weakening', colors.HexColor('#FFA726'), ' + '.join(parts))
-
-    # Level 1 — Early Warning (2개 이상)
-    l1 = [ex('exit_macd_hist_1d_down'), ex('exit_rsi_peaked_65'),
-          ex('exit_bb_top_retreating'), ex('exit_vol_divergence')]
-    if sum(l1) >= 2:
-        parts = []
-        if ex('exit_macd_hist_1d_down'):  parts.append('MACD히스토↓')
-        if ex('exit_rsi_peaked_65'):      parts.append('RSI65꺾임')
-        if ex('exit_bb_top_retreating'):  parts.append('BB상단이탈')
-        if ex('exit_vol_divergence'):     parts.append('거래량다이버전스')
-        return (1, 'Early Warning', colors.HexColor('#FFEE58'), ' + '.join(parts))
-
-    return (0, '-', colors.HexColor('#FFFFFF'), '')
-
-
-def trading_stage(d):
-    """
-    v2.2/v2.3/v2.4 통합 진입 판정 — strategy_type 기반 라우팅
-    Returns: (stage_key, label, color)
-    """
+    # Metal RSI > 80 → TOP_SIGNAL 강제
     stype = _get_strategy_type(d)
-    if stype == 'etf':    return _trading_stage_etf(d)
-    if stype == 'energy': return _trading_stage_energy(d)
-    # ── 이하 v2.2 성장주 원본 로직 ─────────────────────────
-    def sig(key, default=False):
-        return bool(d.get(key, default))
+    if stype == 'metal' and rsi > 80:
+        return (E_TOP, '⚠️ 과열 경보', colors.HexColor('#FF1744'), f'Metal RSI {rsi:.0f}>80')
 
-    # ─────────────────────────────────────────────────────────
-    # 0️⃣ 시장 필터 — QQQ + SPY Dual MA200
-    # ─────────────────────────────────────────────────────────
-    qqq_above = sig('qqq_above_ma200', True)
-    spy_above = sig('spy_above_ma200', True)
-    market_state = d.get('market_state',
-        'normal' if (qqq_above and spy_above) else
-        'caution' if (qqq_above or spy_above) else 'bear')
+    # ① TOP_SIGNAL — 과열은 무조건 발동 (게이트/가드 없음)
+    top_conds = []
+    if rsi >= 75:
+        top_conds.append(f'RSI {rsi:.0f}≥75')
+    if bb_pct > 100 and prev_bb_pct > 100:
+        top_conds.append('BB상단 2일연속')
+    change_3d = float(d.get('change_3d_pct', 0))
+    if change_3d >= 10:
+        top_conds.append(f'3일+{change_3d:.1f}%')
+    if top_conds:
+        return (E_TOP, '⚠️ 과열 경보', colors.HexColor('#FF1744'), ' + '.join(top_conds))
 
-    if market_state == 'bear':
-        return ('watch_market', '하락장', C_BEAR)
+    # ② 고점 영역 게이트: DD > -5% 여야 TP 발동
+    if not ex('exit_dd_gate'):
+        return (None, '', colors.HexColor('#FFFFFF'), '')
 
-    # ─────────────────────────────────────────────────────────
-    # 정상장에서만 2차·3차 허용
-    # ─────────────────────────────────────────────────────────
-    if market_state == 'normal':
-        # 3️⃣ 3차 매수 (50%) — RSI75 차단 제거
-        cond3 = [
-            sig('sig_above_ma20_2d'),    # MA20 2일 연속 위
-            sig('sig_ma20_slope_pos'),   # MA20 기울기 양수
-            sig('sig_macd_above_zero'),  # MACD 0선 위
-            sig('sig_vol_1p3') or sig('sig_vol_5d_2up'),  # 거래량 1.3배 or 5일 중 2일 증가
-        ]
-        if all(cond3):
-            return ('entry3', '본격 매수', C_ENTRY3)
+    # ③ MACD 가드: 반등 중이면 TP 면제
+    if ex('is_macd_bullish') or ex('macd_hist_recovering'):
+        return (None, '', colors.HexColor('#FFFFFF'), '')
 
-        # 2️⃣ 2차 매수 (30%)
-        cond2 = [
-            sig('sig_double_bottom'),
-            sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),
-            sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'),
-            sig('sig_vol_1p2'),
-        ]
-        if all(cond2):
-            return ('entry2', '바닥 확인', C_ENTRY2)
+    # ④ TAKE_PROFIT_2 — 1개라도 충족 → 대량 익절 50%
+    hist_trend = d.get('macd_hist_trend', '')
+    tp2_parts = []
+    # TP2①: MA20 2일 이탈 + hist 감소
+    if ex('exit_ma20_break_2d') and 'decreasing' in hist_trend:
+        tp2_parts.append('MA20 2일이탈+hist↓')
+    # TP2②: Higher Low 붕괴
+    if ex('exit_lower_low'):
+        tp2_parts.append('저점하향돌파')
+    # TP2③: MACD 데드크로스 + hist 감소
+    if ex('exit_macd_dead_cross') and 'decreasing' in hist_trend:
+        tp2_parts.append('MACD데드크로스+hist↓')
+    if tp2_parts:
+        return (E_TP2, 'TAKE PROFIT 2', colors.HexColor('#EF5350'), ' + '.join(tp2_parts))
 
-    # ─────────────────────────────────────────────────────────
-    # 1️⃣ 1차 매수 (20%) — 정상장·경계장 모두 허용
-    #   [필수] MACD 히스토그램 2일 연속 증가 + 6조건 중 3개 이상
-    # ─────────────────────────────────────────────────────────
-    block1 = sig('sig_block_rsi50') or sig('sig_block_bigdrop')
-    if not block1 and sig('sig_macd_hist_2d_up'):
-        cond1_list = [
-            sig('sig_rsi_le38'),
-            sig('sig_adx_le25'),
-            sig('sig_near_bb_low'),
-            sig('sig_below_ma20'),
-            sig('sig_low_stopped'),
-            sig('sig_bounce2pct'),
-        ]
-        if sum(cond1_list) >= 3:
-            return ('entry1', '관심 진입', C_ENTRY1)
+    # ⑤ TAKE_PROFIT_1 — 2/3 충족 → 1차 익절 30%
+    tp1_conds = [
+        ex('exit_macd_hist_3d_down'),        # hist 3일 감소
+        ex('exit_rsi_divergence_above50'),    # RSI 다이버전스 (둘 다 ≥ 50)
+        ex('exit_ma20_break_1d'),             # MA20 1일 이탈
+    ]
+    tp1_parts = []
+    if ex('exit_macd_hist_3d_down'):      tp1_parts.append('MACD hist 3일↓')
+    if ex('exit_rsi_divergence_above50'): tp1_parts.append('RSI다이버전스')
+    if ex('exit_ma20_break_1d'):          tp1_parts.append('MA20이탈')
+    if sum(tp1_conds) >= 2:
+        return (E_TP1, 'TAKE PROFIT 1', colors.HexColor('#FFA726'), ' + '.join(tp1_parts))
 
-    # 경계장이고 1차 미충족
-    if market_state == 'caution':
-        return ('caution_market', '경계장', C_CAUTION)
-
-    return ('watch', '대기', C_WAIT)
-
-
-def _trading_stage2_etf(d):
-    """판정2 ETF v2.4 — 기술 신호만"""
-    def sig(k, default=False): return bool(d.get(k, default))
-    if not sig('sig_rsi_gt70_block'):
-        cond3 = [sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
-                 sig('sig_rsi_gt48'),       sig('sig_macd_above_zero')]
-        if sum(cond3) >= 3: return ('entry3', '본격 매수', C_ENTRY3)
-        cond2 = [sig('sig_rsi_gt42'), sig('sig_macd_golden'),
-                 sig('sig_above_ma20_2d') or not sig('sig_below_ma20'),
-                 sig('sig_higher_low')]
-        if sum(cond2) >= 3: return ('entry2', '바닥 확인', C_ENTRY2)
-        cond1 = [sig('sig_rsi_le40'), sig('sig_below_ma20'), sig('sig_near_bb_low'),
-                 sig('sig_low_stopped'), sig('sig_correction_5pct')]
-        if sum(cond1) >= 3: return ('entry1', '관심 진입', C_ENTRY1)
-    return ('watch', '대기', C_WAIT)
-
-
-def _trading_stage2_energy(d):
-    """판정2 Energy v2.3 — 기술 신호만"""
-    def sig(k, default=False): return bool(d.get(k, default))
-    if not sig('sig_rsi_gt70_block'):
-        cond3 = [sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
-                 sig('sig_macd_golden'),   sig('sig_rsi_gt45')]
-        if sum(cond3) >= 3: return ('entry3', '본격 매수', C_ENTRY3)
-        cond2 = [sig('sig_double_bottom_3pct'), sig('sig_rsi_gt40'),
-                 sig('sig_macd_golden'),         not sig('sig_below_ma20')]
-        if sum(cond2) >= 3: return ('entry2', '바닥 확인', C_ENTRY2)
-        block1 = sig('sig_block_rsi50') or sig('sig_block_bigdrop')
-        if not block1 and sig('sig_macd_hist_2d_up'):
-            cond1 = [sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
-                     sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')]
-            if sum(cond1) >= 3: return ('entry1', '관심 진입', C_ENTRY1)
-    return ('watch', '대기', C_WAIT)
-
-
-def trading_stage2(d):
-    """
-    v2.2/v2.3/v2.4 통합 판정2 — 기술 신호만 (시장 필터 제외)
-    """
-    stype = _get_strategy_type(d)
-    if stype == 'etf':    return _trading_stage2_etf(d)
-    if stype == 'energy': return _trading_stage2_energy(d)
-
-    # v2.2 성장주 기술 신호만
-    def sig(key, default=False):
-        return bool(d.get(key, default))
-
-    if all([sig('sig_above_ma20_2d'), sig('sig_ma20_slope_pos'),
-            sig('sig_macd_above_zero'),
-            sig('sig_vol_1p3') or sig('sig_vol_5d_2up')]):
-        return ('entry3', '본격 매수', C_ENTRY3)
-
-    if all([
-        sig('sig_double_bottom'),
-        sig('sig_rsi_gt35') and sig('sig_rsi_3d_up'),
-        sig('sig_macd_golden') or sig('sig_macd_hist_3d_up'),
-        sig('sig_vol_1p2'),
-    ]):
-        return ('entry2', '바닥 확인', C_ENTRY2)
-
-    block1 = sig('sig_block_rsi50') or sig('sig_block_bigdrop')
-    if not block1 and sig('sig_macd_hist_2d_up'):
-        cond1_list = [
-            sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
-            sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct'),
-        ]
-        if sum(cond1_list) >= 3:
-            return ('entry1', '관심 진입', C_ENTRY1)
-
-    return ('watch', '대기', C_WAIT)
+    return (None, '', colors.HexColor('#FFFFFF'), '')
 
 
 def _stage_reason2(d, sk):
-    """판정2 근거 텍스트 (QQQ 필터 제외 버전)"""
-    rsi = d['rsi']
+    """v5.2 시그널 근거 텍스트"""
+    rsi = d.get('rsi', 50)
     chg = d.get('change_pct', 0.0)
     stype = _get_strategy_type(d)
+    def sig(k): return bool(d.get(k, False))
 
-    def sig(key, default=False):
-        return bool(d.get(key, default))
+    if sk == S_CASH:
+        return '현금성 자산 — 판정 없음'
+    if sk == S_BOND_WATCH:
+        y30 = d.get('yield_30y', 0)
+        return f'30Y 금리 {y30:.2f}% (4.9~5.0%) — 채권 트리거 직전'
 
-    # 에너지 v2.3 관망 이유
-    if sk == 'watch' and stype == 'energy':
-        if sig('sig_rsi_gt70_block'):
-            return f'RSI {rsi:.1f} > 70 → 에너지 전략 과열 차단'
-        if not sig('sig_macd_hist_2d_up'):
-            return 'MACD 히스토그램 2일 증가 미충족 (에너지 v2.3)'
-        return f'에너지 v2.3 조건 미충족'
-
-    # ETF v2.4 관망 이유
-    if sk == 'watch' and stype == 'etf':
-        if sig('sig_rsi_gt70_block'):
-            return f'RSI {rsi:.1f} > 70 → ETF 과열 차단'
-        return 'ETF v2.4 조건 미충족'
-
-    if sk == 'entry3':
+    if sk == S_3RD_BUY:
         parts = []
-        if sig('sig_above_ma20_2d'):   parts.append('MA20 2일↑')
-        if sig('sig_ma20_slope_pos'):  parts.append('MA20기울기+')
-        if sig('sig_macd_above_zero'): parts.append('MACD 0선↑')
-        if sig('sig_vol_1p3'):         parts.append('거래량 1.3배')
-        return '3차: ' + ' + '.join(parts)
+        if stype == 'bond':
+            if sig('sig_above_ma20_2d'): parts.append('MA20 2일↑')
+            if d.get('yield_30y_declining'): parts.append('금리하락전환')
+        elif stype == 'metal':
+            if sig('sig_above_ma20_2d'): parts.append('MA20 2일↑')
+            if sig('sig_ma20_rising'):   parts.append('MA20상승')
+            if sig('sig_macd_above_zero'): parts.append('MACD>0')
+        else:
+            if not sig('sig_below_ma20'): parts.append('종가>MA20')
+            if sig('sig_macd_golden'):    parts.append('MACD골든')
+            if sig('sig_macd_above_zero'):parts.append('MACD>0')
+            if sig('sig_vol_1p3'):        parts.append('거래량1.3x')
+            if sig('sig_rsi_gt55'):       parts.append(f'RSI{rsi:.0f}>55')
+        return '3rd BUY: ' + ' + '.join(parts) if parts else '3rd BUY'
 
-    if sk == 'entry2':
+    if sk == S_2ND_BUY:
         parts = []
-        if sig('sig_double_bottom'):     parts.append('이중바닥')
-        if sig('sig_rsi_3d_up'):         parts.append(f'RSI {rsi:.1f} 3일↑')
-        if sig('sig_macd_golden'):       parts.append('MACD골든')
-        elif sig('sig_macd_hist_3d_up'): parts.append('히스토3일↑')
-        if sig('sig_vol_1p2'):           parts.append('거래량 1.2배')
-        return '2차: ' + ' + '.join(parts)
+        if stype == 'bond':
+            y30 = d.get('yield_30y', 0)
+            if y30 >= 5.2: parts.append(f'금리{y30:.1f}%≥5.2%')
+            if sig('sig_macd_golden'): parts.append('MACD골든')
+        elif stype == 'etf':
+            if sig('sig_rsi_gt42'):    parts.append(f'RSI{rsi:.0f}>42')
+            if sig('sig_macd_golden'): parts.append('MACD골든')
+            if sig('sig_higher_low'):  parts.append('HigherLow')
+        else:
+            if sig('sig_double_bottom_diff_3pct'): parts.append('이중바닥')
+            if sig('sig_rsi_gt35'):    parts.append(f'RSI{rsi:.0f}>35')
+            if sig('sig_macd_golden'): parts.append('MACD골든')
+            if sig('sig_vol_1p2'):     parts.append('거래량1.2x')
+        return '2nd BUY: ' + ' + '.join(parts) if parts else '2nd BUY'
 
-    if sk == 'entry1':
-        if stype == 'etf':
-            met = []
-            if sig('sig_rsi_le40'):         met.append(f'RSI {rsi:.1f}≤40')
-            if sig('sig_adx_le25'):         met.append('ADX≤25')
-            if sig('sig_near_bb_low'):      met.append('BB하단')
-            if sig('sig_below_ma20'):       met.append('MA20아래')
-            if sig('sig_higher_low'):       met.append('고점하락멈춤')
-            if sig('sig_correction_5pct'):  met.append('52주고점-5%')
-            macd_ok = '✓' if sig('sig_macd_hist_2d_up') else '✗'
-            return f'1차({len(met)}/6, MACD히스토{macd_ok}): ' + ' + '.join(met)
-        macd_ok = '✓' if sig('sig_macd_hist_2d_up') else '✗'
-        met = []
-        if sig('sig_rsi_le38'):    met.append(f'RSI {rsi:.1f}≤38')
-        if sig('sig_adx_le25'):    met.append('ADX≤25')
-        if sig('sig_near_bb_low'): met.append('BB하단')
-        if sig('sig_below_ma20'):  met.append('MA20아래')
-        if sig('sig_low_stopped'): met.append('하락멈춤')
-        if sig('sig_bounce2pct'):  met.append(f'+{chg:.1f}%몸통양봉')
-        return f'1차({len(met)}/6, MACD히스토{macd_ok}): ' + ' + '.join(met)
+    if sk == S_1ST_BUY:
+        parts = []
+        if stype == 'bond':
+            y30 = d.get('yield_30y', 0)
+            parts.append(f'금리{y30:.1f}%≥5.0%')
+            parts.append(f'RSI{rsi:.0f}≤35')
+        elif stype == 'etf':
+            if sig('sig_rsi_le35'):        parts.append(f'RSI{rsi:.0f}≤35')
+            if sig('sig_correction_5pct'): parts.append('52주-5%')
+            if sig('sig_below_ma20'):      parts.append('MA20↓')
+            if sig('sig_near_bb_low'):     parts.append('BB하단')
+            if sig('sig_low_stopped'):     parts.append('하락멈춤')
+        else:
+            m = [('RSI≤38', sig('sig_rsi_le38')), ('MA20↓', sig('sig_below_ma20')),
+                 ('hist2일↑', sig('sig_macd_hist_2d_up'))]
+            o = [('ADX≤25', sig('sig_adx_le25')), ('BB하단', sig('sig_near_bb_low')),
+                 ('+2%반등', sig('sig_bounce2pct'))]
+            parts = [n for n, v in m if v] + [n for n, v in o if v]
+        return '1st BUY: ' + ' + '.join(parts) if parts else '1st BUY'
 
-    # 관망 — 이유
-    if sig('sig_block_rsi50'):
-        return f'RSI {rsi:.1f} > 50 → 1차 금지'
-    if sig('sig_block_bigdrop'):
-        return f'장대음봉 {chg:.1f}%'
-    if not sig('sig_macd_hist_2d_up'):
-        return 'MACD 히스토그램 2일 증가 미충족 (1차 필수조건)'
-    cnt = sum([sig('sig_rsi_le38'), sig('sig_adx_le25'), sig('sig_near_bb_low'),
-               sig('sig_below_ma20'), sig('sig_low_stopped'), sig('sig_bounce2pct')])
-    return f'1차 {cnt}/6개 충족'
+    if sk == S_WATCH:
+        return '진입 조건 일부 충족 — 관찰 중'
+
+    # HOLD 이유
+    if sig('sig_block_5pct_drop_all'):
+        return f'장대음봉 {chg:.1f}% → 전단계 차단'
+    if stype in ('etf','energy') and sig('sig_rsi_gt70_block'):
+        return f'RSI {rsi:.1f} > 70 → 과열 차단'
+    if stype == 'growth' and sig('sig_rsi_gt55_block'):
+        return f'RSI {rsi:.1f} > 55 → 1st BUY 차단'
+    return 'HOLD — 진입 조건 미충족'
+
+
+# ══════════════════════════════════════════════════════════════════
+#  BUY 연속일 확인 시스템 (v5.2)
+# ══════════════════════════════════════════════════════════════════
+
+_BUY_SIGNALS = {S_3RD_BUY, S_2ND_BUY, S_1ST_BUY}
+
+def apply_streak(ticker, today_signal, history):
+    """
+    BUY 연속일 확인 — 2일 연속 유지 시 확정
+    Returns: (streak, confirmed, annotation)
+    """
+    prev = history.get(ticker, {})
+    prev_signal = prev.get('prev_signal', '')
+    prev_streak = prev.get('buy_streak', 0)
+
+    is_buy  = today_signal in _BUY_SIGNALS
+    was_buy = prev_signal in _BUY_SIGNALS
+
+    if is_buy and was_buy:
+        streak = prev_streak + 1
+    elif is_buy:
+        streak = 1
+    else:
+        streak = 0
+
+    confirmed = streak >= 2
+    if streak == 1:
+        annotation = '확인 대기 1/2일 ⏳'
+    elif streak >= 2:
+        annotation = f'확정 {streak}일 연속 ✅'
+    else:
+        annotation = ''
+
+    return (streak, confirmed, annotation)
+
+
+def load_signal_history(path):
+    """signals_history.json 로드"""
+    import json
+    if os.path.exists(path):
+        try:
+            with open(path, encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
+def save_signal_history(path, history):
+    """signals_history.json 저장"""
+    import json
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(history, f, ensure_ascii=False, indent=2)
 
 
 # ══════════════════════════════════════════════════════════════════

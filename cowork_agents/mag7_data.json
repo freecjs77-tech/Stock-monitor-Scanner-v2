@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-04-01",
+  "last_updated": "2026-04-02",
   "source": "yfinance",
   "stocks": [
     {
@@ -362,7 +362,12 @@
       "spy_above_ma200": false,
       "market_state": "bear",
       "vix_above_25": false,
-      "condition_explanation": ""
+      "condition_explanation": "",
+      "signal_key": "HOLD",
+      "signal_label": "HOLD",
+      "buy_streak": 0,
+      "buy_confirmed": false,
+      "streak_annotation": ""
     },
     {
       "ticker": "GOOGL",
@@ -724,7 +729,12 @@
       "spy_above_ma200": false,
       "market_state": "bear",
       "vix_above_25": false,
-      "condition_explanation": ""
+      "condition_explanation": "",
+      "signal_key": "WATCH",
+      "signal_label": "WATCH",
+      "buy_streak": 0,
+      "buy_confirmed": false,
+      "streak_annotation": ""
     },
     {
       "ticker": "AMZN",
@@ -1086,7 +1096,12 @@
       "spy_above_ma200": false,
       "market_state": "bear",
       "vix_above_25": false,
-      "condition_explanation": ""
+      "condition_explanation": "",
+      "signal_key": "HOLD",
+      "signal_label": "HOLD",
+      "buy_streak": 0,
+      "buy_confirmed": false,
+      "streak_annotation": ""
     },
     {
       "ticker": "SPY",
@@ -1448,7 +1463,12 @@
       "spy_above_ma200": false,
       "market_state": "bear",
       "vix_above_25": false,
-      "condition_explanation": ""
+      "condition_explanation": "",
+      "signal_key": "WATCH",
+      "signal_label": "WATCH",
+      "buy_streak": 0,
+      "buy_confirmed": false,
+      "streak_annotation": ""
     },
     {
       "ticker": "QQQ",
@@ -1810,7 +1830,12 @@
       "spy_above_ma200": false,
       "market_state": "bear",
       "vix_above_25": false,
-      "condition_explanation": ""
+      "condition_explanation": "",
+      "signal_key": "WATCH",
+      "signal_label": "WATCH",
+      "buy_streak": 0,
+      "buy_confirmed": false,
+      "streak_annotation": ""
     },
     {
       "ticker": "TLT",
@@ -2173,7 +2198,12 @@
       "spy_above_ma200": false,
       "market_state": "bear",
       "vix_above_25": false,
-      "condition_explanation": ""
+      "condition_explanation": "",
+      "signal_key": "HOLD",
+      "signal_label": "HOLD",
+      "buy_streak": 0,
+      "buy_confirmed": false,
+      "streak_annotation": ""
     },
     {
       "ticker": "TSLA",
@@ -2535,7 +2565,12 @@
       "spy_above_ma200": false,
       "market_state": "bear",
       "vix_above_25": false,
-      "condition_explanation": ""
+      "condition_explanation": "",
+      "signal_key": "WATCH",
+      "signal_label": "WATCH",
+      "buy_streak": 0,
+      "buy_confirmed": false,
+      "streak_annotation": ""
     },
     {
       "ticker": "SOXL",
@@ -2871,7 +2906,12 @@
       "spy_above_ma200": false,
       "market_state": "bear",
       "vix_above_25": false,
-      "condition_explanation": ""
+      "condition_explanation": "",
+      "signal_key": "2nd_BUY",
+      "signal_label": "2nd BUY (30%)",
+      "buy_streak": 1,
+      "buy_confirmed": false,
+      "streak_annotation": "확인 대기 1/2일 ⏳"
     },
     {
       "ticker": "GLD",
@@ -3233,7 +3273,12 @@
       "spy_above_ma200": false,
       "market_state": "bear",
       "vix_above_25": false,
-      "condition_explanation": ""
+      "condition_explanation": "",
+      "signal_key": "WATCH",
+      "signal_label": "WATCH",
+      "buy_streak": 0,
+      "buy_confirmed": false,
+      "streak_annotation": ""
     },
     {
       "ticker": "SLV",
@@ -3595,7 +3640,12 @@
       "spy_above_ma200": false,
       "market_state": "bear",
       "vix_above_25": false,
-      "condition_explanation": ""
+      "condition_explanation": "",
+      "signal_key": "2nd_BUY",
+      "signal_label": "2nd BUY (30%)",
+      "buy_streak": 1,
+      "buy_confirmed": false,
+      "streak_annotation": "확인 대기 1/2일 ⏳"
     },
     {
       "ticker": "NVDA",
@@ -3957,7 +4007,12 @@
       "spy_above_ma200": false,
       "market_state": "bear",
       "vix_above_25": false,
-      "condition_explanation": ""
+      "condition_explanation": "",
+      "signal_key": "WATCH",
+      "signal_label": "WATCH",
+      "buy_streak": 0,
+      "buy_confirmed": false,
+      "streak_annotation": ""
     },
     {
       "ticker": "CRCL",
@@ -4275,7 +4330,12 @@
       "spy_above_ma200": false,
       "market_state": "bear",
       "vix_above_25": false,
-      "condition_explanation": ""
+      "condition_explanation": "",
+      "signal_key": "HOLD",
+      "signal_label": "HOLD",
+      "buy_streak": 0,
+      "buy_confirmed": false,
+      "streak_annotation": ""
     },
     {
       "ticker": "XOM",
@@ -4637,7 +4697,12 @@
       "spy_above_ma200": false,
       "market_state": "bear",
       "vix_above_25": false,
-      "condition_explanation": ""
+      "condition_explanation": "",
+      "signal_key": "3rd_BUY",
+      "signal_label": "3rd BUY (50%)",
+      "buy_streak": 1,
+      "buy_confirmed": false,
+      "streak_annotation": "확인 대기 1/2일 ⏳"
     },
     {
       "ticker": "SCHD",
@@ -4999,7 +5064,12 @@
       "spy_above_ma200": false,
       "market_state": "bear",
       "vix_above_25": false,
-      "condition_explanation": ""
+      "condition_explanation": "",
+      "signal_key": "HOLD",
+      "signal_label": "HOLD",
+      "buy_streak": 0,
+      "buy_confirmed": false,
+      "streak_annotation": ""
     },
     {
       "ticker": "AAPL",
@@ -5361,7 +5431,12 @@
       "spy_above_ma200": false,
       "market_state": "bear",
       "vix_above_25": false,
-      "condition_explanation": ""
+      "condition_explanation": "",
+      "signal_key": "HOLD",
+      "signal_label": "HOLD",
+      "buy_streak": 0,
+      "buy_confirmed": false,
+      "streak_annotation": ""
     },
     {
       "ticker": "JEPI",
@@ -5709,7 +5784,12 @@
       "spy_above_ma200": false,
       "market_state": "bear",
       "vix_above_25": false,
-      "condition_explanation": ""
+      "condition_explanation": "",
+      "signal_key": "HOLD",
+      "signal_label": "HOLD",
+      "buy_streak": 0,
+      "buy_confirmed": false,
+      "streak_annotation": ""
     }
   ]
 }

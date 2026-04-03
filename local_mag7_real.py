@@ -40,7 +40,9 @@ DATA_FILE   = os.path.join(AGENTS_DIR, 'mag7_data.json')
 sys.path.insert(0, AGENTS_DIR)
 
 try:
-    from report_engine import generate_report, generate_summary_page, build_index_page
+    from report_engine import (generate_report, generate_summary_page, build_index_page,
+                               trading_signal, calc_exit_signal, apply_streak,
+                               load_signal_history, save_signal_history)
 except ImportError as e:
     print(f"[ERROR] report_engine 로드 실패: {e}")
     print(f"        cowork_agents/ 폴더가 {AGENTS_DIR} 에 있는지 확인하세요.")
@@ -581,12 +583,96 @@ def fetch_stock_data(ticker, retry=2):
                     float(close[-1]) >= float(close[-4]) * 1.10
                 ),
 
-                # ── 종목 전략 유형 ────────────────────────────────────
+                # ── v5.2 신규 필드 ──────────────────────────────────
+                # 고점 게이트 (Exit 익절용)
+                'drawdown_20d_pct': round(
+                    ((cur_close / float(max(high[-20:]))) - 1) * 100, 2
+                ) if len(high) >= 20 else 0.0,
+                'change_3d_pct': round(
+                    (cur_close / float(close[-4]) - 1) * 100, 2
+                ) if len(close) >= 4 else 0.0,
+                'bb_pct': round(
+                    (cur_close - bb_l_val) / (bb_u_val - bb_l_val) * 100, 2
+                ) if (bb_u_val - bb_l_val) > 0 else 50.0,
+                'prev_bb_pct': round(
+                    (float(close[-2]) - float(bb_l_arr[-2])) / (float(bb_u_arr[-2]) - float(bb_l_arr[-2])) * 100, 2
+                ) if (len(close) >= 2 and len(bb_u_arr) >= 2 and
+                      not np.isnan(bb_u_arr[-2]) and not np.isnan(bb_l_arr[-2]) and
+                      (float(bb_u_arr[-2]) - float(bb_l_arr[-2])) > 0) else 50.0,
+                'price_vs_ma20': 'above' if cur_close >= ma20_val else 'below',
+                'prev_price_vs_ma20': (
+                    'above' if (len(close) >= 2 and len(ma20_arr) >= 2 and
+                               not np.isnan(ma20_arr[-2]) and
+                               float(close[-2]) >= float(ma20_arr[-2]))
+                    else 'below'
+                ),
+                'macd_hist_trend': (
+                    'increasing' if (len(hist_arr) >= 3 and
+                                    not np.isnan(hist_arr[-1]) and not np.isnan(hist_arr[-2]) and
+                                    hist_arr[-1] > hist_arr[-2])
+                    else 'decreasing' if (len(hist_arr) >= 3 and
+                                          not np.isnan(hist_arr[-1]) and not np.isnan(hist_arr[-2]) and
+                                          hist_arr[-1] < hist_arr[-2])
+                    else 'flat'
+                ),
+
+                # v5.2 Entry 신규 시그널
+                'sig_rsi_le35':          bool(rsi_val <= 35),
+                'sig_rsi_gt55':          bool(rsi_val > 55),
+                'sig_rsi_gt55_block':    bool(rsi_val > 55),      # 1st BUY만 차단
+                'sig_rsi_gt75_block':    bool(rsi_val > 75),      # 3rd BUY 차단
+                'sig_rsi_gt80_block':    bool(rsi_val > 80),      # Metal TOP_SIGNAL
+                'sig_block_5pct_drop_all': bool(change_pct <= -5.0),  # 전 단계 차단
+                'sig_double_bottom_diff_3pct': bool(              # 이중바닥 diff ≤ 3%
+                    len(close) >= 10 and
+                    abs(float(min(close[-5:])) - float(min(close[-10:-5]))) /
+                    float(min(close[-10:-5])) <= 0.03
+                ) if len(close) >= 10 and float(min(close[-10:-5])) > 0 else False,
+                'sig_ma20_flattening': bool(                      # Metal: MA20 평탄화
+                    len(ma20_arr) >= 10 and
+                    not np.isnan(ma20_arr[-1]) and not np.isnan(ma20_arr[-10]) and
+                    abs(float(ma20_arr[-1]) - float(ma20_arr[-10])) / float(ma20_arr[-10]) < 0.01
+                ),
+                'sig_ma20_rising': bool(                          # Metal: MA20 상승
+                    len(ma20_arr) >= 5 and
+                    not np.isnan(ma20_arr[-1]) and not np.isnan(ma20_arr[-5]) and
+                    float(ma20_arr[-1]) > float(ma20_arr[-5])
+                ),
+
+                # v5.2 Exit 신규 시그널 (MACD 가드)
+                'is_macd_bullish': bool(
+                    macd_val > macd_s_val and
+                    len(hist_arr) >= 2 and not np.isnan(hist_arr[-1]) and not np.isnan(hist_arr[-2]) and
+                    hist_arr[-1] > hist_arr[-2]
+                ),
+                'macd_hist_recovering': bool(
+                    len(hist_arr) >= 2 and not np.isnan(hist_arr[-1]) and not np.isnan(hist_arr[-2]) and
+                    hist_arr[-1] > hist_arr[-2]
+                ),
+                'exit_dd_gate': bool(                             # 고점 게이트: DD > -5%
+                    len(high) >= 20 and
+                    cur_close > float(max(high[-20:])) * 0.95
+                ),
+                'exit_rsi_divergence_above50': bool(              # RSI 다이버전스 (둘 다 ≥ 50)
+                    len(rsi_arr) >= 2 and
+                    not np.isnan(rsi_arr[-1]) and not np.isnan(rsi_arr[-2]) and
+                    rsi_arr[-2] > rsi_arr[-1] and
+                    rsi_arr[-1] >= 50 and rsi_arr[-2] >= 50
+                ),
+
+                # ── 종목 전략 유형 (v5.2: 8종) ───────────────────────
                 'strategy_type': (
+                    'bil'    if ticker in {'BIL'} else
+                    'bond'   if ticker in {'TLT'} else
+                    'metal'  if ticker in {'GLD', 'SLV'} else
+                    'value'  if ticker in {'O', 'UNH'} else
+                    'speculative' if ticker in {
+                        'TQQQ','SOXL','CRCL','BTDR','ETHU',
+                    } else
                     'etf'    if ticker in {
-                        'QQQ','SPY','VOO','GLD','SLV','TLT','SOXL','SCHD',
+                        'QQQ','SPY','VOO','SCHD','JEPI',
                         'IWM','XLF','XLE','IYR','VNQ','HYG','LQD','TIP',
-                        'SQQQ','TQQQ','UVXY','QLD','SSO','UPRO',
+                        'SQQQ','UVXY','QLD','SSO','UPRO',
                     } else
                     'energy' if ticker in {
                         'XOM','CVX','OXY','COP','BP','SLB','EOG','MPC',
@@ -654,6 +740,10 @@ def run(tickers=None, send_telegram=False):
         qqq_above_ma200 = False  # 기본값: 보수적으로 차단
         spy_above_ma200 = False
         vix_above_25    = False
+        vix_cur         = 0.0
+        yield_30y       = 0.0
+        yield_30y_peak  = 0.0
+        yield_30y_declining = False
         try:
             print("  [시장필터] QQQ / SPY / VIX 체크 중...")
             for sym in ['QQQ', 'SPY']:
@@ -671,9 +761,19 @@ def run(tickers=None, send_telegram=False):
             if not vix_h.empty:
                 vix_cur      = float(vix_h['Close'].values[-1])
                 vix_above_25 = vix_cur > 25
-                print(f"  [VIX] 현재={vix_cur:.1f}  {'> 25 ⚠️ 변동성 확대' if vix_above_25 else '≤ 25 정상'}")
+                print(f"  [VIX] current={vix_cur:.1f}  {'> 25 HIGH' if vix_above_25 else '<= 25 OK'}")
+            # 30Y Treasury yield (Bond v2.6용)
+            tyx_h = yf.Ticker('^TYX').history(period='3mo', interval='1d', auto_adjust=True)
+            if not tyx_h.empty:
+                yield_30y = float(tyx_h['Close'].values[-1])
+                yield_30y_peak = float(tyx_h['Close'].values.max())
+                yield_30y_declining = yield_30y < yield_30y_peak * 0.99
+                print(f"  [30Y] 현재={yield_30y:.2f}%  피크={yield_30y_peak:.2f}%  {'하락전환' if yield_30y_declining else '유지/상승'}")
+            else:
+                yield_30y = 0.0; yield_30y_peak = 0.0; yield_30y_declining = False
         except Exception as e:
-            print(f"  [시장필터] 체크 실패 ({e}) → 기본값 유지")
+            print(f"  [MARKET] check failed ({e}) -> defaults")
+            vix_cur = 0.0; yield_30y = 0.0; yield_30y_peak = 0.0; yield_30y_declining = False
 
         # 시장 상태 판정 (3단계)
         if qqq_above_ma200 and spy_above_ma200:
@@ -682,8 +782,8 @@ def run(tickers=None, send_telegram=False):
             market_state = 'caution'  # 경계장: 1차(20%)만 허용
         else:
             market_state = 'bear'     # 하락장: 신규 매수 금지
-        state_label = {'normal': '정상장 ✅', 'caution': '경계장 ⚠️', 'bear': '하락장 🚫'}[market_state]
-        print(f"  [시장필터] {state_label}  QQQ={'위' if qqq_above_ma200 else '아래'}  SPY={'위' if spy_above_ma200 else '아래'}")
+        state_label = {'normal': 'NORMAL', 'caution': 'CAUTION', 'bear': 'BEAR'}[market_state]
+        print(f"  [MARKET] {state_label}  QQQ={'above' if qqq_above_ma200 else 'below'}  SPY={'above' if spy_above_ma200 else 'below'}")
 
         stocks_data = []
         generated   = []
@@ -711,11 +811,15 @@ def run(tickers=None, send_telegram=False):
                     print(f"  [{ticker}] SKIP (수집 실패 + 이전 데이터 없음)")
                 continue
 
-            # 시장 필터 주입
+            # 시장 필터 주입 (v5.2: 참고용, 판정에 미사용)
             sd['qqq_above_ma200'] = qqq_above_ma200
             sd['spy_above_ma200'] = spy_above_ma200
             sd['market_state']    = market_state
             sd['vix_above_25']    = vix_above_25
+            sd['vix_close']       = vix_cur
+            sd['yield_30y']       = yield_30y
+            sd['yield_30y_peak']  = yield_30y_peak
+            sd['yield_30y_declining'] = yield_30y_declining
 
             # AI 판정 근거 설명 생성 (GROQ_API_KEY 있을 때만)
             if generate_condition_explanation:
@@ -738,6 +842,29 @@ def run(tickers=None, send_telegram=False):
                 import traceback
                 print(f"  [{ticker}] PDF 오류: {e}")
                 traceback.print_exc()
+
+        # ── BUY 연속일 확인 (v5.2) ────────────────────────────────
+        HISTORY_FILE = os.path.join(SCRIPT_DIR, 'history', 'signals_history.json')
+        sig_history = load_signal_history(HISTORY_FILE)
+        for sd_item in stocks_data:
+            tk_name = sd_item['ticker']
+            sig_result = trading_signal(sd_item)
+            today_signal = sig_result[0]
+            streak, confirmed, annotation = apply_streak(tk_name, today_signal, sig_history)
+            sd_item['signal_key']       = today_signal
+            sd_item['signal_label']     = sig_result[1]
+            sd_item['buy_streak']       = streak
+            sd_item['buy_confirmed']    = confirmed
+            sd_item['streak_annotation'] = annotation
+            # 히스토리 업데이트
+            sig_history[tk_name] = {
+                'prev_signal': today_signal,
+                'prev_date':   today,
+                'buy_streak':  streak,
+                'buy_confirmed': confirmed,
+            }
+        save_signal_history(HISTORY_FILE, sig_history)
+        print(f"  [STREAK] 연속일 확인 완료 → {HISTORY_FILE}")
 
         # JSON 저장 (price_series 포함 — 차트 실제 데이터 렌더링용)
         if stocks_data:
