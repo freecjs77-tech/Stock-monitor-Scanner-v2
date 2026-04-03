@@ -48,9 +48,6 @@ def get_badge_class(sk):
         S_HOLD:       'watch',
         S_CASH:       'watch',
         S_BOND_WATCH: 'entry1',
-        # 하위호환
-        'entry3': 'entry3', 'entry2': 'entry2', 'entry1': 'entry1',
-        'caution_market': 'caution', 'watch_market': 'sell',
     }.get(sk, 'watch')
 
 

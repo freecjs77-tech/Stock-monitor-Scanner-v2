@@ -167,11 +167,11 @@ def generate_condition_explanation(d):
         return bool(d.get(key, False))
 
     # 현재 판정 계산
-    from report_engine import trading_stage2
-    sk, lbl, _ = trading_stage2(d)
+    from report_engine import trading_signal
+    sk, lbl, _ = trading_signal(d)
 
     # 조건 충족 현황 텍스트
-    if sk == 'entry1':
+    if sk == '1st_BUY':
         conds = []
         if sig('sig_rsi_le38'):    conds.append(f'RSI {rsi:.1f} (≤38 충족)')
         else:                      conds.append(f'RSI {rsi:.1f} (≤38 미충족)')
@@ -189,7 +189,7 @@ def generate_condition_explanation(d):
                    sig('sig_low_stopped'), sig('sig_near_bb_low'), sig('sig_bounce2pct')])
         cond_text = f'1차 매수 조건 {met}/6개 충족\n' + ', '.join(conds)
 
-    elif sk == 'entry2':
+    elif sk == '2nd_BUY':
         conds = []
         if sig('sig_double_bottom'):                          conds.append('이중바닥 충족')
         else:                                                 conds.append('이중바닥 미충족')
@@ -201,7 +201,7 @@ def generate_condition_explanation(d):
         else:                                                 conds.append('거래량 부족')
         cond_text = '2차 매수 조건 4/4개 충족\n' + ', '.join(conds)
 
-    elif sk == 'entry3':
+    elif sk == '3rd_BUY':
         conds = []
         if sig('sig_above_ma20_2d'):    conds.append('MA20 안착 충족')
         else:                           conds.append('MA20 안착 미충족')

@@ -370,17 +370,13 @@ except ImportError:
     _ENGINE_OK = False
 
 
-def trading_stage_v2(p):
+def _get_signal(p):
     """v5.2 통합 판정 — report_engine.trading_signal() 위임"""
     if _ENGINE_OK:
         sk, lbl, color_obj = _trading_signal(p)
         color = _SIGNAL_COLORS.get(sk, '#FFFFFF')
         return sk, lbl, color
     return 'HOLD', 'HOLD', '#FFFFFF'
-
-def trading_stage2_v2(p):
-    """v5.2 판정 (단일) — trading_stage_v2와 동일"""
-    return trading_stage_v2(p)
 
 def calc_exit_signal_v2(p):
     """v5.2 Exit 신호 — (name|None, label, color, detail)"""
@@ -397,10 +393,6 @@ def stage_pill_cls(sk):
         '3rd_BUY': 'tp-entry3', '2nd_BUY': 'tp-entry2', '1st_BUY': 'tp-entry1',
         'WATCH': 'tp-watch', 'HOLD': 'tp-watch', 'CASH': 'tp-watch',
         'BOND_WATCH': 'tp-entry1',
-        # 하위호환
-        'entry3': 'tp-entry3', 'entry2': 'tp-entry2', 'entry1': 'tp-entry1',
-        'watch_market': 'tp-sell', 'caution_market': 'tp-caution',
-        'watch': 'tp-watch',
     }.get(sk, 'tp-watch')
 
 
@@ -625,9 +617,9 @@ missing = [t for t in st.session_state.tickers if t not in price_map]
 # ══════════════════════════════════════════════════════════════════
 n          = len(st.session_state.tickers)
 buy_count  = sum(1 for t in st.session_state.tickers
-                 if price_map.get(t) and trading_stage_v2(price_map[t])[0] in ('1st_BUY','2nd_BUY','3rd_BUY','entry1','entry2','entry3'))
+                 if price_map.get(t) and _get_signal(price_map[t])[0] in ('1st_BUY','2nd_BUY','3rd_BUY'))
 sell_count = sum(1 for t in st.session_state.tickers
-                 if price_map.get(t) and trading_stage_v2(price_map[t])[0] in ('WATCH',))
+                 if price_map.get(t) and _get_signal(price_map[t])[0] in ('WATCH',))
 
 st.markdown(f"""
 <div class="header-wrap">
@@ -733,8 +725,8 @@ for row in rows:
                 rsi_col = "#FF5252" if rsi >= 70 else ("#00E676" if rsi <= 35 else "rgba(255,255,255,0.7)")
 
                 # 판정1 + 판정2
-                sk1, v1_lbl, v1_color = trading_stage_v2(p)
-                sk2, v2_lbl, v2_color = trading_stage2_v2(p)
+                sk1, v1_lbl, v1_color = _get_signal(p)
+                sk2, v2_lbl, v2_color = _get_signal(p)
                 v1_cls = stage_pill_cls(sk1)
                 v2_cls = stage_pill_cls(sk2)
 
