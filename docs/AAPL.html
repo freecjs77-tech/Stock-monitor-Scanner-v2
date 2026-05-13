@@ -249,14 +249,14 @@ tr:nth-child(even) td { background: var(--row2); }
     <div>
       <h1 style="font-size:18px;">AAPL &nbsp;<span style="font-weight:400; color:#ffffff; font-size:14px;">Apple Inc.</span>
         <span style="font-size:9px; color:rgba(100,181,246,0.8); border:1px solid rgba(100,181,246,0.3); border-radius:3px; padding:1px 5px; margin-left:6px; vertical-align:middle;">성장주 v2.3</span>
-        
+        <span class="badge badge-exit-hot" style="font-size:9px; vertical-align:middle; margin-left:4px;" title="RSI 76≥75">⚠️ 과열 경보</span>
       </h1>
-      <div style="font-size:11px; color:#ffffff; margin-top:4px;">NASDAQ | 소비자 전자기기 | 2026년 05월 12일</div>
+      <div style="font-size:11px; color:#ffffff; margin-top:4px;">NASDAQ | 소비자 전자기기 | 2026년 05월 13일</div>
     </div>
     <div style="text-align:right;">
-      <div style="font-size:24px; font-weight:700;">$294.80</div>
+      <div style="font-size:24px; font-weight:700;">$298.87</div>
       <div class="c-green" style="font-size:13px; font-weight:700;">
-        +0.72%
+        +1.38%
       </div>
     </div>
   </div>
@@ -264,13 +264,13 @@ tr:nth-child(even) td { background: var(--row2); }
   <!-- 52주 범위 바 -->
   <div class="range-bar-wrap">
     <div style="display:flex; justify-content:space-between; font-size:11px; color:#ffffff;">
-      <span>52주 저점 $nan</span>
-      <span>현재 위치 100%</span>
-      <span>52주 고점 $nan</span>
+      <span>52주 저점 $192.70</span>
+      <span>현재 위치 98%</span>
+      <span>52주 고점 $300.92</span>
     </div>
     <div class="range-bar">
-      <div class="filled" style="width:100.0%;"></div>
-      <div class="marker" style="left:100.0%;"></div>
+      <div class="filled" style="width:98.1%;"></div>
+      <div class="marker" style="left:98.1%;"></div>
     </div>
   </div>
 
@@ -290,7 +290,7 @@ tr:nth-child(even) td { background: var(--row2); }
       <span class="badge badge-watch" style="font-size:15px; padding:4px 14px;">HOLD</span>
       
     </div>
-    <div style="font-size:12px; color:#ffffff;">RSI 73.7 > 55 → 1st BUY 차단</div>
+    <div style="font-size:12px; color:#ffffff;">RSI 76.0 > 55 → 1st BUY 차단</div>
   </div>
 
   <!-- 차트 -->
@@ -305,20 +305,20 @@ tr:nth-child(even) td { background: var(--row2); }
     
     <div class="metric-card">
       <div class="label">RSI (14)</div>
-      <div class="value" style="color:#F87171;">73.7</div>
+      <div class="value" style="color:#F87171;">76.0</div>
       <div class="direction">과매수</div>
     </div>
     
     <div class="metric-card">
       <div class="label">MA20</div>
-      <div class="value" style="color:#34D399;">$276.46</div>
+      <div class="value" style="color:#34D399;">$278.09</div>
       <div class="direction">위</div>
     </div>
     
     <div class="metric-card">
       <div class="label">MACD</div>
-      <div class="value" style="color:#F87171;">0.000</div>
-      <div class="direction">데드크로스</div>
+      <div class="value" style="color:#34D399;">8.889</div>
+      <div class="direction">골든크로스</div>
     </div>
     
     <div class="metric-card">
@@ -329,13 +329,13 @@ tr:nth-child(even) td { background: var(--row2); }
     
     <div class="metric-card">
       <div class="label">52주 고점 대비</div>
-      <div class="value" style="color:#34D399;">-nan%</div>
-      <div class="direction">저점권</div>
+      <div class="value" style="color:#F87171;">-0.7%</div>
+      <div class="direction">고점권</div>
     </div>
     
     <div class="metric-card">
       <div class="label">Drawdown 20D</div>
-      <div class="value" style="color:#34D399;">-0.2%</div>
+      <div class="value" style="color:#34D399;">-0.7%</div>
       <div class="direction">고점근처</div>
     </div>
     
@@ -354,7 +354,7 @@ tr:nth-child(even) td { background: var(--row2); }
       <div class="action-icon">&#128200;</div>
       <div class="action-content">
         <div class="title">이런 신호가 오면 주목하세요</div>
-        <div class="desc">RSI 38 이하 + 하락 멈춤 + MA20($276.46) 아래 진입 시 1st BUY 검토</div>
+        <div class="desc">RSI 38 이하 + 하락 멈춤 + MA20($278.09) 아래 진입 시 1st BUY 검토</div>
       </div>
     </div>
     <div class="action-item" style="border-bottom:none;">
@@ -367,6 +367,21 @@ tr:nth-child(even) td { background: var(--row2); }
   </div>
 
   <!-- Exit Signal 섹션 (v5.2 익절 전용) -->
+  
+  <div style="background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:14px 16px; margin-top:12px;">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+      <div style="font-size:13px; font-weight:700; color:var(--fg);">Exit Signal</div>
+      <span class="badge badge-exit-hot">⚠️ 과열 경보</span>
+    </div>
+    <div style="font-size:12px; color:#ffffff; line-height:1.8; background:var(--bg); border-radius:4px; padding:10px 14px;">
+      <div>RSI 76≥75</div>
+    </div>
+    <div style="margin-top:10px; font-size:11px; color:var(--sub); line-height:1.6;">
+      
+        <b style="color:#FF1744;">TOP_SIGNAL</b> — RSI>=75 / BB상단 2일 / 3일+10%. 게이트·가드 없이 즉시 발동. 즉시 일부 익절.
+      
+    </div>
+  </div>
   
 
   <!-- 판정 근거 설명 -->
@@ -382,7 +397,7 @@ tr:nth-child(even) td { background: var(--row2); }
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <div style="font-size:12px; font-weight:600; color:var(--fg);">🟡 1차 매수 조건 — 성장주 v2.2 ([필수] MACD히스토2일증가 + 6개 중 3개 이상)</div>
         <div style="font-size:11px; color:#FBBF24; font-weight:600;">
-          2/6 충족
+          1/6 충족
         </div>
       </div>
       
@@ -404,15 +419,15 @@ tr:nth-child(even) td { background: var(--row2); }
           <span style="font-size:13px; flex-shrink:0; margin-top:1px;">&#10008;</span>
           <div style="flex:1; min-width:0;">
             <div style="font-size:11px; font-weight:600; color:var(--fg);">RSI(14) ≤ 38</div>
-            <div style="font-size:11px; color:#ffffff; margin-top:2px;">RSI 73.7 — 기준(38)보다 아직 높아요</div>
+            <div style="font-size:11px; color:#ffffff; margin-top:2px;">RSI 76.0 — 기준(38)보다 아직 높아요</div>
           </div>
         </div>
         
-        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(52,211,153,0.05);">
-          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">&#10004;</span>
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(248,113,113,0.04);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">&#10008;</span>
           <div style="flex:1; min-width:0;">
             <div style="font-size:11px; font-weight:600; color:var(--fg);">ADX(14) ≤ 25</div>
-            <div style="font-size:11px; color:#ffffff; margin-top:2px;">ADX 23.9 — 하락 에너지가 약해지고 있어요</div>
+            <div style="font-size:11px; color:#ffffff; margin-top:2px;">ADX 25.8 — 아직 추세가 강하게 지속 중이에요</div>
           </div>
         </div>
         
@@ -420,7 +435,7 @@ tr:nth-child(even) td { background: var(--row2); }
           <span style="font-size:13px; flex-shrink:0; margin-top:1px;">&#10008;</span>
           <div style="flex:1; min-width:0;">
             <div style="font-size:11px; font-weight:600; color:var(--fg);">종가 < MA20</div>
-            <div style="font-size:11px; color:#ffffff; margin-top:2px;">$294.80 ≥ $276.46 — 이평선 위에 있어요</div>
+            <div style="font-size:11px; color:#ffffff; margin-top:2px;">$298.87 ≥ $278.09 — 이평선 위에 있어요</div>
           </div>
         </div>
         
@@ -444,7 +459,7 @@ tr:nth-child(even) td { background: var(--row2); }
           <span style="font-size:13px; flex-shrink:0; margin-top:1px;">&#10008;</span>
           <div style="flex:1; min-width:0;">
             <div style="font-size:11px; font-weight:600; color:var(--fg);">당일 +2% 이상 몸통 양봉 (윗꼬리≤2%)</div>
-            <div style="font-size:11px; color:#ffffff; margin-top:2px;">오늘 +0.7% — 반등 or 몸통 기준 미충족</div>
+            <div style="font-size:11px; color:#ffffff; margin-top:2px;">오늘 +1.4% — 반등 or 몸통 기준 미충족</div>
           </div>
         </div>
         
@@ -456,7 +471,7 @@ tr:nth-child(even) td { background: var(--row2); }
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <div style="font-size:12px; font-weight:600; color:var(--fg);">🔵 2차 매수 조건 — 성장주 v2.2 (4개 모두 충족)</div>
         <div style="font-size:11px; color:#FBBF24; font-weight:600;">
-          1/4 충족
+          3/4 충족
         </div>
       </div>
       
@@ -470,19 +485,19 @@ tr:nth-child(even) td { background: var(--row2); }
           </div>
         </div>
         
-        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(248,113,113,0.04);">
-          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">&#10008;</span>
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(52,211,153,0.05);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">&#10004;</span>
           <div style="flex:1; min-width:0;">
             <div style="font-size:11px; font-weight:600; color:var(--fg);">RSI > 35 + 3일 연속 상승</div>
-            <div style="font-size:11px; color:#ffffff; margin-top:2px;">RSI 73.7 — 반등이 아직 확인되지 않았어요</div>
+            <div style="font-size:11px; color:#ffffff; margin-top:2px;">RSI 76.0 — 반등 흐름이 이어지고 있어요</div>
           </div>
         </div>
         
-        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(248,113,113,0.04);">
-          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">&#10008;</span>
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(52,211,153,0.05);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">&#10004;</span>
           <div style="flex:1; min-width:0;">
             <div style="font-size:11px; font-weight:600; color:var(--fg);">MACD 골든크로스 or 히스토그램 3일↑</div>
-            <div style="font-size:11px; color:#ffffff; margin-top:2px;">상승 전환 신호를 기다리는 중이에요</div>
+            <div style="font-size:11px; color:#ffffff; margin-top:2px;">상승 전환 신호가 나왔어요</div>
           </div>
         </div>
         
@@ -501,8 +516,8 @@ tr:nth-child(even) td { background: var(--row2); }
     <div style="margin-bottom:12px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <div style="font-size:12px; font-weight:600; color:var(--fg);">🟢 3차 매수 조건 — 성장주 v2.2 (4개 모두 충족)</div>
-        <div style="font-size:11px; color:#FBBF24; font-weight:600;">
-          3/4 충족
+        <div style="font-size:11px; color:#34D399; font-weight:600;">
+          4/4 충족
         </div>
       </div>
       
@@ -524,11 +539,11 @@ tr:nth-child(even) td { background: var(--row2); }
           </div>
         </div>
         
-        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(248,113,113,0.04);">
-          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">&#10008;</span>
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); background:rgba(52,211,153,0.05);">
+          <span style="font-size:13px; flex-shrink:0; margin-top:1px;">&#10004;</span>
           <div style="flex:1; min-width:0;">
             <div style="font-size:11px; font-weight:600; color:var(--fg);">MACD 0선 위</div>
-            <div style="font-size:11px; color:#ffffff; margin-top:2px;">모멘텀이 아직 음수 영역이에요</div>
+            <div style="font-size:11px; color:#ffffff; margin-top:2px;">상승 모멘텀이 확실히 살아났어요</div>
           </div>
         </div>
         
