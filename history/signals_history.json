@@ -1,97 +1,97 @@
 {
   "MU": {
     "prev_signal": "HOLD",
-    "prev_date": "2026-05-14",
+    "prev_date": "2026-05-15",
     "buy_streak": 0,
     "buy_confirmed": false
   },
   "GOOGL": {
     "prev_signal": "3rd_BUY",
-    "prev_date": "2026-05-14",
-    "buy_streak": 1,
-    "buy_confirmed": false
+    "prev_date": "2026-05-15",
+    "buy_streak": 2,
+    "buy_confirmed": true
   },
   "AMZN": {
     "prev_signal": "HOLD",
-    "prev_date": "2026-05-14",
+    "prev_date": "2026-05-15",
     "buy_streak": 0,
     "buy_confirmed": false
   },
   "SPY": {
-    "prev_signal": "HOLD",
-    "prev_date": "2026-05-14",
-    "buy_streak": 0,
+    "prev_signal": "3rd_BUY",
+    "prev_date": "2026-05-15",
+    "buy_streak": 1,
     "buy_confirmed": false
   },
   "QQQ": {
     "prev_signal": "HOLD",
-    "prev_date": "2026-05-14",
+    "prev_date": "2026-05-15",
     "buy_streak": 0,
     "buy_confirmed": false
   },
   "TLT": {
-    "prev_signal": "HOLD",
-    "prev_date": "2026-05-14",
-    "buy_streak": 0,
+    "prev_signal": "1st_BUY",
+    "prev_date": "2026-05-15",
+    "buy_streak": 1,
     "buy_confirmed": false
   },
   "TSLA": {
     "prev_signal": "3rd_BUY",
-    "prev_date": "2026-05-14",
-    "buy_streak": 8,
+    "prev_date": "2026-05-15",
+    "buy_streak": 9,
     "buy_confirmed": true
   },
   "SOXL": {
-    "prev_signal": "3rd_BUY",
-    "prev_date": "2026-05-14",
-    "buy_streak": 2,
-    "buy_confirmed": true
+    "prev_signal": "HOLD",
+    "prev_date": "2026-05-15",
+    "buy_streak": 0,
+    "buy_confirmed": false
   },
   "GLD": {
-    "prev_signal": "2nd_BUY",
-    "prev_date": "2026-05-14",
-    "buy_streak": 36,
+    "prev_signal": "1st_BUY",
+    "prev_date": "2026-05-15",
+    "buy_streak": 37,
     "buy_confirmed": true
   },
   "SLV": {
     "prev_signal": "3rd_BUY",
-    "prev_date": "2026-05-14",
-    "buy_streak": 14,
+    "prev_date": "2026-05-15",
+    "buy_streak": 15,
     "buy_confirmed": true
   },
   "NVDA": {
-    "prev_signal": "HOLD",
-    "prev_date": "2026-05-14",
-    "buy_streak": 0,
+    "prev_signal": "3rd_BUY",
+    "prev_date": "2026-05-15",
+    "buy_streak": 1,
     "buy_confirmed": false
   },
   "CRCL": {
-    "prev_signal": "3rd_BUY",
-    "prev_date": "2026-05-14",
-    "buy_streak": 2,
-    "buy_confirmed": true
+    "prev_signal": "HOLD",
+    "prev_date": "2026-05-15",
+    "buy_streak": 0,
+    "buy_confirmed": false
   },
   "XOM": {
     "prev_signal": "3rd_BUY",
-    "prev_date": "2026-05-14",
-    "buy_streak": 2,
+    "prev_date": "2026-05-15",
+    "buy_streak": 3,
     "buy_confirmed": true
   },
   "SCHD": {
-    "prev_signal": "3rd_BUY",
-    "prev_date": "2026-05-14",
-    "buy_streak": 12,
+    "prev_signal": "2nd_BUY",
+    "prev_date": "2026-05-15",
+    "buy_streak": 13,
     "buy_confirmed": true
   },
   "AAPL": {
-    "prev_signal": "3rd_BUY",
-    "prev_date": "2026-05-14",
-    "buy_streak": 1,
+    "prev_signal": "HOLD",
+    "prev_date": "2026-05-15",
+    "buy_streak": 0,
     "buy_confirmed": false
   },
   "JEPI": {
     "prev_signal": "HOLD",
-    "prev_date": "2026-05-14",
+    "prev_date": "2026-05-15",
     "buy_streak": 0,
     "buy_confirmed": false
   }
