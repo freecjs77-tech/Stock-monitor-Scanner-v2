@@ -6,13 +6,13 @@
     "buy_confirmed": false
   },
   "GOOGL": {
-    "prev_signal": "HOLD",
+    "prev_signal": "WATCH",
     "prev_date": "2026-09-01",
     "buy_streak": 0,
     "buy_confirmed": false
   },
   "AMZN": {
-    "prev_signal": "HOLD",
+    "prev_signal": "WATCH",
     "prev_date": "2026-09-01",
     "buy_streak": 0,
     "buy_confirmed": false
@@ -24,21 +24,21 @@
     "buy_confirmed": false
   },
   "QQQ": {
-    "prev_signal": "HOLD",
+    "prev_signal": "WATCH",
     "prev_date": "2026-09-01",
     "buy_streak": 0,
     "buy_confirmed": false
   },
   "TLT": {
-    "prev_signal": "3rd_BUY",
+    "prev_signal": "2nd_BUY",
     "prev_date": "2026-09-01",
-    "buy_streak": 22,
+    "buy_streak": 23,
     "buy_confirmed": true
   },
   "TSLA": {
-    "prev_signal": "3rd_BUY",
+    "prev_signal": "HOLD",
     "prev_date": "2026-09-01",
-    "buy_streak": 1,
+    "buy_streak": 0,
     "buy_confirmed": false
   },
   "SOXL": {
@@ -50,13 +50,13 @@
   "GLD": {
     "prev_signal": "3rd_BUY",
     "prev_date": "2026-09-01",
-    "buy_streak": 77,
+    "buy_streak": 78,
     "buy_confirmed": true
   },
   "SLV": {
     "prev_signal": "3rd_BUY",
     "prev_date": "2026-09-01",
-    "buy_streak": 31,
+    "buy_streak": 32,
     "buy_confirmed": true
   },
   "NVDA": {
@@ -66,27 +66,27 @@
     "buy_confirmed": false
   },
   "CRCL": {
+    "prev_signal": "HOLD",
+    "prev_date": "2026-09-01",
+    "buy_streak": 0,
+    "buy_confirmed": false
+  },
+  "XOM": {
     "prev_signal": "3rd_BUY",
     "prev_date": "2026-09-01",
     "buy_streak": 1,
     "buy_confirmed": false
   },
-  "XOM": {
+  "SCHD": {
     "prev_signal": "HOLD",
     "prev_date": "2026-09-01",
     "buy_streak": 0,
     "buy_confirmed": false
   },
-  "SCHD": {
-    "prev_signal": "2nd_BUY",
-    "prev_date": "2026-09-01",
-    "buy_streak": 6,
-    "buy_confirmed": true
-  },
   "AAPL": {
-    "prev_signal": "HOLD",
+    "prev_signal": "3rd_BUY",
     "prev_date": "2026-09-01",
-    "buy_streak": 0,
+    "buy_streak": 1,
     "buy_confirmed": false
   },
   "JEPI": {
