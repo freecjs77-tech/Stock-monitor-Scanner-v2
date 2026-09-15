@@ -12,7 +12,7 @@
     "buy_confirmed": false
   },
   "AMZN": {
-    "prev_signal": "HOLD",
+    "prev_signal": "WATCH",
     "prev_date": "2026-09-15",
     "buy_streak": 0,
     "buy_confirmed": false
@@ -24,7 +24,7 @@
     "buy_confirmed": false
   },
   "QQQ": {
-    "prev_signal": "HOLD",
+    "prev_signal": "WATCH",
     "prev_date": "2026-09-15",
     "buy_streak": 0,
     "buy_confirmed": false
@@ -32,7 +32,7 @@
   "TLT": {
     "prev_signal": "2nd_BUY",
     "prev_date": "2026-09-15",
-    "buy_streak": 34,
+    "buy_streak": 35,
     "buy_confirmed": true
   },
   "TSLA": {
@@ -48,15 +48,15 @@
     "buy_confirmed": false
   },
   "GLD": {
-    "prev_signal": "HOLD",
+    "prev_signal": "2nd_BUY",
     "prev_date": "2026-09-15",
-    "buy_streak": 0,
+    "buy_streak": 1,
     "buy_confirmed": false
   },
   "SLV": {
-    "prev_signal": "HOLD",
+    "prev_signal": "2nd_BUY",
     "prev_date": "2026-09-15",
-    "buy_streak": 0,
+    "buy_streak": 1,
     "buy_confirmed": false
   },
   "NVDA": {
@@ -72,9 +72,9 @@
     "buy_confirmed": false
   },
   "XOM": {
-    "prev_signal": "2nd_BUY",
+    "prev_signal": "3rd_BUY",
     "prev_date": "2026-09-15",
-    "buy_streak": 5,
+    "buy_streak": 6,
     "buy_confirmed": true
   },
   "SCHD": {
@@ -86,7 +86,7 @@
   "AAPL": {
     "prev_signal": "3rd_BUY",
     "prev_date": "2026-09-15",
-    "buy_streak": 5,
+    "buy_streak": 6,
     "buy_confirmed": true
   },
   "JEPI": {
